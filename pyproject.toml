@@ -1,0 +1,31 @@
+[project]
+name = "p12-epicevents"
+version = "0.1.0"
+description = "CRM for Epic Events"
+authors = [
+    {name = "Quentin Tellier",email = "quentin.tellier@outlook.com"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "mysql-connector-python (>=9.7.0,<10.0.0)",
+    "sentry-sdk (>=2.66.0,<3.0.0)",
+    "rich (>=15.0.0,<16.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "alembic (>=1.18.5,<2.0.0)",
+    "bcrypt (>=5.0.0,<6.0.0)"
+]
+
+[dependency-groups]
+dev = [
+    "black (>=26.5.1,<27.0.0)",
+    "pytest (>=9.1.1,<10.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

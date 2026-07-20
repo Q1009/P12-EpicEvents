@@ -1,0 +1,1 @@
+from models.base_model import Base, Table
