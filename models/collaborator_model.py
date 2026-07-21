@@ -18,6 +18,8 @@ class Collaborator(Base):
     password = Column(String(100), nullable=False)  # À hasher avec bcrypt
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
     department = relationship("Department", back_populates="collaborators")
+    customers = relationship("Customer", back_populates="sales_representative")
+    events = relationship("Event", back_populates="support_representative")
 
 class Department(Base):
     __tablename__ = "departments"

@@ -25,6 +25,8 @@ config.set_main_option(
 from models import Base, Table
 from models import Collaborator, Department, Role
 from models import Customer, Contact, PhoneNumber
+from models import Event, Location
+from models import Contract, ContractStatus
 from models import customers_contacts_association
 
 # add your model's MetaData object here

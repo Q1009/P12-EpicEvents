@@ -15,9 +15,10 @@ class Customer(Base):
     company_name = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
-    # collaborator_id = Column(Integer, ForeignKey("collaborator.id"), nullable=True)
-    # collaborator = relationship("Collaborator", back_populates="customers")
+    sales_representative_id = Column(Integer, ForeignKey("collaborators.id"), nullable=True)
+    sales_representative = relationship("Collaborator", back_populates="customers")
     contacts = relationship("Contact", secondary=customers_contacts_association, back_populates="customers")
+    contracts = relationship("Contract", back_populates="customer", cascade="all, delete-orphan")
 
 class Contact(Base):
     """Représente un contact associé à un client dans la base de données."""
