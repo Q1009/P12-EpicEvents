@@ -39,6 +39,18 @@ class Settings:
             f"ENVIRONMENT={self.ENVIRONMENT!r}"
             f")"
         )
+    
+    # --- Passwords des collaborateurs (pour le seed) ---
+    COLLAB_PASSWORD_1: str = os.getenv("COLLAB_PASSWORD_1", "default_password")
+    COLLAB_PASSWORD_2: str = os.getenv("COLLAB_PASSWORD_2", "default_password")
+    COLLAB_PASSWORD_3: str = os.getenv("COLLAB_PASSWORD_3", "default_password")
+    COLLAB_PASSWORD_4: str = os.getenv("COLLAB_PASSWORD_4", "default_password")
+    COLLAB_PASSWORD_5: str = os.getenv("COLLAB_PASSWORD_5", "default_password")
+    COLLAB_PASSWORD_6: str = os.getenv("COLLAB_PASSWORD_6", "default_password")
+    COLLAB_PASSWORD_7: str = os.getenv("COLLAB_PASSWORD_7", "default_password")
+    COLLAB_PASSWORD_8: str = os.getenv("COLLAB_PASSWORD_8", "default_password")
+    COLLAB_PASSWORD_9: str = os.getenv("COLLAB_PASSWORD_9", "default_password")
+    COLLAB_PASSWORD_10: str = os.getenv("COLLAB_PASSWORD_10", "default_password")
 
 # Instance globale à importer ailleurs
 settings = Settings()

@@ -23,7 +23,7 @@ config.set_main_option(
 
 # Import your models here to ensure they are registered with Alembic
 from models import Base, Table
-from models import Collaborator, Department, Role
+from models import Collaborator, Department, DepartmentName
 from models import Customer, Contact, PhoneNumber
 from models import Event, Location
 from models import Contract, ContractStatus

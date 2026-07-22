@@ -189,6 +189,24 @@ files = [
 ]
 
 [[package]]
+name = "faker"
+version = "40.32.0"
+description = "Faker is a Python package that generates fake data for you."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "faker-40.32.0-py3-none-any.whl", hash = "sha256:2fd913ad02dabbea84d729937db68f9ca9773dce93cec45f1fd6fe0fd1b41840"},
+    {file = "faker-40.32.0.tar.gz", hash = "sha256:78271bfa3a0e982f1b90e1345b2b8f4a04a132864e0372262074e60c2cddd4ef"},
+]
+
+[package.dependencies]
+tzdata = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+tzdata = ["tzdata"]
+
+[[package]]
 name = "greenlet"
 version = "3.5.3"
 description = "Lightweight in-process concurrent programming"
@@ -860,6 +878,19 @@ files = [
 ]
 
 [[package]]
+name = "tzdata"
+version = "2026.3"
+description = "Provider of IANA time zone data"
+optional = false
+python-versions = ">=2"
+groups = ["main"]
+markers = "platform_system == \"Windows\""
+files = [
+    {file = "tzdata-2026.3-py2.py3-none-any.whl", hash = "sha256:dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931"},
+    {file = "tzdata-2026.3.tar.gz", hash = "sha256:4a1518b8993086a7982523e071643f3c0e5f213e75b21318e78bcabfff9d1415"},
+]
+
+[[package]]
 name = "urllib3"
 version = "2.7.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -880,4 +911,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "da6de4fe55c3ec3ee224774278397e47534b78189763ecd80e2dfb7d241e662a"
+content-hash = "0b0504703d4218eb3d543a8216ec1a2b8ef23742902983a720b5247d1d5b9bc3"

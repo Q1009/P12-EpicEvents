@@ -13,11 +13,11 @@ class Event(Base):
     end_date = Column(DateTime, nullable=False)
     attendees = Column(Integer, nullable=False)
     description = Column(Text, nullable=True)
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    location_id = Column(Integer, ForeignKey("locations.id", name="fk_event_location"), nullable=False)
     location = relationship("Location", back_populates="events")
-    support_representative_id = Column(Integer, ForeignKey("collaborators.id"), nullable=True)
+    support_representative_id = Column(Integer, ForeignKey("collaborators.id", name="fk_event_support_representative"), nullable=True)
     support_representative = relationship("Collaborator", back_populates="events")
-    contract_id = Column(Integer, ForeignKey("contracts.id"), unique=True, nullable=False)
+    contract_id = Column(Integer, ForeignKey("contracts.id", name="fk_event_contract"), unique=True, nullable=False)
     contract = relationship("Contract", back_populates="event")
 
 class Location(Base):
