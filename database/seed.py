@@ -7,14 +7,14 @@ from bcrypt import hashpw, gensalt
 from faker import Faker
 from config.settings import settings
 
-# 2. Importe les modèles
+# 1. Importe les modèles
 from models.base_model import Base
 from models.event_model import Event, Location
 from models.customer_model import Customer, Contact, PhoneNumber
 from models.collaborator_model import Collaborator, Department, DepartmentName
 from models.contract_model import Contract, ContractStatus
 
-# 3. Configuration de la session et de Faker (reproductible)
+# 2. Configuration de la session et de Faker (reproductible)
 engine = create_engine(settings.DB_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -23,7 +23,7 @@ session = Session()
 Faker.seed(42)  # ✅ Même données à chaque exécution
 fake = Faker("fr_FR")
 
-# 4. Récupère les mots de passe depuis .env (1 par collaborateur)
+# 3. Récupère les mots de passe depuis .env (1 par collaborateur)
 # Format attendu dans .env: COLLAB_PASSWORD_1=..., COLLAB_PASSWORD_2=..., etc.
 def get_password(index):
     return getattr(settings, f"COLLAB_PASSWORD_{index}", "default_password")
@@ -32,13 +32,11 @@ def hash_password(password: str) -> str:
     """Hache un mot de passe avec bcrypt."""
     return hashpw(password.encode(), gensalt()).decode()
 
-# 5. Fonction principale
+# 4. Fonction principale
 def seed():
     """Peuple la base de données selon tes spécifications."""
 
     # ===== Étape 1 : Supprime et recrée les tables (pour un environnement propre)
-    # Base.metadata.drop_all(engine)
-    # Base.metadata.create_all(engine)
 
     subprocess.run(["poetry", "run", "alembic", "downgrade", "base"], check=True, cwd=".")
     subprocess.run(["poetry", "run", "alembic", "upgrade", "head"], check=True, cwd=".")
@@ -80,16 +78,26 @@ def seed():
     sales_collaborators = [c for c in collaborators if c.department.name == DepartmentName.SALES.value]
     support_collaborators = [c for c in collaborators if c.department.name == DepartmentName.SUPPORT.value]
 
-    # ===== Étape 4 : Crée 5 contacts =====
-    contacts = []
+    # ===== Étape 4 : Crée 5 contacts et 5 contacts_customers =====
+    contacts = [] # Liste des contacts qui sont les clients
+    contacts_customers = [] # Liste des contacts qui sont différents des clients
     for _ in range(5):
         contact = Contact(
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             email=fake.email()
         )
+
+        contact_customer = Contact(
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
+            email=fake.email()
+        )
+
         contacts.append(contact)
-        session.add(contact)
+        contacts_customers.append(contact_customer)
+        session.add(contact, contact_customer)
+
     session.flush()
 
     # ===== Étape 5 : Crée 10 clients avec relations spécifiques =====
@@ -101,24 +109,23 @@ def seed():
             first_name=contacts[i].first_name,
             last_name=contacts[i].last_name,
             company_name=fake.company(),
-            sales_representative=random.choice(sales_collaborators)  # Commercial aléatoire
+            sales_representative=random.choice(sales_collaborators),  # Commercial aléatoire
+            contacts=[contacts[i]]  # Le contact est le client lui-même
         )
-        # Ajoute le client au contact
-        contacts[i].customers.append(client)
+
         clients.append(client)
         session.add(client)
 
-    # 3 clients avec un contact (parmi les 5 contacts)
+    # 3 clients avec un contact (parmi les 5 contacts_customers)
     for i in range(5, 8):
         client = Customer(
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             company_name=fake.company(),
-            sales_representative=random.choice(sales_collaborators)
+            sales_representative=random.choice(sales_collaborators),
+            contacts=[random.choice(contacts_customers)]  # Associe un contact aléatoire
         )
-        # Associe à un contact aléatoire parmi les 5
-        selected_contact = random.choice(contacts)
-        selected_contact.customers.append(client)
+
         clients.append(client)
         session.add(client)
 
@@ -131,7 +138,7 @@ def seed():
             sales_representative=random.choice(sales_collaborators)
         )
         # Sélectionne 2 contacts distincts
-        selected_contacts = random.sample(contacts, 2)
+        selected_contacts = random.sample(contacts_customers, 2)
         for contact in selected_contacts:
             contact.customers.append(client)
         clients.append(client)
@@ -143,8 +150,8 @@ def seed():
     locations = []
     for _ in range(10):
         location = Location(
-            name=fake.company() + " - Salle " + fake.random_letter(),
-            street_number=str(random.randint(1, 100)),
+            name=fake.location_on_land()[2],  # Nom du lieu basé sur la localisation
+            street_number=fake.building_number(),
             street_name=fake.street_name(),
             zip_code=fake.postcode(),
             city=fake.city()
@@ -158,9 +165,14 @@ def seed():
     status_distribution = [ContractStatus.SIGNED] * 5 + [ContractStatus.PENDING] * 2 + [ContractStatus.CANCELLED]
 
     for i, status_enum in enumerate(status_distribution):
+        total_amount = round(random.uniform(1000, 50000), 2)
+        if status_enum == ContractStatus.SIGNED:
+            amount_due = round(random.uniform(0, total_amount), 2)  # Montant dû aléatoire pour les contrats signés
+        else:
+            amount_due = total_amount  # Montant dû égal au total pour les contrats non signés
         contract = Contract(
-            total_amount=round(random.uniform(1000, 50000), 2),
-            amount_due=round(random.uniform(1000, 50000), 2),
+            total_amount=total_amount,
+            amount_due=amount_due,
             created_at=fake.date_between(start_date='-1y', end_date='today'),
             status=status_enum.value,
             customer=random.choice(clients)
@@ -169,34 +181,28 @@ def seed():
         session.add(contract)
     session.flush()
 
-    # ===== Étape 8 : Crée 5 événements (3 avec support attitré du département support) =====
+    # ===== Étape 8 : Crée autant d'événements que de contrats signés et les associe (1:1) =====
     events = []
-    for i in range(5):
+    signed_contracts = [c for c in contracts if c.status == ContractStatus.SIGNED.value]
+    for i, contract in enumerate(signed_contracts):
         # 3 événements avec support, 2 sans
         support_rep = random.choice(support_collaborators) if i < 3 else None
 
         event = Event(
-            name=fake.company() + " Event " + str(i+1),
+            name=contract.customer.first_name + " " + contract.customer.last_name + " Event",
             start_date=fake.date_between(start_date='today', end_date='+6M'),
             end_date=fake.date_between(start_date='+1d', end_date='+6M'),
-            attendees=random.randint(10, 200),
-            description=fake.text(max_nb_chars=200),
+            attendees=fake.random_number(digits=3, fix_len=False),
+            description=fake.text(max_nb_chars=1000),
             location=random.choice(locations),
             support_representative=support_rep,
-            # Lier à un contrat aléatoire (parmi les 8)
-            contract=random.choice(contracts) if i < len(contracts) else None
+            contract=contract
         )
         events.append(event)
         session.add(event)
 
-    # ===== Étape 9 : Associe chaque contrat signé à un événement (1:1) =====
-    signed_contracts = [c for c in contracts if c.status == ContractStatus.SIGNED]
-    for i, contract in enumerate(signed_contracts[:5]):  # Seuls les 5 premiers contrats signés auront un événement
-        contract.event = events[i]
-    session.flush()
-
-    # ===== Étape 10 : Crée 30 numéros de téléphone (1-3 par contact) =====
-    for contact in contacts:
+    # ===== Étape 9 : Crée des numéros de téléphone (1-3 par contact) =====
+    for contact in contacts_customers + contacts:
         num_phones = random.randint(1, 3)  # 1, 2 ou 3 numéros par contact
         for _ in range(num_phones):
             phone = PhoneNumber(
@@ -205,7 +211,7 @@ def seed():
             )
             session.add(phone)
 
-    # ===== Finalise =====
+    # ===== Étape 10 : Finalise =====
     session.commit()
     print("✅ Base de données peuplée avec succès !")
     print(f"   - {len(departments)} départements")
@@ -213,7 +219,7 @@ def seed():
     print(f"   - {len(contacts)} contacts")
     print(f"   - {len(clients)} clients")
     print(f"   - {len(locations)} lieux")
-    print(f"   - {len(contracts)} contrats")
+    print(f"   - {len(contracts)} contrats (5 signés, 2 pending, 1 annulé)")
     print(f"   - {len(events)} événements")
     print(f"   - {len(session.query(PhoneNumber).all())} numéros de téléphone")
 
