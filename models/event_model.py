@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from models.base_model import Base
 
 class Event(Base):
-    """Représente un événement dans la base de données."""
+    """Represents an event in the database."""
     __tablename__ = "events"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -21,7 +21,7 @@ class Event(Base):
     contract = relationship("Contract", back_populates="event")
 
 class Location(Base):
-    """Représente un lieu associé à un événement dans la base de données."""
+    """Represents a location associated to an event in the database."""
     __tablename__ = "locations"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

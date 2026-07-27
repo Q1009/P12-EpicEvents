@@ -1,3 +1,6 @@
+# == Command to run seed.py ==
+# poetry run python -m database.seed
+
 import random
 import subprocess
 from datetime import datetime, timedelta

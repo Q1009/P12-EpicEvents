@@ -6,7 +6,7 @@ from models.base_model import Base
 from models.associations import customers_contacts_association
 
 class Customer(Base):
-    """Représente un client dans la base de données."""
+    """Represents a customer in the database."""
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -21,7 +21,7 @@ class Customer(Base):
     contracts = relationship("Contract", back_populates="customer", cascade="all, delete-orphan")
 
 class Contact(Base):
-    """Représente un contact associé à un client dans la base de données."""
+    """Represents a contact associated with a customer in the database."""
     __tablename__ = "contacts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -32,7 +32,7 @@ class Contact(Base):
     phone_numbers = relationship("PhoneNumber", back_populates="contact", cascade="all, delete-orphan")
 
 class PhoneNumber(Base):
-    """Représente un numéro de téléphone associé à un contact dans la base de données."""
+    """Represents a phone number associated with a contact in the database."""
     __tablename__ = "phone_numbers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

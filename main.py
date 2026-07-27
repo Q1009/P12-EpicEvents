@@ -1,14 +1,14 @@
 from config.settings import settings
 
 def main():
-    print(f"🚀 Démarrage en mode : {settings.ENVIRONMENT}")
-    print(f"🗄️ Connexion à : {settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
+    print(f"🚀 Starting in : {settings.ENVIRONMENT} mode")
+    print(f"🗄️ Connection to : {settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
 
-    # Vérifie que les variables obligatoires sont présentes
+    # Checks that required variables are present
     required_vars = ["DB_USER", "DB_PASSWORD", "DB_NAME"]
     missing = [var for var in required_vars if not getattr(settings, var)]
     if missing:
-        raise ValueError(f"Variables manquantes dans .env : {', '.join(missing)}")
+        raise ValueError(f"Missing variables in .env : {', '.join(missing)}")
 
     # ...
 

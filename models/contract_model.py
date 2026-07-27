@@ -11,7 +11,7 @@ class ContractStatus(PyEnum):
     CANCELLED = "cancelled"
 
 class Contract(Base):
-    """Représente un contrat dans la base de données."""
+    """Represents a contract in the database."""
     __tablename__ = "contracts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -5,7 +5,7 @@ from datetime import datetime
 Base = declarative_base()
 
 class Table(Base):
-    """Table de test pour vérifier la connexion à la BDD."""
+    """Test table to check database connection."""
     __tablename__ = "test_table"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

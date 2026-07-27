@@ -2,13 +2,13 @@ from dotenv import load_dotenv
 import os
 from typing import Optional
 
-# Charger les variables du fichier .env
+# Load variables from .env file
 load_dotenv()
 
 class Settings:
-    """Classe centralisant toute la configuration de l'application."""
+    """Class centralizing all application configuration."""
 
-    # --- Base de données ---
+    # --- Database ---
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
     DB_USER: str = os.getenv("DB_USER")
@@ -17,20 +17,20 @@ class Settings:
 
     @property
     def DB_URL(self) -> str:
-        """Génère l'URL SQLAlchemy pour MySQL."""
+        """Generates the SQLAlchemy URL for MySQL."""
         return f"mysql+mysqlconnector://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    # --- Sentry (logs d'erreurs) ---
+    # --- Sentry (error logs) ---
     SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN")
 
-    # --- Sécurité ---
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "cle_par_defaut_a_changer_en_prod")
+    # --- Security ---
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "default_key_change_in_production")
 
-    # --- Environnement ---
+    # --- Environment ---
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")  # development|staging|production
 
     def __repr__(self) -> str:
-        # Affiche une représentation sécurisée (sans les mots de passe)
+        # Displays a secure representation (without passwords)
         return (
             f"Settings("
             f"DB_HOST={self.DB_HOST!r}, "
@@ -39,8 +39,8 @@ class Settings:
             f"ENVIRONMENT={self.ENVIRONMENT!r}"
             f")"
         )
-    
-    # --- Passwords des collaborateurs (pour le seed) ---
+
+    # --- Collaborator passwords (for seeding) ---
     COLLAB_PASSWORD_1: str = os.getenv("COLLAB_PASSWORD_1", "default_password")
     COLLAB_PASSWORD_2: str = os.getenv("COLLAB_PASSWORD_2", "default_password")
     COLLAB_PASSWORD_3: str = os.getenv("COLLAB_PASSWORD_3", "default_password")
@@ -52,5 +52,5 @@ class Settings:
     COLLAB_PASSWORD_9: str = os.getenv("COLLAB_PASSWORD_9", "default_password")
     COLLAB_PASSWORD_10: str = os.getenv("COLLAB_PASSWORD_10", "default_password")
 
-# Instance globale à importer ailleurs
+# Global instance to import elsewhere
 settings = Settings()
