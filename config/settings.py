@@ -26,6 +26,13 @@ class Settings:
     # --- Security ---
     SECRET_KEY: str = os.getenv("SECRET_KEY", "default_key_change_in_production")
 
+    # --- JWT ---
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "RS256")
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+    JWT_PRIVATE_KEY_PATH: str = os.getenv("JWT_PRIVATE_KEY_PATH")
+    JWT_PUBLIC_KEY_PATH: str = os.getenv("JWT_PUBLIC_KEY_PATH")
+
     # --- Environment ---
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")  # development|staging|production
 

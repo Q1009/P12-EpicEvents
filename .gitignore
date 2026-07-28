@@ -10,3 +10,4 @@ ERD.pdf
 .vscode/
 poetry.md
 .pytest_cache/
+config/keys/*.pem
