@@ -3,7 +3,7 @@ RSA Key Generation Module for JWT Authentication
 
 This module generates a new pair of RSA private/public keys for JWT signing and verification.
 The keys are saved in PEM format (PKCS#8 for private key, SubjectPublicKeyInfo for public key)
-and stored in the `config/keys/` directory.
+and stored in the `keys/keys/` directory.
 
 Security Notes:
     - The private key is saved WITHOUT password encryption by default (for development).
@@ -12,7 +12,7 @@ Security Notes:
 
 Usage:
     # Generate keys (development)
-    python -m config.generate_keys
+    python -m keys.generate_keys
 """
 
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -36,7 +36,7 @@ private_key = rsa.generate_private_key(
 # - PrivateFormat.PKCS8: Standard format for private keys (RFC 5208).
 # - NoEncryption(): Key is stored in plaintext (for development only).
 #   For production, use BestAvailableEncryption(b'password') to encrypt the key.
-with open('config/keys/jwt_private_key.pem', 'wb') as f:
+with open('keys/keys/jwt_private_key.pem', 'wb') as f:
     pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -50,7 +50,7 @@ with open('config/keys/jwt_private_key.pem', 'wb') as f:
 # The public key is a mathematical derivation of the private key and cannot be reversed.
 # Serializes to SubjectPublicKeyInfo PEM format (most widely compatible).
 public_key = private_key.public_key()
-with open('config/keys/jwt_public_key.pem', 'wb') as f:
+with open('keys/keys/jwt_public_key.pem', 'wb') as f:
     pem = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
@@ -59,4 +59,4 @@ with open('config/keys/jwt_public_key.pem', 'wb') as f:
 
 # --- Completion Feedback ---
 # Prints a success message to confirm key generation.
-print('✅ RSA keys have been generated in config/keys/')
+print('✅ RSA keys have been generated in keys/keys/')

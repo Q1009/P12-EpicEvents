@@ -1,1 +1,1 @@
-from .jwt_config import get_private_key, get_public_key
+from .settings import settings

@@ -1,11 +1,13 @@
-# services/authentication_services.py
 import jwt
-from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Tuple, Callable
+from functools import wraps
 from bcrypt import hashpw, gensalt, checkpw
 from sqlalchemy.orm import Session
-from config.settings import settings
-from config import get_private_key, get_public_key
+from config import settings
+from keys import get_private_key, get_public_key
+from tokens import save_tokens, load_tokens, clear_tokens
+from controllers import AuthController
 from models import Collaborator
 
 class AuthenticationError(Exception):
@@ -27,20 +29,21 @@ class AuthenticationError(Exception):
 
 class TokenService:
     """Service for JWT token management."""
+    # Need to configure payload data
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
         """Create an access JWT token."""
         private_key = get_private_key()
         expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        expiration = datetime.utcnow() + expires_delta
+        expiration = datetime.now(timezone.utc) + expires_delta
 
         payload = {
             "sub": str(user_id),
             "email": email,
             "type": "access",
             "exp": expiration,
-            "iat": datetime.utcnow()
+            "iat": datetime.now(timezone.utc)
         }
 
         return jwt.encode(
@@ -54,14 +57,14 @@ class TokenService:
         """Create a refresh JWT token."""
         private_key = get_private_key()
         expires_delta = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
-        expiration = datetime.utcnow() + expires_delta
+        expiration = datetime.now(timezone.utc) + expires_delta
 
         payload = {
             "sub": str(user_id),
             "email": email,
             "type": "refresh",
             "exp": expiration,
-            "iat": datetime.utcnow()
+            "iat": datetime.now(timezone.utc)
         }
 
         return jwt.encode(
@@ -94,7 +97,7 @@ class TokenService:
             raise AuthenticationError(f"Invalid token: {str(e)}")
 
     @staticmethod
-    def refresh_access_token(refresh_token: str) -> Tuple[str, str]:
+    def refresh_access_token(refresh_token: str) -> Tuple[str]:
         """Refresh access token using a refresh token."""
         payload = TokenService.verify_token(refresh_token, "refresh")
 
@@ -104,12 +107,12 @@ class TokenService:
         )
 
         # Optionally create a new refresh token (rotation)
-        new_refresh_token = TokenService.create_refresh_token(
-            int(payload["sub"]),
-            payload["email"]
-        )
+        # new_refresh_token = TokenService.create_refresh_token(
+        #     int(payload["sub"]),
+        #     payload["email"]
+        # )
 
-        return new_access_token, new_refresh_token
+        return new_access_token, # new_refresh_token
 
 class PasswordService:
     """Service for password hashing and verification."""
@@ -129,11 +132,13 @@ class PasswordService:
 
 class AuthenticationService:
     """Main authentication service."""
+    # Do we really want user_info as return dict ?
 
     @staticmethod
     def login(session: Session, email: str, password: str) -> Tuple[str, str, dict]:
         """
         Authenticate a user and return access/refresh tokens.
+        Save tokens locally
 
         Returns:
             Tuple of (access_token, refresh_token, user_info)
@@ -161,7 +166,51 @@ class AuthenticationService:
             "department": user.department.name
         }
 
+        # Save tokens locally
+        save_tokens(access_token, refresh_token, user_info)
+
         return access_token, refresh_token, user_info
+
+    @staticmethod
+    def logout() -> None:
+        """Clear stored tokens."""
+        clear_tokens()
+
+    @staticmethod
+    def get_authenticated_user() -> Optional[dict]:
+        """
+        Get current authenticated user from local storage.
+        Automatically refreshes access token if expired.
+
+        Returns:
+            User info dict or None if not authenticated.
+        """
+        tokens = load_tokens()
+        if not tokens:
+            return None
+
+        try:
+            # Try to use the access token
+            user_info = AuthenticationService.get_current_user(tokens["access_token"])
+            return user_info
+        except AuthenticationError:
+            # Access token expired, try to refresh
+            try:
+                new_access_token = TokenService.refresh_access_token(
+                    tokens["refresh_token"]
+                )
+                # Save new access token
+                save_tokens(
+                    new_access_token,
+                    tokens["refresh_token"],
+                    tokens["user"]
+                )
+                # Return user info from new access token
+                return AuthenticationService.get_current_user(new_access_token)
+            except AuthenticationError:
+                # Refresh token also expired or invalid
+                clear_tokens()
+                return None
 
     @staticmethod
     def get_current_user(token: str) -> dict:
@@ -171,3 +220,48 @@ class AuthenticationService:
             "user_id": int(payload["sub"]),
             "email": payload["email"]
         }
+
+    @staticmethod
+    def require_auth(func: Callable) -> Callable:
+        """
+        Decorator to ensure user is authenticated before executing a command.
+
+        If not authenticated:
+        1. Prompt for login
+        2. Retry the command if login succeeds
+        3. Return to menu if login fails
+
+        Usage:
+            @require_auth
+            def my_protected_command(session):
+                ...
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check if user is authenticated
+            if not AuthController.is_authenticated():
+                print("\n⚠️  Authentication required for this command.")
+                session = kwargs.get('session')
+                if session and AuthController.login(session):
+                    # Login succeeded, retry the command
+                    return func(*args, **kwargs)
+                else:
+                    # Login failed or cancelled
+                    return None
+
+            # Get current user and inject into kwargs
+            user_info = AuthController.get_user_info()
+            if not user_info:
+                print("\n⚠️  Your session has expired. Please login again.")
+                session = kwargs.get('session')
+                if session and AuthController.login(session):
+                    user_info = AuthController.get_user_info()
+                    if user_info:
+                        kwargs['user'] = user_info
+                        return func(*args, **kwargs)
+                return None
+
+            kwargs['user'] = user_info
+            return func(*args, **kwargs)
+
+        return wrapper

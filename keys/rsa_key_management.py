@@ -1,10 +1,11 @@
-"""Module for loading and managing RSA keys for JWT signing/verification.
+"""
+Module for loading and managing RSA keys for JWT signing/verification.
 
 This module provides functions to load RSA private and public keys from PEM files,
 with security checks (file existence).
 
 Example:
-    from config.jwt_config import get_private_key, get_public_key
+    from keys import get_private_key, get_public_key
 
     private_key = get_private_key()  # For signing JWTs
     public_key = get_public_key()     # For verifying JWTs
@@ -13,7 +14,7 @@ Example:
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from pathlib import Path
-from config.settings import settings
+from config import settings
 
 def _load_private_key() -> bytes:
     """Load the private key from PEM file with security checks.

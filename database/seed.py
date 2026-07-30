@@ -272,7 +272,3 @@ def seed():
     print(f"   - {len(contracts)} contracts (5 signed, 2 pending, 1 cancelled)")
     print(f"   - {len(events)} events (3 with support, 2 without support)")
     print(f"   - {len(session.query(PhoneNumber).all())} phone numbers")
-
-
-if __name__ == "__main__":
-    seed()
