@@ -6,7 +6,7 @@ from bcrypt import hashpw, gensalt, checkpw
 from sqlalchemy.orm import Session
 from config import settings
 from keys import get_private_key, get_public_key
-from tokens import save_tokens, load_tokens, clear_tokens
+from tokens import save_tokens, load_tokens, clear_tokens, tokens_exist
 from controllers import AuthController
 from models import Collaborator
 
@@ -97,7 +97,7 @@ class TokenService:
             raise AuthenticationError(f"Invalid token: {str(e)}")
 
     @staticmethod
-    def refresh_access_token(refresh_token: str) -> Tuple[str]:
+    def refresh_access_token(refresh_token: str) -> Tuple[str, str]:
         """Refresh access token using a refresh token."""
         payload = TokenService.verify_token(refresh_token, "refresh")
 
@@ -106,13 +106,13 @@ class TokenService:
             payload["email"]
         )
 
-        # Optionally create a new refresh token (rotation)
-        # new_refresh_token = TokenService.create_refresh_token(
-        #     int(payload["sub"]),
-        #     payload["email"]
-        # )
+        # Create a new refresh token (rotation)
+        new_refresh_token = TokenService.create_refresh_token(
+            int(payload["sub"]),
+            payload["email"]
+        )
 
-        return new_access_token, # new_refresh_token
+        return new_access_token, new_refresh_token
 
 class PasswordService:
     """Service for password hashing and verification."""
@@ -224,44 +224,75 @@ class AuthenticationService:
     @staticmethod
     def require_auth(func: Callable) -> Callable:
         """
-        Decorator to ensure user is authenticated before executing a command.
+        Décorateur pour s'assurer que l'utilisateur est authentifié avant d'exécuter une commande.
 
-        If not authenticated:
-        1. Prompt for login
-        2. Retry the command if login succeeds
-        3. Return to menu if login fails
-
-        Usage:
-            @require_auth
-            def my_protected_command(session):
-                ...
+        Logique implémentée :
+        A[Déclenchement] --> B[Tokens locaux existants?]
+        ├── Non --> C[Demander login] --> B
+        └── Oui --> D[Charger tokens]
+            └── E[Vérifier access token]
+                ├── Valide --> F[Exécuter commande]
+                └── Expiré/Invalide --> G[Rafraîchir avec refresh token]
+                    ├── Succès --> H[Sauvegarder nouveaux tokens] --> F
+                    └── Échec --> C
         """
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Check if user is authenticated
-            if not AuthController.is_authenticated():
+            # Check if local token file exist and if data format is valid
+            if not tokens_exist():
+                # New login
                 print("\n⚠️  Authentication required for this command.")
                 session = kwargs.get('session')
-                if session and AuthController.login(session):
-                    # Login succeeded, retry the command
-                    return func(*args, **kwargs)
-                else:
-                    # Login failed or cancelled
+                if not session or not AuthController.login(session):
                     return None
+                # After successfull login, check local token file
+                return wrapper(*args, **kwargs)
 
-            # Get current user and inject into kwargs
-            user_info = AuthController.get_user_info()
-            if not user_info:
-                print("\n⚠️  Your session has expired. Please login again.")
-                session = kwargs.get('session')
-                if session and AuthController.login(session):
-                    user_info = AuthController.get_user_info()
-                    if user_info:
-                        kwargs['user'] = user_info
-                        return func(*args, **kwargs)
+            # Load existing tokens
+            tokens = load_tokens()
+            if not tokens:
                 return None
 
-            kwargs['user'] = user_info
-            return func(*args, **kwargs)
+            # Check access token validity
+            try:
+                payload = TokenService.verify_token(tokens['access_token'], 'access')
+
+                # User authenticated, proceed with function
+                kwargs['user'] = tokens['user']
+                return func(*args, **kwargs)
+
+            except AuthenticationError as e:
+                # Token invalid or expired
+                error_msg = str(e).lower()
+
+                if "expired" in error_msg or "invalid" in error_msg:
+                    try:
+                        # Try to refresh tokens
+                        new_access_token, new_refresh_token = TokenService.refresh_access_token(
+                            tokens['refresh_token']
+                        )
+
+                        # Save tokens
+                        save_tokens(
+                            new_access_token,
+                            new_refresh_token,
+                            tokens['user']
+                        )
+
+                        # User authenticated, proceed with function
+                        kwargs['user'] = tokens['user']
+                        return func(*args, **kwargs)
+
+                    except AuthenticationError:
+                        # Refresh failed, new login required
+                        pass
+
+                # New login
+                print("\n⚠️  Session expired or invalid. Please login again.")
+                session = kwargs.get('session')
+                if session and AuthController.login(session):
+                    # After successfull login, check local token file
+                    return wrapper(*args, **kwargs)
+                return None
 
         return wrapper
