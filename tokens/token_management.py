@@ -25,22 +25,20 @@ def _ensure_directory() -> None:
     # Restrict directory to owner only (700 = rwx------)
     os.chmod(CONFIG_DIR, 0o700)
 
-def save_tokens(access_token: str, refresh_token: str, user_info: Dict[str, Any]) -> None:
+def save_tokens(access_token: str, refresh_token: str) -> None:
     """
     Save tokens to disk with secure permissions.
 
     Args:
         access_token: JWT access token
         refresh_token: JWT refresh token
-        user_info: User data dictionary
     """
     _ensure_directory()
 
     data = {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "user": user_info
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
 
     # Write to a temporary file first (atomic operation)

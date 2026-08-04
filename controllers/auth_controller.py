@@ -4,10 +4,7 @@ Authentication Controller
 Handles user login, logout, and session state.
 """
 
-from services.authentication_services import (
-    AuthenticationService,
-    AuthenticationError
-)
+from services import AuthenticationServices, AuthenticationError
 from tokens import tokens_exist
 from typing import Optional
 
@@ -40,7 +37,7 @@ class AuthController:
             return False
 
         try:
-            AuthenticationService.login(session, email, password)
+            AuthenticationServices.login(session, email, password)
             print("\n✅ Login successful!")
             return True
         except AuthenticationError as e:
@@ -50,7 +47,7 @@ class AuthController:
     @staticmethod
     def logout() -> None:
         """Clear authentication tokens."""
-        AuthenticationService.logout()
+        AuthenticationServices.logout()
         print("\n✅ You have been logged out.")
 
     @staticmethod
@@ -63,4 +60,4 @@ class AuthController:
     @staticmethod
     def get_user_info() -> Optional[dict]:
         """Get current user info from stored tokens."""
-        return AuthenticationService.get_authenticated_user()
+        return AuthenticationServices.get_authenticated_user()
