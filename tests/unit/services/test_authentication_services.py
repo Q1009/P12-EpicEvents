@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from services import PasswordServices, TokenServices, AuthenticationError, AuthenticationServices
 from datetime import datetime, timedelta, timezone
 from keys import get_private_key
+from tokens import load_tokens, save_tokens
 from pathlib import Path
 from config import settings
 from models import Collaborator
@@ -18,7 +19,6 @@ def expired_access_token():
     It can be used in tests that require an expired token scenario.
     """
     user_id = 1
-    """Create an access JWT token."""
     private_key = get_private_key()
 
     payload = {
@@ -303,10 +303,12 @@ class TestTokenServices:
         valid_refresh_token = TokenServices.create_refresh_token(user_id)
 
         # Get new tokens by simulating the use of the refresh token
-        new_access_token, new_refresh_token = TokenServices.refresh_access_token(valid_refresh_token)
+        TokenServices.refresh_access_token(valid_refresh_token)
+        # Load refreshed tokens
+        tokens = load_tokens()
 
         # Verify the new access token
-        payload = TokenServices.verify_token(new_access_token, 'access')
+        payload = TokenServices.verify_token(tokens['access_token'], 'access')
         assert payload['sub'] == str(user_id)
         assert payload['jti'] is not None
         assert payload['type'] == 'access'
@@ -314,7 +316,7 @@ class TestTokenServices:
         assert payload['exp'] is not None
 
         # Verify the new refresh token
-        payload = TokenServices.verify_token(new_refresh_token, 'refresh')
+        payload = TokenServices.verify_token(tokens['refresh_token'], 'refresh')
         assert payload['sub'] == str(user_id)
         assert payload['jti'] is not None
         assert payload['type'] == 'refresh'
@@ -338,7 +340,7 @@ class TestTokenServices:
 
         # Test that using a valid access token raises an AuthenticationError
         with pytest.raises(AuthenticationError) as exc_info:
-            TokenServices.refresh_access_token(new_access_token)
+            TokenServices.refresh_access_token(tokens['access_token'])
         assert 'Invalid token type' in str(exc_info.value)
         assert 'expired' not in str(exc_info.value)
 
@@ -351,6 +353,7 @@ class TestAuthenticationServices:
         This test verifies that:
         - A user can log in with valid credentials and receive access and refresh tokens.
         - The tokens are saved locally in the expected file path.
+        - Logging when already logged in replaces tokens with new ones.
         - Logging in with invalid email raises an AuthenticationError.
         - Logging in with invalid password raises an AuthenticationError.
         """
@@ -361,11 +364,13 @@ class TestAuthenticationServices:
         invalid_password = 'wrongpassword'
 
         # Login with valid credentials
-        access_token, refresh_token = AuthenticationServices.login(db_session, valid_email, valid_password)
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+        # Load tokens
+        tokens = load_tokens()
 
         # Verify that the returned tokens are valid
-        access_payload = TokenServices.verify_token(access_token, 'access')
-        refresh_payload = TokenServices.verify_token(refresh_token, 'refresh')
+        access_payload = TokenServices.verify_token(tokens['access_token'], 'access')
+        refresh_payload = TokenServices.verify_token(tokens['refresh_token'], 'refresh')
 
         # Test that the payloads are not None and that the tokens are valid
         assert access_payload is not None
@@ -374,6 +379,29 @@ class TestAuthenticationServices:
         # Test that the tokens were saved locally
         token_file_path = Path.home() / ".epicevents" / "tokens.json"
         assert token_file_path.exists()
+
+        # Test that login when already logged in:
+        # - creates new tokens
+        # - the new tokens are different from the old ones
+        # - the token file still exists
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+
+        # Test token file still exists
+        assert token_file_path.exists()
+        # Load tokens
+        new_tokens = load_tokens()
+
+        # Test new tokens are different than previous tokens
+        assert new_tokens['access_token'] != tokens['access_token']
+        assert new_tokens['refresh_token']!= tokens['refresh_token']
+
+        # Get payloads
+        new_access_payload = TokenServices.verify_token(new_tokens['access_token'], 'access')
+        new_refresh_payload = TokenServices.verify_token(new_tokens['refresh_token'], 'refresh')
+
+        # Test new payloads are different then previous payloads
+        assert new_access_payload['jti'] != access_payload['jti']
+        assert new_refresh_payload['jti'] != refresh_payload['jti']
 
         # Test that login with invalid email raises AuthenticationError
         with pytest.raises(AuthenticationError) as exc_info:
@@ -384,3 +412,108 @@ class TestAuthenticationServices:
         with pytest.raises(AuthenticationError) as exc_info:
             AuthenticationServices.login(db_session, valid_email, invalid_password)
         assert 'Invalid email or password' in str(exc_info.value)
+
+    def test_get_user_id_by_token(self, db_session, valid_user):
+        """Test the get_user_id_by_token authentication service method.
+
+        Verifies that the method correctly extracts user ID from a valid access token
+        and properly raises AuthenticationError for invalid tokens.
+
+        Test scenarios:
+            - Valid access token returns the expected user_id matching the authenticated user
+            - Invalid token string raises AuthenticationError with 'Invalid token' message
+            - Error message for invalid token does not contain 'expired' (distinguishing from
+            expired token cases)
+        """
+        # Setup
+        valid_email = valid_user.email
+        valid_password = settings.COLLAB_PASSWORD_1
+
+        # Login to get tokens
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+        # Load tokens
+        tokens = load_tokens()
+
+        # Test get_user_id_by_token
+        user_id = AuthenticationServices.get_user_id_by_token(tokens['access_token'])
+        assert user_id == valid_user.id
+
+        # Test with an invalid token
+        with pytest.raises(AuthenticationError) as exc_info:
+            AuthenticationServices.get_user_id_by_token('invalid.token.string')
+        assert 'Invalid token' in str(exc_info.value)
+        assert 'expired' not in str(exc_info.value)
+
+    def test_logout(self, db_session, valid_user):
+        """
+        Test the logout functionality of the AuthenticationServices.
+
+        This test verifies that:
+        - The logout method clears the stored authentication tokens
+        by deleting the token file.
+        - If the token file does not exist, no errors are raised.
+        """
+        # Setup:
+        valid_email = valid_user.email
+        valid_password = settings.COLLAB_PASSWORD_1
+
+        # Login to create token file
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+
+        # Test when the token file is present
+        AuthenticationServices.logout()
+        assert not (Path.home() / ".epicevents" / "tokens.json").exists()
+        assert not load_tokens()
+
+        # Test when the token file is not present
+        AuthenticationServices.logout()
+        assert not (Path.home() / ".epicevents" / "tokens.json").exists()
+        assert not load_tokens()
+
+    def test_require_auth(self, db_session, valid_user, expired_access_token, expired_refresh_token):
+        """Test the require_auth decorator functionality.
+
+        Verifies that the decorator correctly handles authentication scenarios:
+            - Allows execution when valid tokens are present
+            - Returns None when no tokens exist
+            - Handles expired access token by refreshing with valid refresh token
+            - Returns None when both tokens are expired or invalid
+            - Adds user info to kwargs when authentication succeeds
+        """
+        # Create a test function to decorate
+        @AuthenticationServices.require_auth
+        def function_requiring_auth(*args, **kwargs):
+            return 'auth_provided'
+
+        # Test 1: No tokens exist - should return None
+        AuthenticationServices.logout()
+        result = function_requiring_auth()
+        assert result is None
+
+        # Test 2: Valid tokens exist - should execute function and add user to kwargs
+        valid_email = valid_user.email
+        valid_password = settings.COLLAB_PASSWORD_1
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+
+        # The function_requiring_auth should execute successfully with valid tokens
+        result = function_requiring_auth()
+        assert result is not None
+        assert result == 'auth_provided'
+
+        # Test 3: Expired access token with valid refresh token - should refresh and execute
+        tokens = load_tokens()
+        tokens['access_token'] = expired_access_token
+        save_tokens(tokens['access_token'], tokens['refresh_token'])
+
+        result = function_requiring_auth()
+        assert result is not None
+        assert result == 'auth_provided'
+
+        # Test 4: Both tokens expired - should return None
+        tokens = load_tokens()
+        tokens['access_token'] = expired_access_token
+        tokens['refresh_token'] = expired_refresh_token
+        save_tokens(tokens['access_token'], tokens['refresh_token'])
+
+        result = function_requiring_auth()
+        assert result is None

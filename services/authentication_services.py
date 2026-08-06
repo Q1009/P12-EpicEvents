@@ -95,6 +95,8 @@ class TokenServices:
 
         Decodes and validates a JWT token using the application's public key.
         Optionally validates the token type claim against the provided parameter.
+        Returns the decoded payload.
+        Raises AuthenticationError if verification fails.
 
         :param token: The JWT token string to verify and decode
         :type token: str
@@ -126,7 +128,6 @@ class TokenServices:
             # Check token type if specified
             if token_type and payload.get('type') != token_type:
                 raise AuthenticationError(f'Invalid token type. Expected {token_type}')
-
             return payload
 
         except jwt.ExpiredSignatureError:
@@ -165,7 +166,8 @@ class TokenServices:
             int(payload['sub'])
         )
 
-        return new_access_token, new_refresh_token
+        # Save tokens locally
+        save_tokens(new_access_token, new_refresh_token)
 
     @staticmethod
     def invalidate_refresh_token(refresh_token: str) -> None:
@@ -183,9 +185,9 @@ class TokenServices:
         pass
 
 class AuthenticationServices:
-    """Main authentication service."""
-    # Do we really want user_info as return dict ?
-
+    """
+    Main authentication service.
+    """
     @staticmethod
     def login(session: Session, email: str, password: str) -> Tuple[str, str]:
         """Authenticate a user and generate authentication tokens.
@@ -225,72 +227,58 @@ class AuthenticationServices:
         # Save tokens locally
         save_tokens(access_token, refresh_token)
 
-        return access_token, refresh_token
-
     @staticmethod
     def logout() -> None:
-        """Clear stored tokens."""
+        """
+        Clear stored authentication tokens.
+
+        Removes the locally stored access and refresh tokens by deleting
+        the token file, effectively logging out the current authenticated user.
+
+        :rtype: None
+        """
         clear_tokens()
 
     @staticmethod
-    def get_authenticated_user() -> Optional[dict]: # A supprimer ?
+    def get_user_id_by_token(token: str) -> int:
         """
-        Get current authenticated user from local storage.
-        Automatically refreshes access token if expired.
+        Extract user ID from a verified access token.
 
-        Returns:
-            User info dict or None if not authenticated.
+        Verifies the provided token and extracts the user ID from its payload.
+        If the token is invalid or expired, an AuthenticationError is raised.
+
+        :param token: The access token string to verify
+        :type token: str
+        :return: Integer of the user_id
+        :rtype: int
+        :raises AuthenticationError: If token verification fails
+        (expired, invalid, or type mismatch)
         """
-        tokens = load_tokens()
-        if not tokens:
-            return None
-
-        try:
-            # Try to use the access token
-            user_info = AuthenticationServices.get_current_user(tokens["access_token"])
-            return user_info
-        except AuthenticationError:
-            # Access token expired, try to refresh
-            try:
-                new_access_token = TokenServices.refresh_access_token(
-                    tokens["refresh_token"]
-                )
-                # Save new access token
-                save_tokens(
-                    new_access_token,
-                    tokens["refresh_token"]
-                )
-                # Return user info from new access token
-                return AuthenticationServices.get_current_user(new_access_token)
-            except AuthenticationError:
-                # Refresh token also expired or invalid
-                clear_tokens()
-                return None
-
-    @staticmethod
-    def get_current_user(token: str) -> dict: # A renommer en get user id (by token)?
-        """Get current user info from a valid access token."""
         payload = TokenServices.verify_token(token, 'access')
-        return {
-            "user_id": int(payload['sub']),
-            "email": payload['email']
-        }
+        return int(payload['sub'])
 
     @staticmethod
     def require_auth(func: Callable) -> Callable:
         """
-        Décorateur pour s'assurer que l'utilisateur est authentifié avant d'exécuter une commande.
+        Decorator to ensure user authentication before executing a command.
 
-        Logique implémentée :
-        A[Déclenchement] --> B[Tokens locaux existants?]
-        ├── Non --> C[Demander login] --> B
-        └── Oui --> D[Charger tokens]
-            └── E[Vérifier access token]
-                ├── Valide --> F[Exécuter commande]
-                └── Expiré/Invalide --> G[Rafraîchir avec refresh token]
-                    ├── Succès --> H[Sauvegarder nouveaux tokens] --> F
-                    └── Échec --> C
+        Validates authentication tokens and automatically handles token refresh
+        when access tokens are expired. Returns None if authentication fails.
+
+        Workflow:
+            1. Checks if local tokens exist and are valid
+            2. If no tokens: prints authentication message and returns None
+            3. If valid access token: executes the decorated function
+            4. If access token expired/invalid: attempts refresh with refresh token
+            - On success: executes the decorated function
+            - On failure: prints session error message and returns None
+
+        :param func: The function to be decorated and protected with authentication
+        :type func: Callable
+        :return: A wrapped function that performs authentication checks before execution
+        :rtype: Callable
         """
+        # Injecte user: Collaborator ??
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Check if local token file exist and if data format is valid
@@ -306,10 +294,10 @@ class AuthenticationServices:
 
             # Check access token validity
             try:
-                payload = TokenServices.verify_token(tokens['access_token'], 'access')
+                TokenServices.verify_token(tokens['access_token'], 'access')
 
                 # User authenticated, proceed with function
-                kwargs['user'] = tokens['user'] # Add user info to kwargs for the decorated function
+
                 return func(*args, **kwargs)
 
             except AuthenticationError as e:
@@ -319,18 +307,10 @@ class AuthenticationServices:
                 if "expired" in error_msg or "invalid" in error_msg:
                     try:
                         # Try to refresh tokens
-                        new_access_token, new_refresh_token = TokenServices.refresh_access_token(
-                            tokens['refresh_token']
-                        )
-
-                        # Save tokens
-                        save_tokens(
-                            new_access_token,
-                            new_refresh_token
-                        )
+                        TokenServices.refresh_access_token(
+                            tokens['refresh_token'])
 
                         # User authenticated, proceed with function
-                        kwargs['user'] = tokens['user'] # Add user info to kwargs for the decorated function
                         return func(*args, **kwargs)
 
                     except AuthenticationError:

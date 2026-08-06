@@ -56,7 +56,7 @@ def load_tokens() -> Optional[Dict[str, Any]]:
     Load tokens from disk if they exist.
 
     Returns:
-        Dictionary with tokens and user info, or None if file doesn't exist or is invalid.
+        Dictionary with tokens, or None if file doesn't exist or is invalid.
     """
     if not TOKEN_FILE.exists():
         return None
@@ -66,7 +66,7 @@ def load_tokens() -> Optional[Dict[str, Any]]:
             data = json.load(f)
 
         # Validate required fields
-        required_keys = {"access_token", "refresh_token", "user"}
+        required_keys = {"access_token", "refresh_token", "created_at"}
         if not required_keys.issubset(data.keys()):
             clear_tokens()  # Corrupted file, delete it
             return None
