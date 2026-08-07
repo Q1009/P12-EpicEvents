@@ -258,7 +258,24 @@ class AuthenticationServices:
         return int(payload['sub'])
 
     @staticmethod
-    def require_auth(func: Callable) -> Callable:
+    def is_user_authenticated() -> bool:
+        """Check if stored tokens are valid (at least one not expired)."""
+        tokens = load_tokens()
+        if not tokens:
+            return False
+
+        try:
+            TokenServices.verify_token(tokens['access_token'], 'access')
+            return True
+        except AuthenticationError:
+            try:
+                TokenServices.verify_token(tokens['refresh_token'], 'refresh')
+                return True
+            except AuthenticationError:
+                return False
+
+    @staticmethod
+    def check_authentication(func: Callable) -> Callable:
         """
         Decorator to ensure user authentication before executing a command.
 
@@ -284,20 +301,20 @@ class AuthenticationServices:
             # Check if local token file exist and if data format is valid
             if not tokens_exist():
                 # New login
-                print("\n⚠️  Authentication required for this command.")
-                return None
+                # print("\n⚠️  Authentication required for this command.")
+                raise AuthenticationError('Authentication required')
 
             # Load existing tokens
             tokens = load_tokens()
             if not tokens:
-                return None
+                raise AuthenticationError('Authentication required')
 
             # Check access token validity
             try:
                 TokenServices.verify_token(tokens['access_token'], 'access')
 
                 # User authenticated, proceed with function
-
+                #INJECT user: Collaborator ?
                 return func(*args, **kwargs)
 
             except AuthenticationError as e:
@@ -318,7 +335,7 @@ class AuthenticationServices:
                         pass
 
                 # New login
-                print("\n⚠️  Session expired or invalid. Please login again.")
-                return None
+                # print("\n⚠️  Session expired or invalid. Please login again.")
+                raise AuthenticationError('Session expired or invalid. Please login again.')
 
         return wrapper

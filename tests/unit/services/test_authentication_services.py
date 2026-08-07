@@ -470,8 +470,8 @@ class TestAuthenticationServices:
         assert not (Path.home() / ".epicevents" / "tokens.json").exists()
         assert not load_tokens()
 
-    def test_require_auth(self, db_session, valid_user, expired_access_token, expired_refresh_token):
-        """Test the require_auth decorator functionality.
+    def test_check_authentication_decorator(self, db_session, valid_user, expired_access_token, expired_refresh_token):
+        """Test the check_authentication decorator functionality.
 
         Verifies that the decorator correctly handles authentication scenarios:
             - Allows execution when valid tokens are present
@@ -481,39 +481,43 @@ class TestAuthenticationServices:
             - Adds user info to kwargs when authentication succeeds
         """
         # Create a test function to decorate
-        @AuthenticationServices.require_auth
-        def function_requiring_auth(*args, **kwargs):
-            return 'auth_provided'
+        @AuthenticationServices.check_authentication
+        def function_requiring_authentication(*args, **kwargs):
+            return 'authentication_provided'
 
-        # Test 1: No tokens exist - should return None
+        # Test 1: No tokens exist - should raise AuthenticationError
         AuthenticationServices.logout()
-        result = function_requiring_auth()
-        assert result is None
+        with pytest.raises(AuthenticationError) as exc_info:
+            function_requiring_authentication()
+
+        assert 'Authentication required' in str(exc_info.value)
 
         # Test 2: Valid tokens exist - should execute function and add user to kwargs
         valid_email = valid_user.email
         valid_password = settings.COLLAB_PASSWORD_1
         AuthenticationServices.login(db_session, valid_email, valid_password)
 
-        # The function_requiring_auth should execute successfully with valid tokens
-        result = function_requiring_auth()
+        # The function_requiring_authentication should execute successfully with valid tokens
+        result = function_requiring_authentication()
         assert result is not None
-        assert result == 'auth_provided'
+        assert result == 'authentication_provided'
 
         # Test 3: Expired access token with valid refresh token - should refresh and execute
         tokens = load_tokens()
         tokens['access_token'] = expired_access_token
         save_tokens(tokens['access_token'], tokens['refresh_token'])
 
-        result = function_requiring_auth()
+        result = function_requiring_authentication()
         assert result is not None
-        assert result == 'auth_provided'
+        assert result == 'authentication_provided'
 
-        # Test 4: Both tokens expired - should return None
+        # Test 4: Both tokens expired - should raise AuthenticationError
         tokens = load_tokens()
         tokens['access_token'] = expired_access_token
         tokens['refresh_token'] = expired_refresh_token
         save_tokens(tokens['access_token'], tokens['refresh_token'])
 
-        result = function_requiring_auth()
-        assert result is None
+        with pytest.raises(AuthenticationError) as exc_info:
+            function_requiring_authentication()
+
+        assert 'Session expired' in str(exc_info.value)

@@ -1,1 +1,1 @@
-from .auth_controller import AuthController
+from .authentication_controller import AuthenticationController
