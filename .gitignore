@@ -10,3 +10,5 @@ ERD.pdf
 .vscode/
 poetry.md
 .pytest_cache/
+keys/keys/*.pem
+tokens.json
