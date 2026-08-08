@@ -39,7 +39,6 @@ class AuthenticationController:
     def logout(self):
         """
         """
-        self.authenticated = False
         AuthenticationServices.logout()
         self.authentication_view.prompt_successful_logout_message()
 
