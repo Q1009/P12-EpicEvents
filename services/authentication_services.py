@@ -259,7 +259,8 @@ class AuthenticationServices:
 
     @staticmethod
     def is_user_authenticated() -> bool:
-        """Check if stored tokens are valid (at least one not expired)."""
+        """Check if user is authenticated
+        Refresh tokens if access is expired but refresh is valid."""
         tokens = load_tokens()
         if not tokens:
             return False
@@ -270,6 +271,7 @@ class AuthenticationServices:
         except AuthenticationError:
             try:
                 TokenServices.verify_token(tokens['refresh_token'], 'refresh')
+                TokenServices.refresh_access_token(tokens['refresh_token'])
                 return True
             except AuthenticationError:
                 return False

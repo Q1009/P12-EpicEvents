@@ -11,15 +11,8 @@ class AuthenticationController:
     def __init__(self, session, authentication_view):
         # Models
         self.session = session
-        self._credentials = {}
         # Views
         self.authentication_view = authentication_view
-
-    def get_user_credentials(self):
-        # Prompt user for credentials
-        user_email, user_password = self.authentication_view.prompt_credentials()
-        self._credentials['email'] = user_email
-        self._credentials['password'] = user_password
 
     # @staticmethod
     def login(self):
@@ -27,21 +20,19 @@ class AuthenticationController:
         """
         authenticated = False
         while not authenticated:
-            self.get_user_credentials()
+            user_email, user_password = self.authentication_view.prompt_credentials()
 
             try:
                 AuthenticationServices.login(
                     self.session,
-                    self._credentials['email'],
-                    self._credentials['password']
+                    user_email,
+                    user_password
                 )
-                # print("\n✅ Login successful!")
                 self.authentication_view.prompt_successful_login_message()
                 authenticated = True
                 return True
             
             except AuthenticationError as e:
-                # print(f"\n❌ {e}")
                 self.authentication_view.prompt_fail_login_message(str(e))
 
     # @staticmethod
@@ -50,13 +41,13 @@ class AuthenticationController:
         """
         self.authenticated = False
         AuthenticationServices.logout()
-        self._credentials.clear()
-        # print("\n✅ You have been logged out.")
         self.authentication_view.prompt_successful_logout_message()
 
     # @staticmethod
     def is_authenticated(self) -> bool:
-        """Check if a user is currently authenticated."""
+        """Check if a user is currently authenticated.
+        Refresh tokens if access token is expired but refresh token is valid.
+        """
         return AuthenticationServices.is_user_authenticated()
 
     # # @staticmethod

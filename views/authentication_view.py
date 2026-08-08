@@ -1,6 +1,6 @@
 
 class AuthenticationView:
-    def prompt_credentials():
+    def prompt_credentials(self):
 
         credentials = {}
 
@@ -20,3 +20,11 @@ class AuthenticationView:
 
         return credentials
 
+    def prompt_successful_login_message(self):
+        print('\n✅ Login successful!')
+
+    def prompt_fail_login_message(self, message: str = 'Failed to log in'):
+        print(f"\n❌ {message}")
+
+    def prompt_successful_logout_message(self):
+        print("\n✅ You have been logged out.")

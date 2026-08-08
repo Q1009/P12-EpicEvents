@@ -470,6 +470,44 @@ class TestAuthenticationServices:
         assert not (Path.home() / ".epicevents" / "tokens.json").exists()
         assert not load_tokens()
 
+    def test_is_user_authenticated(self, db_session, valid_user, expired_access_token, expired_refresh_token):
+        """
+        """
+        # Setup
+        valid_email = valid_user.email
+        valid_password = settings.COLLAB_PASSWORD_1
+
+        # Test 1: No tokens exist - should return False
+        AuthenticationServices.logout()
+        assert not AuthenticationServices.is_user_authenticated()
+
+        # Test 2: Valid tokens exist - should return True
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+        assert AuthenticationServices.is_user_authenticated()
+
+        # Test 3: Expired access token with valid refresh token - should refresh tokens
+        # and should return True
+        tokens = load_tokens()
+        tokens['access_token'] = expired_access_token
+        save_tokens(tokens['access_token'], tokens['refresh_token'])
+        assert AuthenticationServices.is_user_authenticated()
+        tokens = load_tokens()
+        assert tokens['access_token'] != expired_access_token
+
+        # Test 4: Expired refresh token with valid access token - should return True
+        AuthenticationServices.login(db_session, valid_email, valid_password)
+        tokens = load_tokens()
+        tokens['refresh_token'] = expired_refresh_token
+        save_tokens(tokens['access_token'], tokens['refresh_token'])
+        assert AuthenticationServices.is_user_authenticated()
+
+        # Test 5: Both tokens expired - should return False
+        tokens = load_tokens()
+        tokens['access_token'] = expired_access_token
+        tokens['refresh_token'] = expired_refresh_token
+        save_tokens(tokens['access_token'], tokens['refresh_token'])
+        assert not AuthenticationServices.is_user_authenticated()
+
     def test_check_authentication_decorator(self, db_session, valid_user, expired_access_token, expired_refresh_token):
         """Test the check_authentication decorator functionality.
 
@@ -492,7 +530,7 @@ class TestAuthenticationServices:
 
         assert 'Authentication required' in str(exc_info.value)
 
-        # Test 2: Valid tokens exist - should execute function and add user to kwargs
+        # Test 2: Valid tokens exist - should execute function
         valid_email = valid_user.email
         valid_password = settings.COLLAB_PASSWORD_1
         AuthenticationServices.login(db_session, valid_email, valid_password)
