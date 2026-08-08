@@ -79,7 +79,7 @@ class TestPermissionServices:
     - Proper permission checking for individual users
     """
 
-    def test_get_role(self, collab: Collaborator):
+    def test_get_role(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
         """
         Test that get_role returns the correct RoleName enum for each collaborator.
 
@@ -110,7 +110,7 @@ class TestPermissionServices:
         assert admin_role == RoleName.ADMIN, \
             f"Expected ADMIN role for admin, got {admin_role}"
 
-    def test_get_permissions(self, collab: Collaborator):
+    def test_get_permissions(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
         """
         Test that get_permissions returns the correct permission set for each role.
 
@@ -167,7 +167,7 @@ class TestPermissionServices:
             assert permission in admin_permissions, \
                 f"Admin role missing permission: {permission.name}"
 
-    def test_has_permission(self, collab: Collaborator):
+    def test_has_permission(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
         """
         Test that has_permission correctly verifies if a user has a specific permission.
 
@@ -225,7 +225,7 @@ class TestPermissionServices:
             assert not PermissionServices.has_permission(support_rep, permission), \
                 f"Support rep should NOT have {permission.name} permission"
 
-    def test_check_permission_decorator(self, collab: Collaborator):
+    def test_check_permission_decorator(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
         """
         Test that the check_permission decorator properly enforces permissions.
 

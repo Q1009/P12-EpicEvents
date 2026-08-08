@@ -1,1 +1,2 @@
 from .main_controller import MainController
+from .authentication_controller import AuthenticationController
