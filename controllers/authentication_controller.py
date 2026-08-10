@@ -20,7 +20,13 @@ class AuthenticationController:
         """
         authenticated = False
         while not authenticated:
-            user_email, user_password = self.authentication_view.prompt_credentials()
+            credentials = self.authentication_view.prompt_credentials()
+
+            # Nouveauté : gestion du retour au menu
+            if credentials is None:
+                return False  # Retour au menu principal
+
+            user_email, user_password = credentials
 
             try:
                 AuthenticationServices.login(
@@ -31,7 +37,7 @@ class AuthenticationController:
                 self.authentication_view.prompt_successful_login_message()
                 authenticated = True
                 return True
-            
+
             except AuthenticationError as e:
                 self.authentication_view.prompt_fail_login_message(str(e))
 

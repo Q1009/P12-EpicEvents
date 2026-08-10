@@ -5,7 +5,7 @@ description = "CRM for Epic Events"
 authors = [
     {name = "Quentin Tellier",email = "quentin.tellier@outlook.com"}
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4.0"
 dependencies = [
     "mysql-connector-python (>=9.7.0,<10.0.0)",
     "sentry-sdk (>=2.66.0,<3.0.0)",
@@ -16,7 +16,8 @@ dependencies = [
     "bcrypt (>=5.0.0,<6.0.0)",
     "pyjwt (>=2.8.0,<3.0.0)",
     "cryptography (>=43.0.0,<44.0.0)",
-    "faker (>=40.32.0,<41.0.0)"
+    "faker (>=40.32.0,<41.0.0)",
+    "textual (>=8.2.8,<9.0.0)"
 ]
 
 [dependency-groups]
