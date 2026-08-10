@@ -1,4 +1,4 @@
-from controllers import AuthenticationController
+from .authentication_controller import AuthenticationController
 from views import AuthenticationView
 from services import AuthenticationError
 
@@ -9,7 +9,7 @@ class MainController:
         # Models
         self.session = session
         # Views
-        self.view = main_view
+        self.main_view = main_view
 
     def run(self):
         """
@@ -26,7 +26,7 @@ class MainController:
                     authentication_controller.login()  # Lève AuthenticationError si échec
 
                 # User logged in
-                self.view.main_menu()
+                self.main_view.main_menu()
                 running = False
 
             except AuthenticationError:
