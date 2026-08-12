@@ -21,14 +21,17 @@ class MainController:
         )
         running = True
         while running:
-            try:
-                if not authentication_controller.is_authenticated():
-                    authentication_controller.login()  # Lève AuthenticationError si échec
+            self.main_view.main_menu()
+            running = False
 
-                # User logged in
-                self.main_view.main_menu()
-                running = False
+            # try:
+            #     if not authentication_controller.is_authenticated():
+            #         authentication_controller.login()  # Lève AuthenticationError si échec
 
-            except AuthenticationError:
-                print("Failed to authenticate. Exiting.")
-                return
+            #     # User logged in
+            #     self.main_view.main_menu()
+            #     running = False
+
+            # except AuthenticationError:
+            #     print("Failed to authenticate. Exiting.")
+            #     return
