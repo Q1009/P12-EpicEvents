@@ -5,48 +5,56 @@ Handles user login, logout, and session state.
 """
 
 from services import AuthenticationServices, AuthenticationError
+from views import AuthenticationScreen
 
 class AuthenticationController:
     """Handles authentication workflows for the CLI."""
-    def __init__(self, session, authentication_view):
+    def __init__(self, epic_events_app, session):
         # Models
         self.session = session
         # Views
-        self.authentication_view = authentication_view
+        self.epic_events_app = epic_events_app
 
     # @staticmethod
     def login(self):
         """
         """
-        authenticated = False
-        while not authenticated:
-            credentials = self.authentication_view.prompt_credentials()
+        self.epic_events_app.push_screen(AuthenticationScreen(), callback=self.handle_credentials)
 
-            # Nouveauté : gestion du retour au menu
-            if credentials is None:
-                return False  # Retour au menu principal
+    def handle_credentials(self, credentials):
+        """Callback to handle user credentials"""
+        if credentials is None:
+            self.epic_events_app.notify("❌ Login cancelled", severity="error")
+            return
 
-            user_email, user_password = credentials
+        user_email, user_password = credentials
 
-            try:
-                AuthenticationServices.login(
-                    self.session,
-                    user_email,
-                    user_password
-                )
-                self.authentication_view.prompt_successful_login_message()
-                authenticated = True
-                return True
+        if not user_email or not user_password:
+            self.epic_events_app.notify("❌ Email and password are required!", severity="error")
+            self.login()
+            return
+        
+        try:
+            AuthenticationServices.login(
+                self.session,
+                user_email,
+                user_password
+            )
+            self.epic_events_app.notify('[bold green]✅ Login successful![/bold green]', severity='information')
 
-            except AuthenticationError as e:
-                self.authentication_view.prompt_fail_login_message(str(e))
+        except AuthenticationError as e:
+            self.epic_events_app.notify(f'[bold red]❌ {str(e)}[/bold red]', severity='error')
+            self.login()
+
+
+
 
     # @staticmethod
     def logout(self):
         """
         """
         AuthenticationServices.logout()
-        self.authentication_view.prompt_successful_logout_message()
+        self.epic_events_app.notify('[bold green]✅ You have been logged out.[/bold green]', severity='warning')
 
     # @staticmethod
     def is_authenticated(self) -> bool:
