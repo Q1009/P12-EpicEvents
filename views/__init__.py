@@ -1,2 +1,3 @@
 from .main_view import AuthenticatedMainScreen, UnauthenticatedMainScreen
 from .authentication_view import AuthenticationScreen
+from .event_view import EventScreen
