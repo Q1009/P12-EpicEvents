@@ -6,6 +6,9 @@ Handles user login, logout, and session state.
 
 from services import AuthenticationServices, AuthenticationError
 from views import AuthenticationScreen
+from models import Collaborator
+from sqlalchemy.orm import Session
+
 
 class AuthenticationController:
     """Handles authentication workflows for the CLI."""
@@ -14,24 +17,30 @@ class AuthenticationController:
         self.session = session
         # Views
         self.epic_events_app = epic_events_app
+        self.on_success_callback = None
+        self.on_cancel_callback = None
 
     # @staticmethod
-    def login(self):
+    def login(self, on_success=None, on_cancel=None):
         """
         """
+        self.on_success_callback = on_success
+        self.on_cancel_callback = on_cancel
         self.epic_events_app.push_screen(AuthenticationScreen(), callback=self.handle_credentials)
 
     def handle_credentials(self, credentials):
         """Callback to handle user credentials"""
         if credentials is None:
             self.epic_events_app.notify("❌ Login cancelled", severity="error")
+            if self.on_cancel_callback:
+                self.on_cancel_callback()
             return
 
         user_email, user_password = credentials
 
         if not user_email or not user_password:
             self.epic_events_app.notify("❌ Email and password are required!", severity="error")
-            self.login()
+            self.login(self.on_success_callback, self.on_cancel_callback)
             return
         
         try:
@@ -41,17 +50,17 @@ class AuthenticationController:
                 user_password
             )
             self.epic_events_app.notify('[bold green]✅ Login successful![/bold green]', severity='information')
+            if self.on_success_callback:
+                self.on_success_callback()
 
         except AuthenticationError as e:
             self.epic_events_app.notify(f'[bold red]❌ {str(e)}[/bold red]', severity='error')
-            self.login()
-
-
-
+            self.login(self.on_success_callback, self.on_cancel_callback)
 
     # @staticmethod
     def logout(self):
         """
+        Modal screen for user confirmation to implement
         """
         AuthenticationServices.logout()
         self.epic_events_app.notify('[bold green]✅ You have been logged out.[/bold green]', severity='warning')
@@ -63,7 +72,7 @@ class AuthenticationController:
         """
         return AuthenticationServices.is_user_authenticated()
 
-    # # @staticmethod
-    # def get_user_info() -> Optional[dict]:
-    #     """Get current user info from stored tokens."""
-    #     return AuthenticationServices.get_authenticated_user()
+    # @staticmethod
+    def get_user_info(self):
+        """Get current user info from stored tokens."""
+        return AuthenticationServices.get_user_info(self.session)

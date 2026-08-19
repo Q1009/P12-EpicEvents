@@ -257,6 +257,20 @@ class AuthenticationServices:
         payload = TokenServices.verify_token(token, 'access')
         return int(payload['sub'])
 
+    def get_user_info(session: Session):
+        """
+        """
+        tokens = load_tokens()
+        if not tokens:
+            return None
+
+        # Get user ID from access token
+        user_id = AuthenticationServices.get_user_id_by_token(tokens['access_token'])
+
+        # Query user from database
+        user = session.query(Collaborator).filter_by(id=user_id).first()
+        return user.first_name if user else None
+
     @staticmethod
     def is_user_authenticated() -> bool:
         """Check if user is authenticated
