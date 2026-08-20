@@ -28,7 +28,7 @@ class EventScreen(Screen):
         yield Button('Create Event', id='create-event', variant='success')
         yield Button('Update Event', id='update-event', variant='warning')
         yield Button('Delete Event', id='delete-event', variant='error')
-        yield Button('Back', id='back', variant='primary')
+        yield Button('Back', id='back', variant='default')
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -115,4 +115,4 @@ class EventScreen(Screen):
 
     @on(Button.Pressed, "#back")
     def go_back(self) -> None:
-        self.dismiss('Quit')
+        self.dismiss('back')

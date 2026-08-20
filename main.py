@@ -10,7 +10,7 @@ class EpicEventsCRM(App):
     CLI of EpicEvents CRM
     """
     TITLE = 'Epic Events CRM'
-    BINDINGS = [('q', 'quit', 'Quitter')]
+    BINDINGS = [('q', 'quit', 'Quit')]
 
     def __init__(self):
         super().__init__()

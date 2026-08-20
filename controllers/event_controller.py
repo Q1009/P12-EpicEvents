@@ -9,8 +9,10 @@ class EventController:
     def __init__(self, epic_events_app, session):
         self.session = session
         self.epic_events_app = epic_events_app
+        self.on_back_callback = None
 
-    def start(self):
+    def start(self, on_back):
+        self.on_back_callback = on_back
         events = self.get_all_events(self.session)
         events_screen = EventScreen(events)
         self.epic_events_app.push_screen(events_screen, callback=self.handle_user_choice)
@@ -35,7 +37,10 @@ class EventController:
                 unsupported_events = self.get_unsupported_events(self.session)
                 unsupported_events_screen = EventScreen(unsupported_events)
                 self.epic_events_app.push_screen(unsupported_events_screen, callback=self.handle_user_choice)
-            case 'Quit':
+            case 'back':
+                if self.on_back_callback:
+                    self.on_back_callback()
+            case 'quit':
                 self.epic_events_app.exit()
 
     def get_all_events(self, session: Session) -> list[Event]:
