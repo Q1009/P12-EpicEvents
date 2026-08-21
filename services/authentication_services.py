@@ -269,7 +269,7 @@ class AuthenticationServices:
 
         # Query user from database
         user = session.query(Collaborator).filter_by(id=user_id).first()
-        return user.first_name if user else None
+        return user if user else None
 
     @staticmethod
     def is_user_authenticated() -> bool:
