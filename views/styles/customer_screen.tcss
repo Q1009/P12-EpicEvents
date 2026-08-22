@@ -1,0 +1,36 @@
+Screen {
+    layout: vertical;
+}
+
+#tables-container {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
+    grid-gutter: 1;
+    border: round $error;
+    content-align: center top;
+}
+
+#customers-table {
+    border: round $primary;
+    row-span: 2;
+    height: 100%;
+}
+
+#contacts-table {
+    border: round $primary;
+}
+
+#phone-numbers-table{
+    border: round $primary;
+}
+
+#buttons-container {
+    layout: grid;
+    grid-size: 4;
+    grid-gutter: 2;
+    align: center top;
+    border: round $warning;
+    width: 100%;
+    height: 5;
+}
