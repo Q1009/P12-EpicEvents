@@ -6,7 +6,7 @@
     border: round $primary;
 }
 
-#buttons-container {
+#create-buttons-container {
     layout: grid;
     grid-size: 2;
     grid-gutter: 0;

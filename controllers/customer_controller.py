@@ -1,7 +1,7 @@
 from .authentication_controller import AuthenticationController
 from sqlalchemy.orm import Session
 from models import Customer, Contact, PhoneNumber, Collaborator
-from views import CustomerScreen, CreateCustomerScreen
+from views import CustomerScreen, CreateCustomerScreen, UpdateCustomerScreen
 
 class CustomerController:
 
@@ -20,7 +20,7 @@ class CustomerController:
         customers_screen = CustomerScreen(customers)
         self.epic_events_app.push_screen(customers_screen, callback=self.handle_user_choice)
 
-    def handle_user_choice(self, user_choice: str):
+    def handle_user_choice(self, user_choice):
         """Callback when user chooses from customer menu"""
         match user_choice:
             case 'display_all_customers':
@@ -37,9 +37,13 @@ class CustomerController:
                 # customers_without_rep_screen = CustomerScreen(customers_without_rep)
                 # self.epic_events_app.push_screen(customers_without_rep_screen, callback=self.handle_user_choice)
             case 'create_customer':
-                self.epic_events_app.notify('Create Customer', severity='error')
+                self.epic_events_app.notify('Create Customer', severity='warning')
                 create_customer_screen = CreateCustomerScreen()
                 self.epic_events_app.push_screen(create_customer_screen, callback=self.create_customer)
+            case ('update_customer', customer_id):
+                customer_to_update = self.load_customer_data_for_update(customer_id)
+                update_customer_screen = UpdateCustomerScreen(customer_to_update)
+                self.epic_events_app.push_screen(update_customer_screen, callback=self.update_customer)
             case 'back':
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -47,7 +51,7 @@ class CustomerController:
             case 'quit':
                 self.epic_events_app.exit()
 
-    def handle_create_customer_data(self):
+    def handle_update_customer_(self):
         """
         """
 
@@ -57,24 +61,44 @@ class CustomerController:
         """
         return session.query(Customer).all()
 
-    def get_customers_by_sales_rep_id(self, session: Session, user_id: int) -> list[Customer]:
+    def load_customer_data_for_update(self, customer_id: int):
+        """
+        """
+        customer = self.session.query(Customer).filter(Customer.id == customer_id).first()
+        # for contact in customer.contacts:
+
+        return {
+            'customer_id': customer.id,
+            "customer_first_name": customer.first_name,
+            "customer_last_name": customer.last_name,
+            "company_name": customer.company_name,
+            # "contacts": contacts, mettre en place un select parmis les contacts existants
+        }
+
+    def get_all_contacts(self, session: Session) -> list[Contact]:
+            """
+            Returns all customers from the database.
+            """
+            return session.query(Contact).all()
+
+    def get_customers_by_sales_rep_id(self, user_id: int) -> list[Customer]:
         """
         Returns all customers where sales_representative_id matches the given user_id.
         """
-        return session.query(Customer).filter(Customer.sales_representative_id == user_id).all()
+        return self.session.query(Customer).filter(Customer.sales_representative_id == user_id).all()
 
-    def get_customers_without_sales_rep(self, session: Session) -> list[Customer]:
+    def get_customers_without_sales_rep(self) -> list[Customer]:
         """
         Returns all customers that have no sales_representative_id assigned.
         """
-        return session.query(Customer).filter(Customer.sales_representative_id.is_(None)).all()
+        return self.session.query(Customer).filter(Customer.sales_representative_id.is_(None)).all()
 
     def create_customer(self, new_customer_data):
         """
         """
         # If creation was cancelled
         if not new_customer_data:
-            self.epic_events_app.notify('Customer creation cancelled', severity='error')
+            self.epic_events_app.notify('Customer creation cancelled', severity='warning')
             self.start(self.on_back_callback)
             return
 
@@ -103,13 +127,25 @@ class CustomerController:
             sales_representative=self.authentication_controller.get_user_info(),
         )
         customer.contacts.append(contact)
+
         self.session.add(customer)
         self.session.commit()
         self.epic_events_app.notify('Customer successfully added', severity='success')
         self.start(self.on_back_callback)
 
-    def update_customer(self):
-        pass
+    def update_customer(self, updated_customer_data):
+        """
+        """
+        if not updated_customer_data:
+            self.epic_events_app.notify('Customer update cancelled', severity='warning')
+            self.start(self.on_back_callback)
+            return
 
+        self.session.query(Customer).filter(Customer.id == updated_customer_data['id']).update(updated_customer_data)
+
+        self.session.commit()
+        self.epic_events_app.notify('Customer successfully updated', severity='success')
+        self.start(self.on_back_callback)
+        
     def delete_customer(self):
         pass
