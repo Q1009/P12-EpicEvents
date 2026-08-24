@@ -1,50 +1,81 @@
 from textual.app import App, ComposeResult
+from textual.containers import Container
 from textual.widgets import Header, Footer, OptionList, Label, Button
+from textual.widgets.option_list import Option
 from textual import on
 from textual.screen import Screen
 
 class AuthenticatedMainScreen(Screen[str]):
     """
+    Main screen for authenticated users in the EpicEvents CRM application.
 
+    Displays a welcome message with the user's name and a navigation menu
+    providing access to all CRM modules: Events, Contracts, Customers,
+    Collaborators, Profile, and Logout.
+
+    :param user_name: The username of the authenticated collaborator,
+        used in the welcome message.
     """
+    SUB_TITLE = "HOME"
+
+    CSS_PATH = 'styles/main_screen.tcss'
+
     def __init__(self, user_name) -> None:
         self.user_name = user_name
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Header("EPIC EVENTS - HOME")
-        yield Label(f'Welcome [bold]{self.user_name}[/bold] !')
-        yield OptionList(
-            'Events',
-            'Contracts',
-            'Customers',
-            'Collaborators',
-            'Profile',
-            'Logout',
-            id='authenticated-main-menu',
-        )
+        yield Header()
+        with Container(classes='main-container'):
+            yield Label(
+                f'Welcome [bold]{self.user_name}[/bold] !',
+                id='welcome',
+            )
+            yield OptionList(
+                Option('Events', id='events'),
+                None,
+                Option('Contracts', id='contracts', disabled=True),
+                None,
+                Option('Customers', id='customers'),
+                None,
+                Option('Collaborators', id='collaborators', disabled=True),
+                None,
+                Option('Profile', id='profile', disabled=True),
+                None,
+                Option('Logout', id='logout'),
+            )
         yield Footer(show_command_palette=False)
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected):
-        selected_text = event.option.prompt
-        self.dismiss(selected_text)
+        self.dismiss(event.option.id)
 
 class UnauthenticatedMainScreen(Screen[str]):
     """
-    
+    Main screen for unauthenticated users in the EpicEvents CRM application.
+
+    Provides a minimal menu with options to log in or quit the application.
+    This is the entry point for users who have not yet authenticated.
     """
+
+    SUB_TITLE = "WELCOME"
+
+    CSS_PATH = 'styles/main_screen.tcss'
+
     def __init__(self) -> None:
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Header("EPIC EVENTS - CRM")
-        yield OptionList(
-            'Login',
-            'Quit',
-            id='unauthenticated-main-menu',
-        )
+        yield Header()
+        with Container(classes='main-container'):
+            yield Label(
+                'Please login to access services',
+            )
+            yield OptionList(
+                Option('Login', id='login'),
+                None,
+                Option('Quit', id='quit'),
+            )
         yield Footer(show_command_palette=False)
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected):
-        selected_text = event.option.prompt
-        self.dismiss(selected_text)
+        self.dismiss(event.option.id)

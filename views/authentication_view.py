@@ -24,20 +24,24 @@ class InstructionFooter(Static):
         self.styles.border = ("round", "dimgrey")
 
 class AuthenticationScreen(Screen):
+
+    SUB_TITLE = 'AUTHENTICATION'
+
+    CSS_PATH = 'styles/authentication_screen.tcss'
     
     def __init__(self):
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Container(
-            Header("EPIC EVENTS - AUTHENTICATION"),
-            Input(placeholder="Email", id="email"),
-            Input(placeholder="Password", id="password", password=True),
-            Button("Submit", id="submit", variant="primary"),
-            Button("Back", id="back", variant="default"),
-            Footer(),
-            id="authentication-form"
-        )
+        yield Header()
+        with Container(classes='main-container'):
+            with Container(classes='credentials-container'):
+                yield Input(placeholder="Email", id="email", classes='credentials-input')
+                yield Input(placeholder="Password", id="password", password=True, classes='credentials-input')
+            with Container(classes='buttons-container'):
+                yield Button("Submit", id="submit", variant="primary", classes='credentials-button')
+                yield Button("Back", id="back", variant="default", classes='credentials-button')
+        yield Footer(show_command_palette=False)
 
     @on(Button.Pressed, "#submit")
     def on_submit(self, event: Button.Pressed) -> None:

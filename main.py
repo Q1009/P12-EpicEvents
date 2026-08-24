@@ -9,7 +9,7 @@ class EpicEventsCRM(App):
     """
     CLI of EpicEvents CRM
     """
-    TITLE = 'Epic Events CRM'
+    TITLE = 'EPIC EVENTS CRM'
     BINDINGS = [('q', 'quit', 'Quit')]
 
     def __init__(self):
@@ -24,7 +24,6 @@ class EpicEventsCRM(App):
         
 
     def compose(self) -> ComposeResult:
-        yield Header("EPIC EVENTS CRM")
         yield Footer(show_command_palette=False)
 
     def on_ready(self):
@@ -44,20 +43,6 @@ def main():
     missing = [var for var in required_vars if not getattr(settings, var)]
     if missing:
         raise ValueError(f"Missing variables in .env : {', '.join(missing)}")
-
-    # # ...
-    # engine = create_engine(settings.DB_URL)
-    # Session = sessionmaker(bind=engine)
-    # #==
-    # session = Session()
-    # epic_events_app = EpicEventsCRM()
-    # main_view = MainView(epic_events_app)
-    # main_controller = MainController(session, main_view)
-    # epic_events_app.run()
-    # main_controller.start()
-    # #==
-    # session.close()
-    # engine.dispose()
 
     app = EpicEventsCRM()
     app.run()

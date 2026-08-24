@@ -1,0 +1,20 @@
+.main-container {
+    layout: vertical;
+    align: center middle;
+    border: round $primary;
+    overflow: auto auto;
+}
+
+Label {
+    border: round $secondary;
+    width: 50%;
+    height: auto;
+    content-align: center middle;
+}
+
+OptionList {
+    width: 50%;
+    content-align: center middle;
+    height: auto;
+    border: round $primary;
+}

@@ -60,33 +60,33 @@ class MainController:
     def handle_user_choice(self, user_choice: str):
         """Callback when user choses from main menu"""
         match user_choice:
-            case 'Login':
+            case 'login':
                 # Retourner Login au controlleur
                 self.authentication_controller.login(on_success=self.display_authenticated_main_menu, on_cancel=self.display_unauthenticated_main_menu)
-            case 'Events':
+            case 'events':
                 # Retourner Events au controlleur
                 self.epic_events_app.notify('Events', severity='information')
                 self.event_controller.start(on_back=self.display_authenticated_main_menu)
-            case 'Contracts':
+            case 'contracts':
                 # Retourner Contracts au controlleur
                 # self.contract_controller.start()
                 self.epic_events_app.notify('Contracts', severity='warning')
-            case 'Customers':
+            case 'customers':
                 # Retourner Customers au controlleur
                 self.epic_events_app.notify('Customers', severity='error')
                 self.customer_controller.start(on_back=self.display_authenticated_main_menu)
-            case 'Collaborators':
+            case 'collaborators':
                 # Retourner Customers au controlleur
                 # self.collaborator_controller.start()
                 self.epic_events_app.notify('Collaborators', severity='information')
-            case 'Profile':
+            case 'profile':
                 # Retourner Profile au controlleur
                 # self.profile_controller.start()
                 self.epic_events_app.notify('Profile', severity='information')
-            case 'Logout':
+            case 'logout':
                 # Logout from the application
                 self.authentication_controller.logout()
                 self.display_unauthenticated_main_menu()
-            case 'Quit':
+            case 'quit':
                 # Quit application
                 self.epic_events_app.exit()

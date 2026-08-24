@@ -1,0 +1,27 @@
+.main-container {
+    layout: vertical;
+    border: round $primary;
+    overflow: auto auto;
+}
+
+.credentials-container {
+    layout: vertical;
+    align: center middle;
+    height: auto;
+}
+
+.buttons-container {
+    layout: horizontal;
+    align: center top;
+    height: auto;
+}
+
+.credentials-input {
+    height: auto;
+    margin: 1 0;
+    width: 50%;
+}
+
+.credentials-button {
+    margin: 0 2;
+}
