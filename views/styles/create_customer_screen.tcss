@@ -1,21 +1,35 @@
-#personal-data {
-    border: round $primary;
-}
-
-#contact-data {
-    border: round $primary;
-}
-
-#create-buttons-container {
+.main-container {
     layout: grid;
     grid-size: 2;
-    grid-gutter: 0;
-    border: round $error;
-    content-align: center top
+    grid-gutter: 1;
+    grid-rows: 85%;
+    border: round $primary;
+    overflow: auto auto;
+    content-align: center middle;
+}
+
+.customer-data-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.contact-data-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
 }
 
 .form-button {
-    margin: 0 15 0 15;
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    margin: 0 2;
 }

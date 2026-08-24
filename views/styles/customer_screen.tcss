@@ -1,0 +1,57 @@
+#main-container {
+    layout: vertical;
+    overflow: auto auto;
+    border: round $primary;
+}
+
+#tables-container {
+    column-span: 2;
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
+    grid-gutter: 1;
+    height: 85%;
+    content-align: center top;
+}
+
+#customers-table {
+    border: round $secondary;
+    row-span: 2;
+    height: 100%;
+}
+
+#contacts-table {
+    border: round $secondary;
+    height: 100%;
+}
+
+#phone-numbers-table{
+    border: round $secondary;
+    height: 100%;
+}
+
+#buttons-container {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
+    grid-gutter: 1;
+    height: 5;
+}
+
+#customer-buttons-container {
+    layout: grid;
+    grid-size: 3;
+    grid-gutter: 1;
+    align: center middle;
+    border: round $secondary;
+    width: 2fr;
+}
+
+#contact-buttons-container {
+    layout: grid;
+    grid-size: 3;
+    grid-gutter: 1;
+    align: center middle;
+    border: round $secondary;
+    width: 1fr;
+}

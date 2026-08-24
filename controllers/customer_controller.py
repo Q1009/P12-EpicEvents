@@ -1,5 +1,5 @@
 from .authentication_controller import AuthenticationController
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from models import Customer, Contact, PhoneNumber, Collaborator
 from views import CustomerScreen, CreateCustomerScreen, UpdateCustomerScreen
 
@@ -59,7 +59,11 @@ class CustomerController:
         """
         Returns all customers from the database.
         """
-        return session.query(Customer).all()
+        # return session.query(Customer).all()
+        return self.session.query(Customer).options(
+            joinedload(Customer.contacts).joinedload(Contact.phone_numbers),
+            joinedload(Customer.sales_representative)
+        ).all()
 
     def load_customer_data_for_update(self, customer_id: int):
         """
