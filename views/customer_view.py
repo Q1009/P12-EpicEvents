@@ -27,15 +27,20 @@ class CustomerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header("EPIC EVENTS - CUSTOMERS", id='header')
-        with Container(id='tables-container'):
-            yield DataTable(id="customers-table")
-            yield DataTable(id='contacts-table')
-            yield DataTable(id='phone-numbers-table')
-        with Container(id='buttons-container'):
-            yield Button('Create Customer', id='create-customer', variant='success')
-            yield Button('Update Customer', id='update-customer', variant='warning')
-            yield Button('Delete Customer', id='delete-customer', variant='error')
-            yield Button('Back', id='back', variant='default')
+        with Container(id='main-container'):
+            with Container(id='tables-container'):
+                yield DataTable(id="customers-table")
+                yield DataTable(id='contacts-table')
+                yield DataTable(id='phone-numbers-table')
+            with Container(id='buttons-container'):
+                with Container(id='customer-buttons-container'):
+                    yield Button('Create Customer', id='create-customer', variant='primary')
+                    yield Button('Update Customer', id='update-customer', variant='warning')
+                    yield Button('Delete Customer', id='delete-customer', variant='error')
+                with Container(id='contact-buttons-container'):
+                    yield Button('Create Contact', id='create-contact', variant='primary')
+                    yield Button('Update Contact', id='update-contact', variant='warning')
+                    yield Button('Delete Contact', id='delete-contact', variant='error')
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
