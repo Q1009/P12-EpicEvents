@@ -11,6 +11,8 @@ from datetime import datetime
 class CustomerScreen(Screen):
     """Screen that displays a table of customers."""
 
+    SUB_TITLE = 'CUSTOMERS'
+
     CSS_PATH = 'styles/customer_screen.tcss'
 
     BINDINGS = [
@@ -26,7 +28,7 @@ class CustomerScreen(Screen):
         self.customers = customers
 
     def compose(self) -> ComposeResult:
-        yield Header("EPIC EVENTS - CUSTOMERS", id='header')
+        yield Header(show_clock=True)
         with Container(id='main-container'):
             with Container(id='tables-container'):
                 yield DataTable(id="customers-table")
@@ -144,7 +146,6 @@ class CustomerScreen(Screen):
 
         table.loading = False
 
-
     def watch_selected_customer_id(self, new_id: int | None) -> None:
         """
         Watcher that loads contacts and phone numbers based on the client
@@ -231,48 +232,45 @@ class CustomerScreen(Screen):
     def go_back(self) -> None:
         self.dismiss('back')
 
-
 class CreateCustomerScreen(Screen):
     """Screen that displays a form to create a new customer."""
 
-    CSS_PATH = 'styles/create_customer_screen.tcss'
+    SUB_TITLE = 'CREATE CUSTOMERS'
 
-    BINDINGS = [
-        ("b", "go_back", "Back"),
-    ]
+    CSS_PATH = 'styles/create_customer_screen.tcss'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.customer_data = {}
 
     def compose(self) -> ComposeResult:
-
-        yield Header("EPIC EVENTS - CREATE CUSTOMER")
-        with ScrollableContainer(id='personal-data'):
-            yield Label("Customer Last Name:", classes="form-label")
-            yield Input(placeholder="Doe", id="customer_last_name", type='text', classes="form-input")
-            yield Label("Customer First Name:", classes="form-label")
-            yield Input(placeholder="John", id="customer_first_name", type='text', classes="form-input")
-            yield Label("Company Name:", classes="form-label")
-            yield Input(placeholder="John Doe Corp", id="company_name", type='text', classes="form-input")
-        with ScrollableContainer(id='contact-data'):
-            yield Label("Contact Last Name:", classes="form-label")
-            yield Input(placeholder="Smith", id="contact_last_name", type='text', classes="form-input")
-            yield Label("First Name:", classes="form-label")
-            yield Input(placeholder="Tom", id="contact_first_name", type='text', classes="form-input")
-            yield Label("Email:", classes="form-label")
-            yield Input(placeholder="tom.smith@example.com", id="email", type='text', classes="form-input")
-            yield Label("Phone Number:", classes="form-label")
-            yield Input(placeholder="00 12 34 56 78", id="phone_number", type='number', classes="form-input")
-        with Container(id='create-buttons-container'):
-            yield Button("Create", id="create", variant="primary", classes="form-button")
-            yield Button("Cancel", id="cancel", variant="default", classes="form-button")
+        yield Header(show_clock=True)
+        with Container(classes='main-container'):
+            with Container(id='customer-data', classes='customer-data-container'):
+                yield Label("Customer Last Name:", classes="form-label")
+                yield Input(placeholder="Doe", id="customer_last_name", type='text', classes="form-input")
+                yield Label("Customer First Name:", classes="form-label")
+                yield Input(placeholder="John", id="customer_first_name", type='text', classes="form-input")
+                yield Label("Company Name:", classes="form-label")
+                yield Input(placeholder="John Doe Corp", id="company_name", type='text', classes="form-input")
+            with Container(id='contact-data', classes='contact-data-container'):
+                yield Label("Contact Last Name:", classes="form-label")
+                yield Input(placeholder="Smith", id="contact_last_name", type='text', classes="form-input")
+                yield Label("First Name:", classes="form-label")
+                yield Input(placeholder="Tom", id="contact_first_name", type='text', classes="form-input")
+                yield Label("Email:", classes="form-label")
+                yield Input(placeholder="tom.smith@example.com", id="email", type='text', classes="form-input")
+                yield Label("Phone Number:", classes="form-label")
+                yield Input(placeholder="00 12 34 56 78", id="phone_number", type='number', classes="form-input")
+            with Container(classes='buttons-container'):
+                yield Button("Create", id="create", variant="primary", classes='form-button')
+                yield Button("Cancel", id="cancel", variant="default", classes='form-button')
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        personal_data_container = self.query_one('#personal-data', ScrollableContainer)
-        contact_data_container = self.query_one('#contact-data', ScrollableContainer)
-        personal_data_container.border_title = 'Personal Data'
+        customer_data_container = self.query_one('#customer-data', Container)
+        contact_data_container = self.query_one('#contact-data', Container)
+        customer_data_container.border_title = 'Personal Data'
         contact_data_container.border_title = 'Contact Data'
 
     @on(Button.Pressed, "#create")
@@ -299,6 +297,8 @@ class CreateCustomerScreen(Screen):
 class UpdateCustomerScreen(Screen):
     """
     """
+    SUB_TITLE = 'UPDATE CUSTOMERS'
+
     def __init__(self, customer_data: dict):
         super().__init__()
         self.customer_data = customer_data
@@ -308,7 +308,7 @@ class UpdateCustomerScreen(Screen):
         """
         Compose the screen with a form to update customer data.
         """
-        yield Header("EPIC EVENTS - UPDATE CUSTOMER")
+        yield Header(show_clock=True)
         yield Static(f"Updating Customer: {self.customer_data['customer_first_name']} {self.customer_data['customer_last_name']}")
 
         # Form fields with pre-filled values

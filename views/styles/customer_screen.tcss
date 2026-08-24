@@ -1,4 +1,3 @@
-
 #main-container {
     layout: vertical;
     overflow: auto auto;
