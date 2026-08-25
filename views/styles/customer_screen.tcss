@@ -1,17 +1,11 @@
-#main-container {
-    layout: vertical;
-    overflow: auto auto;
-    border: round $primary;
-}
-
-#tables-container {
-    column-span: 2;
+.customer-main-container {
     layout: grid;
     grid-size: 2;
     grid-columns: 2fr 1fr;
+    grid-rows: 2fr 2fr 5;
     grid-gutter: 1;
-    height: 85%;
-    content-align: center top;
+    overflow: auto auto;
+    border: round $primary;
 }
 
 #customers-table {
@@ -30,28 +24,20 @@
     height: 100%;
 }
 
-#buttons-container {
+.customer-buttons-container {
     layout: grid;
-    grid-size: 2;
-    grid-columns: 2fr 1fr;
+    grid-size: 3;
     grid-gutter: 1;
+    align: center middle;
+    border: round $secondary;
     height: 5;
 }
 
-#customer-buttons-container {
+.contact-buttons-container {
     layout: grid;
     grid-size: 3;
     grid-gutter: 1;
     align: center middle;
     border: round $secondary;
-    width: 2fr;
-}
-
-#contact-buttons-container {
-    layout: grid;
-    grid-size: 3;
-    grid-gutter: 1;
-    align: center middle;
-    border: round $secondary;
-    width: 1fr;
+    height: 5;
 }

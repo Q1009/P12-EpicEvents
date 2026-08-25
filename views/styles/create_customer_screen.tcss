@@ -1,26 +1,26 @@
-.main-container {
+.create-customer-main-container {
     layout: grid;
     grid-size: 2;
     grid-gutter: 1;
-    grid-rows: 85%;
+    grid-rows: auto 5;
     border: round $primary;
     overflow: auto auto;
     content-align: center middle;
 }
 
-.customer-data-container {
+.customer-data-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
 }
 
-.contact-data-container {
+.contact-data-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
 }
 
-.buttons-container {
+.create-customer-buttons-container {
     column-span: 2;
     layout: horizontal;
     align: center top;
@@ -28,7 +28,7 @@
     width: 100%;
 }
 
-.form-button {
+.create-customer-button {
     width: auto;
     height: auto;
     margin: 0 2;

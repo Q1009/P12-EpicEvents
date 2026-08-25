@@ -29,20 +29,18 @@ class CustomerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(id='main-container'):
-            with Container(id='tables-container'):
-                yield DataTable(id="customers-table")
-                yield DataTable(id='contacts-table')
-                yield DataTable(id='phone-numbers-table')
-            with Container(id='buttons-container'):
-                with Container(id='customer-buttons-container'):
-                    yield Button('Create Customer', id='create-customer', variant='primary')
-                    yield Button('Update Customer', id='update-customer', variant='warning')
-                    yield Button('Delete Customer', id='delete-customer', variant='error')
-                with Container(id='contact-buttons-container'):
-                    yield Button('Create Contact', id='create-contact', variant='primary')
-                    yield Button('Update Contact', id='update-contact', variant='warning')
-                    yield Button('Delete Contact', id='delete-contact', variant='error')
+        with Container(classes='customer-main-container'):
+            yield DataTable(id="customers-table")
+            yield DataTable(id='contacts-table')
+            yield DataTable(id='phone-numbers-table')
+            with Container(classes='customer-buttons-container'):
+                yield Button('Create Customer', id='create-customer', variant='primary')
+                yield Button('Update Customer', id='update-customer', variant='warning')
+                yield Button('Delete Customer', id='delete-customer', variant='error')
+            with Container(classes='contact-buttons-container'):
+                yield Button('Create Contact', id='create-contact', variant='primary')
+                yield Button('Update Contact', id='update-contact', variant='warning')
+                yield Button('Delete Contact', id='delete-contact', variant='error')
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -245,15 +243,15 @@ class CreateCustomerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='main-container'):
-            with Container(id='customer-data', classes='customer-data-container'):
+        with Container(classes='create-customer-main-container'):
+            with Container(id='customer-data', classes='customer-data-input-container'):
                 yield Label("Customer Last Name:", classes="form-label")
                 yield Input(placeholder="Doe", id="customer_last_name", type='text', classes="form-input")
                 yield Label("Customer First Name:", classes="form-label")
                 yield Input(placeholder="John", id="customer_first_name", type='text', classes="form-input")
                 yield Label("Company Name:", classes="form-label")
                 yield Input(placeholder="John Doe Corp", id="company_name", type='text', classes="form-input")
-            with Container(id='contact-data', classes='contact-data-container'):
+            with Container(id='contact-data', classes='contact-data-input-container'):
                 yield Label("Contact Last Name:", classes="form-label")
                 yield Input(placeholder="Smith", id="contact_last_name", type='text', classes="form-input")
                 yield Label("First Name:", classes="form-label")
@@ -262,9 +260,9 @@ class CreateCustomerScreen(Screen):
                 yield Input(placeholder="tom.smith@example.com", id="email", type='text', classes="form-input")
                 yield Label("Phone Number:", classes="form-label")
                 yield Input(placeholder="00 12 34 56 78", id="phone_number", type='number', classes="form-input")
-            with Container(classes='buttons-container'):
-                yield Button("Create", id="create", variant="primary", classes='form-button')
-                yield Button("Cancel", id="cancel", variant="default", classes='form-button')
+            with Container(classes='create-customer-buttons-container'):
+                yield Button("Create", id="create", variant="primary", classes='create-customer-button')
+                yield Button("Cancel", id="cancel", variant="default", classes='create-customer-button')
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:

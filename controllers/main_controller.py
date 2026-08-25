@@ -65,24 +65,22 @@ class MainController:
                 self.authentication_controller.login(on_success=self.display_authenticated_main_menu, on_cancel=self.display_unauthenticated_main_menu)
             case 'events':
                 # Retourner Events au controlleur
-                self.epic_events_app.notify('Events', severity='information')
                 self.event_controller.start(on_back=self.display_authenticated_main_menu)
             case 'contracts':
                 # Retourner Contracts au controlleur
                 # self.contract_controller.start()
-                self.epic_events_app.notify('Contracts', severity='warning')
+                pass
             case 'customers':
                 # Retourner Customers au controlleur
-                self.epic_events_app.notify('Customers', severity='error')
                 self.customer_controller.start(on_back=self.display_authenticated_main_menu)
             case 'collaborators':
                 # Retourner Customers au controlleur
                 # self.collaborator_controller.start()
-                self.epic_events_app.notify('Collaborators', severity='information')
+                pass
             case 'profile':
                 # Retourner Profile au controlleur
                 # self.profile_controller.start()
-                self.epic_events_app.notify('Profile', severity='information')
+                pass
             case 'logout':
                 # Logout from the application
                 self.authentication_controller.logout()

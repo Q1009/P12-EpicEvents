@@ -25,11 +25,11 @@ class AuthenticatedMainScreen(Screen[str]):
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Container(classes='main-container'):
+        yield Header(show_clock=True)
+        with Container(classes='home-main-container'):
             yield Label(
                 f'Welcome [bold]{self.user_name}[/bold] !',
-                id='welcome',
+                classes='welcome-user-label',
             )
             yield OptionList(
                 Option('Events', id='events'),
@@ -43,6 +43,7 @@ class AuthenticatedMainScreen(Screen[str]):
                 Option('Profile', id='profile', disabled=True),
                 None,
                 Option('Logout', id='logout'),
+                classes='home-option-list',
             )
         yield Footer(show_command_palette=False)
 
@@ -65,15 +66,17 @@ class UnauthenticatedMainScreen(Screen[str]):
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Container(classes='main-container'):
+        yield Header(show_clock=True)
+        with Container(classes='home-main-container'):
             yield Label(
                 'Please login to access services',
+                classes='welcome-user-label',
             )
             yield OptionList(
                 Option('Login', id='login'),
                 None,
                 Option('Quit', id='quit'),
+                classes='home-option-list'
             )
         yield Footer(show_command_palette=False)
 

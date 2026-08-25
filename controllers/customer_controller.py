@@ -37,7 +37,6 @@ class CustomerController:
                 # customers_without_rep_screen = CustomerScreen(customers_without_rep)
                 # self.epic_events_app.push_screen(customers_without_rep_screen, callback=self.handle_user_choice)
             case 'create_customer':
-                self.epic_events_app.notify('Create Customer', severity='warning')
                 create_customer_screen = CreateCustomerScreen()
                 self.epic_events_app.push_screen(create_customer_screen, callback=self.create_customer)
             case ('update_customer', customer_id):
@@ -134,7 +133,7 @@ class CustomerController:
 
         self.session.add(customer)
         self.session.commit()
-        self.epic_events_app.notify('Customer successfully added', severity='success')
+        self.epic_events_app.notify('Customer successfully created', severity='success')
         self.start(self.on_back_callback)
 
     def update_customer(self, updated_customer_data):

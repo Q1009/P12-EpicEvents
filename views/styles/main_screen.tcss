@@ -1,18 +1,18 @@
-.main-container {
+.home-main-container {
     layout: vertical;
     align: center middle;
     border: round $primary;
     overflow: auto auto;
 }
 
-Label {
+.welcome-user-label {
     border: round $secondary;
     width: 50%;
     height: auto;
     content-align: center middle;
 }
 
-OptionList {
+.home-option-list {
     width: 50%;
     content-align: center middle;
     height: auto;
