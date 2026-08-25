@@ -1,0 +1,57 @@
+.update-customer-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto auto 5;
+    border: round $primary;
+    overflow: auto auto;
+}
+
+.updating-customer-static {
+    column-span: 2;
+    border: round $secondary;
+    height: auto;
+    content-align: center middle;
+}
+
+.update-customer-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.update-contact-data-select-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.update-customer-contacts-selection-list {
+    overflow: auto auto;
+    border: round $accent;
+    content-align: left middle;
+}
+
+.selection-list--button-selected {
+            color: $text-primary;
+            background: $panel-darken-2;
+}
+
+.selection-list--button-selected-highlighted {
+            color: $text-primary;
+            background: $panel-darken-2;
+        }
+
+.update-customer-buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
+}
+
+.update-customer-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}

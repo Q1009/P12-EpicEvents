@@ -1,0 +1,42 @@
+.create-contact-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto;
+    border: round $primary;
+    overflow: auto auto;
+    content-align: center middle;
+}
+
+.contact-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.phone-number-input-container {
+    layout: vertical;
+    overflow: auto auto;
+    border: round $secondary;
+    height: 100%;
+}
+
+.phone-number-buttons-container {
+    margin: 1 1;
+    align: right middle;
+    height: auto;
+}
+
+.create-contact-buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
+}
+
+.create-contact-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}
