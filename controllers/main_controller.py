@@ -1,6 +1,7 @@
 from .authentication_controller import AuthenticationController
 from .event_controller import EventController
 from .customer_controller import CustomerController
+from .collaborator_controller import CollaboratorController
 from views import AuthenticatedMainScreen, UnauthenticatedMainScreen
 from services import AuthenticationError
 from models import Collaborator
@@ -21,6 +22,10 @@ class MainController:
             self.session
         )
         self.event_controller = EventController(
+            self.epic_events_app,
+            self.session
+        )
+        self.collaborator_controller = CollaboratorController(
             self.epic_events_app,
             self.session
         )
@@ -75,7 +80,7 @@ class MainController:
                 self.customer_controller.start(on_back=self.display_authenticated_main_menu)
             case 'collaborators':
                 # Retourner Customers au controlleur
-                # self.collaborator_controller.start()
+                self.collaborator_controller.start(on_back=self.display_authenticated_main_menu)
                 pass
             case 'profile':
                 # Retourner Profile au controlleur

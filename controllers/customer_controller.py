@@ -16,7 +16,7 @@ class CustomerController:
 
     def start(self, on_back=None):
         self.on_back_callback = on_back
-        customers = self.get_all_customers(self.session)
+        customers = self.get_all_customers()
         customers_screen = CustomerScreen(customers)
         self.epic_events_app.push_screen(customers_screen, callback=self.handle_user_choice)
 
@@ -24,7 +24,7 @@ class CustomerController:
         """Callback when user chooses from customer menu"""
         match user_choice:
             case 'display_all_customers':
-                all_customers = self.get_all_customers(self.session)
+                all_customers = self.get_all_customers()
                 all_customers_screen = CustomerScreen(all_customers)
                 self.epic_events_app.push_screen(all_customers_screen, callback=self.handle_user_choice)
             # case 'display_own_customers':
@@ -62,7 +62,7 @@ class CustomerController:
         """
         """
 
-    def get_all_customers(self, session: Session) -> list[Customer]:
+    def get_all_customers(self) -> list[Customer]:
         """
         Returns all customers from the database.
         """

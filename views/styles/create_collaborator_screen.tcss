@@ -1,0 +1,35 @@
+.create-collaborator-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto 5;
+    border: round $primary;
+    overflow: auto auto;
+    content-align: center middle;
+}
+
+.collaborator-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.collaborator-department-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.create-collaborator-buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
+}
+
+.create-collaborator-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}

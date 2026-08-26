@@ -3,3 +3,4 @@ from .authentication_view import AuthenticationScreen
 from .event_view import EventScreen
 from .create_event_view import CreateEventScreen
 from .customer_view import CustomerScreen, CreateCustomerScreen, UpdateCustomerScreen, CreateContactScreen, UpdateContactScreen
+from .collaborator_view import CollaboratorScreen, CreateCollaboratorScreen

@@ -38,7 +38,7 @@ class AuthenticatedMainScreen(Screen[str]):
                 None,
                 Option('Customers', id='customers'),
                 None,
-                Option('Collaborators', id='collaborators', disabled=True),
+                Option('Collaborators', id='collaborators', disabled=False),
                 None,
                 Option('Profile', id='profile', disabled=True),
                 None,
