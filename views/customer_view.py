@@ -9,16 +9,15 @@ from textual.widgets import Header, Footer, DataTable, Button, Input, Label, Sta
 from textual.widgets.selection_list import Selection
 from textual.screen import Screen
 from datetime import datetime
+from typing import ClassVar
 
 class CustomerScreen(Screen):
     """Screen that displays a table of customers."""
 
     SUB_TITLE = 'CUSTOMERS'
-
     CSS_PATH = 'styles/customer_screen.tcss'
-
-    BINDINGS = [
-        ("b", "go_back", "Back"),
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ('b', 'go_back', 'Back'),
     ]
 
     # Reactive variables
@@ -244,7 +243,6 @@ class CreateCustomerScreen(Screen):
     """Screen that displays a form to create a new customer."""
 
     SUB_TITLE = 'CREATE CUSTOMERS'
-
     CSS_PATH = 'styles/create_customer_screen.tcss'
 
     def __init__(self, **kwargs):

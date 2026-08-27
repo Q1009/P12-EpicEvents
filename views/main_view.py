@@ -1,9 +1,9 @@
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.containers import Container
-from textual.widgets import Header, Footer, OptionList, Label, Button
-from textual.widgets.option_list import Option
-from textual import on
 from textual.screen import Screen
+from textual.widgets import Footer, Header, Label, OptionList
+from textual.widgets.option_list import Option
+
 
 class AuthenticatedMainScreen(Screen[str]):
     """
@@ -16,9 +16,9 @@ class AuthenticatedMainScreen(Screen[str]):
     :param user_name: The username of the authenticated collaborator,
         used in the welcome message.
     """
-    SUB_TITLE = "HOME"
 
-    CSS_PATH = 'styles/main_screen.tcss'
+    SUB_TITLE = "HOME"
+    CSS_PATH = "styles/main_screen.tcss"
 
     def __init__(self, user_name) -> None:
         self.user_name = user_name
@@ -26,29 +26,32 @@ class AuthenticatedMainScreen(Screen[str]):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='home-main-container'):
+        with Container(classes="home-main-container"):
             yield Label(
-                f'Welcome [bold]{self.user_name}[/bold] !',
-                classes='welcome-user-label',
+                f"Welcome [bold]{self.user_name}[/bold] !",
+                classes="welcome-user-label",
             )
             yield OptionList(
-                Option('Events', id='events'),
+                Option("Events", id="events"),
                 None,
-                Option('Contracts', id='contracts', disabled=True),
+                Option("Contracts", id="contracts", disabled=True),
                 None,
-                Option('Customers', id='customers'),
+                Option("Customers", id="customers"),
                 None,
-                Option('Collaborators', id='collaborators', disabled=True),
+                Option("Collaborators", id="collaborators", disabled=True),
                 None,
-                Option('Profile', id='profile', disabled=True),
+                Option("Profile", id="profile", disabled=True),
                 None,
-                Option('Logout', id='logout'),
-                classes='home-option-list',
+                Option("Logout", id="logout"),
+                classes="home-option-list",
             )
         yield Footer(show_command_palette=False)
 
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected):
+    def on_option_list_option_selected(
+        self, event: OptionList.OptionSelected
+    ):
         self.dismiss(event.option.id)
+
 
 class UnauthenticatedMainScreen(Screen[str]):
     """
@@ -59,26 +62,27 @@ class UnauthenticatedMainScreen(Screen[str]):
     """
 
     SUB_TITLE = "WELCOME"
-
-    CSS_PATH = 'styles/main_screen.tcss'
+    CSS_PATH = "styles/main_screen.tcss"
 
     def __init__(self) -> None:
         super().__init__()
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='home-main-container'):
+        with Container(classes="home-main-container"):
             yield Label(
-                'Please login to access services',
-                classes='welcome-user-label',
+                "Please login to access services",
+                classes="welcome-user-label",
             )
             yield OptionList(
-                Option('Login', id='login'),
+                Option("Login", id="login"),
                 None,
-                Option('Quit', id='quit'),
-                classes='home-option-list'
+                Option("Quit", id="quit"),
+                classes="home-option-list",
             )
         yield Footer(show_command_palette=False)
 
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected):
+    def on_option_list_option_selected(
+        self, event: OptionList.OptionSelected
+    ):
         self.dismiss(event.option.id)
