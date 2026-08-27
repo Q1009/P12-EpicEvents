@@ -1,0 +1,41 @@
+.update-collaborator-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto auto 5;
+    border: round $primary;
+    overflow: auto auto;
+}
+
+.updating-collaborator-static {
+    column-span: 2;
+    border: round $secondary;
+    height: auto;
+    content-align: center middle;
+}
+
+.update-collaborator-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.update-collaborator-department-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.update-collaborator-buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
+}
+
+.update-collaborator-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}

@@ -13,6 +13,7 @@ from textual.widgets import (
     Input,
     Label,
     Select,
+    Static,
 )
 
 from models import Collaborator, Department
@@ -345,14 +346,14 @@ class CreateCollaboratorScreen(Screen):
                 department_options = [
                     (
                         department.name.value,
-                        department.name.value,
-                    )  # (valeur, label)
+                        department,
+                    )
                     for department in self.departments
                 ]
                 yield Select(
                     department_options,
-                    id="collaborator-department-select",  # ID pour la récupération
-                    prompt="Select a department",  # Texte par défaut
+                    id="collaborator-department-select",
+                    prompt="Select a department",
                 )
             with Container(
                 classes="create-collaborator-buttons-container"
@@ -405,4 +406,112 @@ class CreateCollaboratorScreen(Screen):
             "department": self.query_one(
                 "#collaborator-department-select", Select
             ).value,
+        }
+
+class UpdateCollaboratorScreen(Screen):
+    """ """
+
+    SUB_TITLE = "UPDATE COLLABORATOR"
+    CSS_PATH = "styles/update_collaborator_screen.tcss"
+
+    def __init__(self, collaborator_data: dict, departments: list[Department]):
+        super().__init__()
+        self.collaborator_data = collaborator_data
+        self.updated_collaborator_data = {}
+        self.departments = departments
+
+    def compose(self):
+        """
+        Compose the screen with a form to update collaborator data.
+        """
+        yield Header(show_clock=True)
+        with Container(classes="update-collaborator-main-container"):
+            yield Static(
+                f"Updating Collaborator: {self.collaborator_data['collaborator_first_name']} {self.collaborator_data['collaborator_last_name']}",
+                classes="updating-collaborator-static",
+            )
+            with Container(
+                id="update-collaborator-data",
+                classes="update-collaborator-data-input-container",
+            ):
+                yield Label("Collaborator Last Name:")
+                yield Input(
+                    value=self.collaborator_data.get(
+                        "collaborator_last_name", ""
+                    ),
+                    id="collaborator_last_name",
+                )
+                yield Label("Collaborator First Name:")
+                yield Input(
+                    value=self.collaborator_data.get("collaborator_first_name", ""),
+                    id="collaborator_first_name",
+                )
+            with Container(
+                id="update-collaborator-department",
+                classes="update-collaborator-department-input-container",
+            ):
+                department_options = [
+                    (
+                        department.name.value,
+                        department,
+                    )
+                    for department in self.departments
+                ]
+                yield Select(
+                    department_options,
+                    id="update-collaborator-department-select",
+                    prompt="Select a department",
+                    value=self.collaborator_data.get("department")
+                )
+            with Container(classes="update-collaborator-buttons-container"):
+                yield Button(
+                    "Update",
+                    id="update",
+                    variant="primary",
+                    classes="update-collaborator-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="update-collaborator-button",
+                )
+        yield Footer(show_command_palette=False)
+
+    def _on_mount(self):
+        """Set container border title"""
+
+        collaborator_data_container = self.query_one(
+            "#update-collaborator-data", Container
+        )
+        collaborator_department_container = self.query_one(
+            "#update-collaborator-department", Container
+        )
+        collaborator_data_container.border_title = "Personal Data"
+        collaborator_department_container.border_title = (
+            "Department Selection"
+        )
+
+    @on(Button.Pressed, "#update")
+    def go_update(self) -> None:
+        self._collect_form_data()
+        self.dismiss(self.updated_collaborator_data)
+
+    @on(Button.Pressed, "#cancel")
+    def go_back(self) -> None:
+        self.dismiss(None)
+
+    def _collect_form_data(self):
+        """ """
+        selected_department = self.query_one("#update-collaborator-department-select", Select).value
+
+        self.updated_collaborator_data = {
+            "id": self.collaborator_data["collaborator_id"],
+            "first_name": self.query_one(
+                "#collaborator_first_name", Input
+            ).value,
+            "last_name": self.query_one(
+                "#collaborator_last_name", Input
+            ).value,
+            "department": selected_department,
         }

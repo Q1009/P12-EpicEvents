@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session, joinedload
 
-from models import Collaborator, Department, DepartmentName
+from models import Collaborator, Department
 from services import PasswordServices
-from views import CollaboratorScreen, CreateCollaboratorScreen
+from views import (
+    CollaboratorScreen,
+    CreateCollaboratorScreen,
+    UpdateCollaboratorScreen,
+)
 
 
 class CollaboratorController:
@@ -26,28 +30,36 @@ class CollaboratorController:
         match user_choice:
             case "display_all_collaborators":
                 all_collaborators = self.get_all_collaborators()
-                all_collaborators_screen = CollaboratorScreen(all_collaborators)
+                all_collaborators_screen = CollaboratorScreen(
+                    all_collaborators
+                )
                 self.epic_events_app.push_screen(
-                    all_collaborators_screen, callback=self.handle_user_choice
+                    all_collaborators_screen,
+                    callback=self.handle_user_choice,
                 )
             case "create_collaborator":
                 # pass
                 all_departments = self.get_all_departments()
-                create_collaborator_screen = CreateCollaboratorScreen(all_departments)
+                create_collaborator_screen = CreateCollaboratorScreen(
+                    all_departments
+                )
                 self.epic_events_app.push_screen(
-                    create_collaborator_screen, callback=self.create_collaborator
+                    create_collaborator_screen,
+                    callback=self.create_collaborator,
                 )
             case ("update_collaborator", collaborator_id):
-                pass
-                # collaborator_to_update = self.load_collaborator_data_for_update(
-                #     collaborator_id
-                # )
-                # update_collaborator_screen = UpdatecollaboratorScreen(
-                #     collaborator_to_update
-                # )
-                # self.epic_events_app.push_screen(
-                #     update_collaborator_screen, callback=self.update_collaborator
-                # )
+                # pass
+                all_departments = self.get_all_departments()
+                collaborator_to_update = (
+                    self.load_collaborator_data_for_update(collaborator_id)
+                )
+                update_collaborator_screen = UpdateCollaboratorScreen(
+                    collaborator_to_update, all_departments
+                )
+                self.epic_events_app.push_screen(
+                    update_collaborator_screen,
+                    callback=self.update_collaborator,
+                )
             case "delete_collaborator":
                 pass
             case ("consult_customer", customer_id):
@@ -116,19 +128,13 @@ class CollaboratorController:
         new_collaborator_password = PasswordServices.hash_password(
             new_collaborator_data["password"]
         )
-        # Create department instance
-        new_collaborator_department = (
-            self.session.query(Department)
-            .filter_by(name=DepartmentName(new_collaborator_data["department"]))
-            .first()
-        )
 
         collaborator = Collaborator(
             last_name=new_collaborator_data["collaborator_last_name"],
             first_name=new_collaborator_data["collaborator_first_name"],
             email=new_collaborator_email,
             password=new_collaborator_password,
-            department=new_collaborator_department,
+            department=new_collaborator_data["department"],
         )
 
         self.session.add(collaborator)
@@ -147,14 +153,24 @@ class CollaboratorController:
             self.start(self.on_back_callback)
             return
 
+        # Update email
+        updated_collaborator_email = (
+            (updated_collaborator_data["first_name"]).lower()
+            + "."
+            + (updated_collaborator_data["last_name"]).lower()
+            + "@epicevents.com"
+        )
+
         self.session.query(Collaborator).filter(
             Collaborator.id == updated_collaborator_data["id"]
         ).update(
             {
                 "first_name": updated_collaborator_data["first_name"],
                 "last_name": updated_collaborator_data["last_name"],
-                "email": updated_collaborator_data["company_name"],
-                "department_id": updated_collaborator_data["department_id"],
+                "email": updated_collaborator_email,
+                "department_id": updated_collaborator_data[
+                    "department"
+                ].id,
             }
         )
 
