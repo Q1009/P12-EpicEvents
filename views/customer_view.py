@@ -18,6 +18,7 @@ from textual.widgets import (
 from textual.widgets.selection_list import Selection
 
 from models import Contact, Customer
+from services import format_french_datetime
 
 
 class CustomerScreen(Screen):
@@ -115,6 +116,9 @@ class CustomerScreen(Screen):
                 + " "
                 + customer.sales_representative.last_name
             )
+            # creation and update date format conversion
+            created_at = format_french_datetime(customer.created_at)
+            updated_at = format_french_datetime(customer.updated_at)
 
             table.add_row(
                 customer.id,
@@ -122,8 +126,8 @@ class CustomerScreen(Screen):
                 customer.last_name,
                 customer.company_name,
                 sales_representative,
-                customer.created_at,
-                customer.updated_at,
+                created_at,
+                updated_at,
             )
 
         table.loading = False
