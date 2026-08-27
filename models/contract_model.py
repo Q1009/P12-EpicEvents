@@ -1,9 +1,12 @@
-from sqlalchemy import Column, Integer, String, Enum as SQLEnum, ForeignKey, Float
-from sqlalchemy.orm import relationship
-from sqlalchemy import DateTime
-from datetime import datetime
-from models.base_model import Base
+from datetime import UTC, datetime
 from enum import Enum as PyEnum
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import relationship
+
+from models.base_model import Base
+
 
 class ContractStatus(PyEnum):
     SIGNED = "signed"
@@ -17,7 +20,7 @@ class Contract(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     total_amount = Column(Float, nullable=False)
     amount_due = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(), nullable=False)
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
     status = Column(SQLEnum(ContractStatus), nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id", name="fk_contract_customer"), nullable=False)
     customer = relationship("Customer", back_populates="contracts")

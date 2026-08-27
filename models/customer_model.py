@@ -1,9 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import UTC, datetime
 
-from models.base_model import Base
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
 from models.associations import customers_contacts_association
+from models.base_model import Base
+
 
 class Customer(Base):
     """Represents a customer in the database."""
@@ -13,8 +15,8 @@ class Customer(Base):
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
     company_name = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
     sales_representative_id = Column(Integer, ForeignKey("collaborators.id", name="fk_customers_sales_representative"), nullable=True)
     sales_representative = relationship("Collaborator", back_populates="customers")
     contacts = relationship("Contact", secondary=customers_contacts_association, back_populates="customers")

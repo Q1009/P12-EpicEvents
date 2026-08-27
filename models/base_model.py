@@ -1,6 +1,7 @@
+from datetime import UTC, datetime
+
+from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime
-from datetime import datetime
 
 Base = declarative_base()
 
@@ -10,4 +11,4 @@ class Table(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, default="connexion_ok")
-    created_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)

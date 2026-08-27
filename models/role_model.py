@@ -1,6 +1,8 @@
 from enum import Enum
-from models.permission_model import Permission
+
 from models.collaborator_model import DepartmentName
+from models.permission_model import Permission
+
 
 class RoleName(Enum):
     """

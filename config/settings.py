@@ -1,6 +1,6 @@
-from dotenv import load_dotenv
 import os
-from typing import Optional
+
+from dotenv import load_dotenv
 
 # Load variables from .env file
 load_dotenv()
@@ -21,7 +21,7 @@ class Settings:
         return f"mysql+mysqlconnector://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # --- Sentry (error logs) ---
-    SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN")
+    SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
 
     # --- Security ---
     SECRET_KEY: str = os.getenv("SECRET_KEY", "default_key_change_in_production")

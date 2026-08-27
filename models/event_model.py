@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from models.base_model import Base
+
 
 class Event(Base):
     """Represents an event in the database."""

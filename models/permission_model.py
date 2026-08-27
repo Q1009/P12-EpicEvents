@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class Permission(Enum):
     """
     Enum of all possible permissions in the Epic Event CRM.

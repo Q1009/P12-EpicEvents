@@ -9,10 +9,9 @@ Handles secure persistence of JWT tokens in a JSON file.
 
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
-
+from typing import Any
 
 # Path for tokens' directory (in user's home directory)
 CONFIG_DIR = Path.home() / ".epicevents"
@@ -38,7 +37,7 @@ def save_tokens(access_token: str, refresh_token: str) -> None:
     data = {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(UTC).isoformat()
     }
 
     # Write to a temporary file first (atomic operation)
@@ -51,7 +50,7 @@ def save_tokens(access_token: str, refresh_token: str) -> None:
     # Set file permissions to owner read/write only (600 = rw-------)
     os.chmod(TOKEN_FILE, 0o600)
 
-def load_tokens() -> Optional[Dict[str, Any]]:
+def load_tokens() -> dict[str, Any] | None:
     """
     Load tokens from disk if they exist.
 
@@ -72,7 +71,7 @@ def load_tokens() -> Optional[Dict[str, Any]]:
             return None
 
         return data
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return None
 
 def clear_tokens() -> None:

@@ -1,14 +1,17 @@
-import jwt
-from uuid import uuid4
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Tuple, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from functools import wraps
-from bcrypt import hashpw, gensalt, checkpw
+from uuid import uuid4
+
+import jwt
+from bcrypt import checkpw, gensalt, hashpw
 from sqlalchemy.orm import Session
+
 from config import settings
 from keys import get_private_key, get_public_key
-from tokens import save_tokens, load_tokens, clear_tokens, tokens_exist
 from models import Collaborator
+from tokens import clear_tokens, load_tokens, save_tokens, tokens_exist
+
 
 class AuthenticationError(Exception):
     """
@@ -52,14 +55,14 @@ class TokenServices:
         """Create an access JWT token."""
         private_key = get_private_key()
         expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        expiration = datetime.now(timezone.utc) + expires_delta
+        expiration = datetime.now(UTC) + expires_delta
 
         payload = {
             "sub": str(user_id),
             "jti": str(uuid4()),
             "type": "access",
             "exp": expiration,
-            "iat": datetime.now(timezone.utc)
+            "iat": datetime.now(UTC)
         }
 
         return jwt.encode(
@@ -73,14 +76,14 @@ class TokenServices:
         """Create a refresh JWT token."""
         private_key = get_private_key()
         expires_delta = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
-        expiration = datetime.now(timezone.utc) + expires_delta
+        expiration = datetime.now(UTC) + expires_delta
 
         payload = {
             "sub": str(user_id),
             "jti": str(uuid4()),
             "type": "refresh",
             "exp": expiration,
-            "iat": datetime.now(timezone.utc)
+            "iat": datetime.now(UTC)
         }
 
         return jwt.encode(
@@ -90,7 +93,7 @@ class TokenServices:
         )
 
     @staticmethod
-    def verify_token(token: str, token_type: Optional[str] = None) -> dict:
+    def verify_token(token: str, token_type: str | None = None) -> dict:
         """Verify and decode a JWT token.
 
         Decodes and validates a JWT token using the application's public key.
@@ -133,10 +136,10 @@ class TokenServices:
         except jwt.ExpiredSignatureError:
             raise AuthenticationError('Token has expired')
         except jwt.InvalidTokenError as e:
-            raise AuthenticationError(f'Invalid token: {str(e)}')
+            raise AuthenticationError(f'Invalid token: {e!s}')
 
     @staticmethod
-    def refresh_access_token(refresh_token: str) -> Tuple[str, str]:
+    def refresh_access_token(refresh_token: str) -> tuple[str, str]:
         """Refresh an access token using a valid refresh token.
 
         Performs token rotation by generating a new access token and a new refresh token
@@ -182,14 +185,13 @@ class TokenServices:
         :type refresh_token: str
         """
         # Placeholder for token invalidation logic (e.g., add to blacklist)
-        pass
 
 class AuthenticationServices:
     """
     Main authentication service.
     """
     @staticmethod
-    def login(session: Session, email: str, password: str) -> Tuple[str, str]:
+    def login(session: Session, email: str, password: str) -> tuple[str, str]:
         """Authenticate a user and generate authentication tokens.
 
         Validates user credentials against the database and generates JWT tokens

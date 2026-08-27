@@ -11,10 +11,13 @@ Example:
     public_key = get_public_key()     # For verifying JWTs
 """
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
 from pathlib import Path
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
 from config import settings
+
 
 def _load_private_key() -> bytes:
     """Load the private key from PEM file with security checks.

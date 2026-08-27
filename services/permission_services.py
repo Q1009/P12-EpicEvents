@@ -14,9 +14,11 @@ Dependencies:
 - models.role_model: ROLE_PERMISSIONS
 """
 
-from models import Collaborator, Permission, RoleName, ROLE_PERMISSIONS
-from typing import Callable
+from collections.abc import Callable
 from functools import wraps
+
+from models import ROLE_PERMISSIONS, Collaborator, Permission, RoleName
+
 
 class PermissionError(Exception):
     """Exception raised when a user lacks the required permission.

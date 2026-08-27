@@ -1,2 +1,7 @@
-from .permission_services import PermissionServices, PermissionError
-from .authentication_services import PasswordServices, TokenServices, AuthenticationServices, AuthenticationError
+from .authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+    PasswordServices,
+    TokenServices,
+)
+from .permission_services import PermissionError, PermissionServices
