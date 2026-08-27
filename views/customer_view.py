@@ -1,23 +1,32 @@
-from models import Customer, Contact, PhoneNumber
-from textual import on
-from textual.reactive import reactive
-from textual.app import ComposeResult
-from textual.containers import Container, ScrollableContainer, Horizontal
-from textual.events import Mount
-from textual.widget import Widget
-from textual.widgets import Header, Footer, DataTable, Button, Input, Label, Static, MaskedInput, SelectionList, Pretty
-from textual.widgets.selection_list import Selection
-from textual.screen import Screen
-from datetime import datetime
 from typing import ClassVar
+
+from textual import on
+from textual.app import ComposeResult
+from textual.containers import Container
+from textual.reactive import reactive
+from textual.screen import Screen
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Input,
+    Label,
+    SelectionList,
+    Static,
+)
+from textual.widgets.selection_list import Selection
+
+from models import Contact, Customer
+
 
 class CustomerScreen(Screen):
     """Screen that displays a table of customers."""
 
-    SUB_TITLE = 'CUSTOMERS'
-    CSS_PATH = 'styles/customer_screen.tcss'
+    SUB_TITLE = "CUSTOMERS"
+    CSS_PATH = "styles/customer_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
-        ('b', 'go_back', 'Back'),
+        ("b", "go_back", "Back"),
     ]
 
     # Reactive variables
@@ -30,23 +39,44 @@ class CustomerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='customer-main-container'):
+        with Container(classes="customer-main-container"):
             yield DataTable(id="customers-table")
-            yield DataTable(id='contacts-table')
-            yield DataTable(id='phone-numbers-table')
-            with Container(classes='customer-buttons-container'):
-                yield Button('Create Customer', id='create-customer', variant='primary')
-                yield Button('Update Customer', id='update-customer', variant='warning')
-                yield Button('Delete Customer', id='delete-customer', variant='error')
-            with Container(classes='contact-buttons-container'):
-                yield Button('Create Contact', id='create-contact', variant='primary')
-                yield Button('Update Contact', id='update-contact', variant='warning')
-                yield Button('Delete Contact', id='delete-contact', variant='error')
+            yield DataTable(id="contacts-table")
+            yield DataTable(id="phone-numbers-table")
+            with Container(classes="customer-buttons-container"):
+                yield Button(
+                    "Create Customer",
+                    id="create-customer",
+                    variant="primary",
+                )
+                yield Button(
+                    "Update Customer",
+                    id="update-customer",
+                    variant="warning",
+                )
+                yield Button(
+                    "Delete Customer",
+                    id="delete-customer",
+                    variant="error",
+                )
+            with Container(classes="contact-buttons-container"):
+                yield Button(
+                    "Create Contact",
+                    id="create-contact",
+                    variant="primary",
+                )
+                yield Button(
+                    "Update Contact",
+                    id="update-contact",
+                    variant="warning",
+                )
+                yield Button(
+                    "Delete Contact", id="delete-contact", variant="error"
+                )
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """
-        """
+        """ """
         self.build_customers_table()
         self.build_contacts_table()
         self.build_phone_numbers_table()
@@ -55,12 +85,11 @@ class CustomerScreen(Screen):
             self.selected_customer_id = self.customers[0].id
             if self.customers[0].contacts:
                 self.selected_contact_id = self.customers[0].contacts[0].id
-        
 
     def build_customers_table(self) -> None:
-        table = self.query_one('#customers-table', DataTable)
-        table.border_title = 'Customers'
-        table.cursor_type = 'row'
+        table = self.query_one("#customers-table", DataTable)
+        table.border_title = "Customers"
+        table.cursor_type = "row"
         table.zebra_stripes = True
 
         # Configure table columns
@@ -68,7 +97,7 @@ class CustomerScreen(Screen):
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
         table.add_column("Company Name", key="company_name")
-        table.add_column('Sales Representative')
+        table.add_column("Sales Representative")
         table.add_column("Created At", key="created_at")
         table.add_column("Updated At", key="updated_at")
 
@@ -82,9 +111,9 @@ class CustomerScreen(Screen):
         for customer in self.customers:
             # sales representative
             sales_representative = (
-                customer.sales_representative.first_name +
-                ' ' +
-                customer.sales_representative.last_name
+                customer.sales_representative.first_name
+                + " "
+                + customer.sales_representative.last_name
             )
 
             table.add_row(
@@ -100,9 +129,9 @@ class CustomerScreen(Screen):
         table.loading = False
 
     def build_contacts_table(self) -> None:
-        table = self.query_one('#contacts-table', DataTable)
-        table.border_title = 'Contacts'
-        table.cursor_type = 'row'
+        table = self.query_one("#contacts-table", DataTable)
+        table.border_title = "Contacts"
+        table.cursor_type = "row"
         table.zebra_stripes = True
 
         table.add_column("ID", key="id")
@@ -120,28 +149,27 @@ class CustomerScreen(Screen):
                 contact.id,
                 contact.first_name,
                 contact.last_name,
-                contact.email
+                contact.email,
             )
 
             table.loading = False
 
     def build_phone_numbers_table(self) -> None:
-        table = self.query_one('#phone-numbers-table', DataTable)
-        table.border_title = 'Phone Numbers'
-        table.cursor_type = 'row'
+        table = self.query_one("#phone-numbers-table", DataTable)
+        table.border_title = "Phone Numbers"
+        table.cursor_type = "row"
         table.zebra_stripes = True
 
-        table.add_column('ID', key='id')
+        table.add_column("ID", key="id")
         table.add_column("Phone Number", key="phone_number")
         table.loading = True
 
-    def load_phone_numbers(self, table: DataTable, contact: Contact) -> None:
+    def load_phone_numbers(
+        self, table: DataTable, contact: Contact
+    ) -> None:
         table.clear()
         for phone_number in contact.phone_numbers:
-            table.add_row(
-                phone_number.id,
-                phone_number.number
-            )
+            table.add_row(phone_number.id, phone_number.number)
 
         table.loading = False
 
@@ -150,8 +178,7 @@ class CustomerScreen(Screen):
         Watcher that loads contacts and phone numbers based on the client
         highlighted in customers-table
         """
-        contacts_table = self.query_one('#contacts-table', DataTable)
-        phone_numbers_table = self.query_one('#phone-numbers-table', DataTable)
+        contacts_table = self.query_one("#contacts-table", DataTable)
 
         if new_id is None:
             contacts_table.clear()
@@ -160,8 +187,7 @@ class CustomerScreen(Screen):
 
         # Get customer by ID
         selected_customer = next(
-            (c for c in self.customers if c.id == new_id),
-            None
+            (c for c in self.customers if c.id == new_id), None
         )
 
         if selected_customer:
@@ -173,7 +199,9 @@ class CustomerScreen(Screen):
         Watcher that loads phone numbers based on the contact
         highlighted in contacts-table
         """
-        phone_numbers_table = self.query_one('#phone-numbers-table', DataTable)
+        phone_numbers_table = self.query_one(
+            "#phone-numbers-table", DataTable
+        )
 
         if new_id is None:
             phone_numbers_table.clear()
@@ -182,16 +210,26 @@ class CustomerScreen(Screen):
         # Trouve le contact sélectionné dans le client actuellement sélectionné
         if self.selected_customer_id:
             selected_customer = next(
-                (c for c in self.customers if c.id == self.selected_customer_id),
-                None
+                (
+                    c
+                    for c in self.customers
+                    if c.id == self.selected_customer_id
+                ),
+                None,
             )
             if selected_customer:
                 selected_contact = next(
-                    (contact for contact in selected_customer.contacts if contact.id == new_id),
-                    None
+                    (
+                        contact
+                        for contact in selected_customer.contacts
+                        if contact.id == new_id
+                    ),
+                    None,
                 )
                 if selected_contact:
-                    self.load_phone_numbers(phone_numbers_table, selected_contact)
+                    self.load_phone_numbers(
+                        phone_numbers_table, selected_contact
+                    )
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
@@ -205,45 +243,54 @@ class CustomerScreen(Screen):
             self.selected_customer_id = self.customers[row_index].id
 
     @on(DataTable.RowHighlighted, "#contacts-table")
-    def on_contact_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+    def on_contact_row_highlighted(
+        self, event: DataTable.RowHighlighted
+    ) -> None:
         """Saves highlighted contact id"""
         row_index = event.cursor_row
 
         # Récupère le contact correspondant à la ligne sélectionnée
         if self.selected_customer_id:
             selected_customer = next(
-                (c for c in self.customers if c.id == self.selected_customer_id),
-                None
+                (
+                    c
+                    for c in self.customers
+                    if c.id == self.selected_customer_id
+                ),
+                None,
             )
-            if selected_customer and 0 <= row_index < len(selected_customer.contacts):
+            if selected_customer and 0 <= row_index < len(
+                selected_customer.contacts
+            ):
                 selected_contact = selected_customer.contacts[row_index]
                 self.selected_contact_id = selected_contact.id
 
     @on(Button.Pressed, "#create-customer")
     def go_create_customer(self) -> None:
-        self.dismiss('create_customer')
+        self.dismiss("create_customer")
 
     @on(Button.Pressed, "#update-customer")
     def go_update_customer(self) -> None:
-        self.dismiss(('update_customer', self.selected_customer_id))
+        self.dismiss(("update_customer", self.selected_customer_id))
 
     @on(Button.Pressed, "#create-contact")
     def go_create_contact(self) -> None:
-        self.dismiss('create_contact')
+        self.dismiss("create_contact")
 
     @on(Button.Pressed, "#update-contact")
     def go_update_contact(self) -> None:
-        self.dismiss(('update_contact', self.selected_contact_id))
+        self.dismiss(("update_contact", self.selected_contact_id))
 
     @on(Button.Pressed, "#back")
     def go_back(self) -> None:
-        self.dismiss('back')
+        self.dismiss("back")
+
 
 class CreateCustomerScreen(Screen):
     """Screen that displays a form to create a new customer."""
 
-    SUB_TITLE = 'CREATE CUSTOMERS'
-    CSS_PATH = 'styles/create_customer_screen.tcss'
+    SUB_TITLE = "CREATE CUSTOMERS"
+    CSS_PATH = "styles/create_customer_screen.tcss"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -251,39 +298,90 @@ class CreateCustomerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='create-customer-main-container'):
-            with Container(id='customer-data', classes='customer-data-input-container'):
+        with Container(classes="create-customer-main-container"):
+            with Container(
+                id="customer-data", classes="customer-data-input-container"
+            ):
                 yield Label("Customer Last Name:", classes="form-label")
-                yield Input(placeholder="Doe", id="customer_last_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="Doe",
+                    id="customer_last_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Customer First Name:", classes="form-label")
-                yield Input(placeholder="John", id="customer_first_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="John",
+                    id="customer_first_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Company Name:", classes="form-label")
-                yield Input(placeholder="John Doe Corp", id="company_name", type='text', classes="form-input")
-            with Container(id='contact-data', classes='contact-data-input-container'):
+                yield Input(
+                    placeholder="John Doe Corp",
+                    id="company_name",
+                    type="text",
+                    classes="form-input",
+                )
+            with Container(
+                id="contact-data", classes="contact-data-input-container"
+            ):
                 yield Label("Contact Last Name:", classes="form-label")
-                yield Input(placeholder="Smith", id="contact_last_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="Smith",
+                    id="contact_last_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("First Name:", classes="form-label")
-                yield Input(placeholder="Tom", id="contact_first_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="Tom",
+                    id="contact_first_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Email:", classes="form-label")
-                yield Input(placeholder="tom.smith@example.com", id="email", type='text', classes="form-input")
+                yield Input(
+                    placeholder="tom.smith@example.com",
+                    id="email",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Phone Number:", classes="form-label")
-                yield Input(placeholder="00 12 34 56 78", id="phone_number", type='number', classes="form-input")
-            with Container(classes='create-customer-buttons-container'):
-                yield Button("Create", id="create", variant="primary", classes='create-customer-button')
-                yield Button("Cancel", id="cancel", variant="default", classes='create-customer-button')
+                yield Input(
+                    placeholder="00 12 34 56 78",
+                    id="phone_number",
+                    type="number",
+                    classes="form-input",
+                )
+            with Container(classes="create-customer-buttons-container"):
+                yield Button(
+                    "Create",
+                    id="create",
+                    variant="primary",
+                    classes="create-customer-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="create-customer-button",
+                )
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        customer_data_container = self.query_one('#customer-data', Container)
-        contact_data_container = self.query_one('#contact-data', Container)
-        customer_data_container.border_title = 'Personal Data'
-        contact_data_container.border_title = 'Contact Data'
+        customer_data_container = self.query_one(
+            "#customer-data", Container
+        )
+        contact_data_container = self.query_one("#contact-data", Container)
+        customer_data_container.border_title = "Personal Data"
+        contact_data_container.border_title = "Contact Data"
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
         self._collect_form_data()
         self.dismiss(self.customer_data)
-        
+
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
         self.dismiss(None)
@@ -291,61 +389,90 @@ class CreateCustomerScreen(Screen):
     def _collect_form_data(self) -> dict:
         """Collect all form data into a dictionary."""
         self.customer_data = {
-            "customer_last_name": self.query_one("#customer_last_name", Input).value,
-            "customer_first_name": self.query_one("#customer_first_name", Input).value,
+            "customer_last_name": self.query_one(
+                "#customer_last_name", Input
+            ).value,
+            "customer_first_name": self.query_one(
+                "#customer_first_name", Input
+            ).value,
             "company_name": self.query_one("#company_name", Input).value,
-            "contact_last_name": self.query_one("#contact_last_name", Input).value,
-            "contact_first_name": self.query_one("#contact_first_name", Input).value,
+            "contact_last_name": self.query_one(
+                "#contact_last_name", Input
+            ).value,
+            "contact_first_name": self.query_one(
+                "#contact_first_name", Input
+            ).value,
             "email": self.query_one("#email", Input).value,
             "phone_number": self.query_one("#phone_number", Input).value,
         }
 
-class UpdateCustomerScreen(Screen):
-    """
-    """
-    SUB_TITLE = 'UPDATE CUSTOMERS'
 
-    CSS_PATH = 'styles/update_customer_screen.tcss'
+class UpdateCustomerScreen(Screen):
+    """ """
+
+    SUB_TITLE = "UPDATE CUSTOMERS"
+    CSS_PATH = "styles/update_customer_screen.tcss"
 
     def __init__(self, customer_data: dict, contacts: list[Contact]):
         super().__init__()
         self.customer_data = customer_data
         self.updated_customer_data = {}
         self.contacts = contacts
-        self.customer_contacts_ids = customer_data.get('customer_contacts_ids', [])
+        self.customer_contacts_ids = customer_data.get(
+            "customer_contacts_ids", []
+        )
 
     def compose(self):
         """
         Compose the screen with a form to update customer data.
         """
         yield Header(show_clock=True)
-        with Container(classes='update-customer-main-container'):
+        with Container(classes="update-customer-main-container"):
             yield Static(
                 f"Updating Customer: {self.customer_data['customer_first_name']} {self.customer_data['customer_last_name']}",
-                classes='updating-customer-static'
+                classes="updating-customer-static",
             )
-            with Container(id='update-customer-data', classes='update-customer-data-input-container'):
+            with Container(
+                id="update-customer-data",
+                classes="update-customer-data-input-container",
+            ):
                 yield Label("Customer First Name:")
                 yield Input(
-                    value=self.customer_data.get("customer_first_name", ""),
-                    id="customer_first_name"
+                    value=self.customer_data.get(
+                        "customer_first_name", ""
+                    ),
+                    id="customer_first_name",
                 )
                 yield Label("Customer Last Name:")
                 yield Input(
                     value=self.customer_data.get("customer_last_name", ""),
-                    id="customer_last_name"
+                    id="customer_last_name",
                 )
                 yield Label("Company Name:")
                 yield Input(
                     value=self.customer_data.get("company_name", ""),
-                    id="company_name"
+                    id="company_name",
                 )
-            with Container(id='update-contact-data', classes='update-contact-data-select-container'):
+            with Container(
+                id="update-contact-data",
+                classes="update-contact-data-select-container",
+            ):
                 yield SelectionList(
-                    classes='update-customer-contacts-selection-list')
+                    classes="update-customer-contacts-selection-list"
+                )
             with Container(classes="update-customer-buttons-container"):
-                yield Button("Update", id="update", variant="primary", classes='update-customer-button')
-                yield Button("Cancel", id="cancel", variant="default", classes='update-customer-button')
+                yield Button(
+                    "Update",
+                    id="update",
+                    variant="primary",
+                    classes="update-customer-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="update-customer-button",
+                )
         yield Footer(show_command_palette=False)
 
     def _on_mount(self):
@@ -353,18 +480,26 @@ class UpdateCustomerScreen(Screen):
         Fill the selection list with contacts and the pretty with selected contacts
         """
 
-        self.query_one('#update-customer-data', Container).border_title = 'Personal Data'
-        self.query_one('#update-customer-data', Container).border_subtitle = 'Edit relevant fields'
-        self.query_one('#update-contact-data', Container).border_title = 'Assigned Contacts'
-        self.query_one('#update-contact-data', Container).border_subtitle = 'Click on contact to assign/unassign'
+        self.query_one(
+            "#update-customer-data", Container
+        ).border_title = "Personal Data"
+        self.query_one(
+            "#update-customer-data", Container
+        ).border_subtitle = "Edit relevant fields"
+        self.query_one(
+            "#update-contact-data", Container
+        ).border_title = "Assigned Contacts"
+        self.query_one(
+            "#update-contact-data", Container
+        ).border_subtitle = "Click on contact to assign/unassign"
         for contact in self.contacts:
             is_assigned = contact.id in self.customer_contacts_ids
 
             self.query_one(SelectionList).add_option(
                 Selection(
-                    prompt=f'{contact.first_name} {contact.last_name}',
+                    prompt=f"{contact.first_name} {contact.last_name}",
                     value=contact.id,
-                    initial_state=is_assigned
+                    initial_state=is_assigned,
                 )
             )
 
@@ -372,31 +507,36 @@ class UpdateCustomerScreen(Screen):
     def go_update(self) -> None:
         self._collect_form_data()
         self.dismiss(self.updated_customer_data)
-            
+
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
         self.dismiss(None)
 
     def _collect_form_data(self):
-        """
-        """
+        """ """
         selection_list = self.query_one(SelectionList)
-        selected_contacts_ids = [selection for selection in selection_list.selected]
+        selected_contacts_ids = [
+            selection for selection in selection_list.selected
+        ]
 
         self.updated_customer_data = {
-            "id": self.customer_data['customer_id'],
-            "first_name": self.query_one("#customer_first_name", Input).value,
-            "last_name": self.query_one("#customer_last_name", Input).value,
+            "id": self.customer_data["customer_id"],
+            "first_name": self.query_one(
+                "#customer_first_name", Input
+            ).value,
+            "last_name": self.query_one(
+                "#customer_last_name", Input
+            ).value,
             "company_name": self.query_one("#company_name", Input).value,
-            'contact_ids': selected_contacts_ids,
-            'updated_at': datetime.now()
+            "contact_ids": selected_contacts_ids,
         }
 
+
 class CreateContactScreen(Screen):
-    """
-    """
-    SUB_TITLE = 'CREATE CONTACT'
-    CSS_PATH = 'styles/create_contact_screen.tcss'
+    """ """
+
+    SUB_TITLE = "CREATE CONTACT"
+    CSS_PATH = "styles/create_contact_screen.tcss"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -405,50 +545,101 @@ class CreateContactScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='create-contact-main-container'):
-            with Container(id='contact-data', classes='contact-data-input-container'):
+        with Container(classes="create-contact-main-container"):
+            with Container(
+                id="contact-data", classes="contact-data-input-container"
+            ):
                 yield Label("Contact Last Name:", classes="form-label")
-                yield Input(placeholder="Smith", id="contact_last_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="Smith",
+                    id="contact_last_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Contact First Name:", classes="form-label")
-                yield Input(placeholder="Tom", id="contact_first_name", type='text', classes="form-input")
+                yield Input(
+                    placeholder="Tom",
+                    id="contact_first_name",
+                    type="text",
+                    classes="form-input",
+                )
                 yield Label("Email:", classes="form-label")
-                yield Input(placeholder="tom.smith@example.com", id="email", type='text', classes="form-input")
-            with Container(id='phone-number', classes='phone-number-input-container'):
-                yield Label("Phone Number 1:", id='phone_label_1', classes="form-label")
-                yield Input(placeholder="00 12 34 56 78", id="phone_number_1", type='number', classes="form-input")
-                with Container(id='phone-number-buttons-container', classes='phone-number-buttons-container'):
-                    yield Button("Add a number", id="add-phone-number", variant='default')
-            with Container(classes='create-contact-buttons-container'):
-                yield Button("Create", id="create", variant="primary", classes='create-contact-button')
-                yield Button("Cancel", id="cancel", variant="default", classes='create-contact-button')
+                yield Input(
+                    placeholder="tom.smith@example.com",
+                    id="email",
+                    type="text",
+                    classes="form-input",
+                )
+            with Container(
+                id="phone-number", classes="phone-number-input-container"
+            ):
+                yield Label(
+                    "Phone Number 1:",
+                    id="phone_label_1",
+                    classes="form-label",
+                )
+                yield Input(
+                    placeholder="00 12 34 56 78",
+                    id="phone_number_1",
+                    type="number",
+                    classes="form-input",
+                )
+                with Container(
+                    id="phone-number-buttons-container",
+                    classes="phone-number-buttons-container",
+                ):
+                    yield Button(
+                        "Add a number",
+                        id="add-phone-number",
+                        variant="default",
+                    )
+            with Container(classes="create-contact-buttons-container"):
+                yield Button(
+                    "Create",
+                    id="create",
+                    variant="primary",
+                    classes="create-contact-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="create-contact-button",
+                )
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        contact_data_container = self.query_one('#contact-data', Container)
-        phone_number_container = self.query_one('#phone-number', Container)
-        contact_data_container.border_title = 'Personal Data'
-        phone_number_container.border_title = 'Phone Numbers'
+        contact_data_container = self.query_one("#contact-data", Container)
+        phone_number_container = self.query_one("#phone-number", Container)
+        contact_data_container.border_title = "Personal Data"
+        phone_number_container.border_title = "Phone Numbers"
 
     @on(Button.Pressed, "#add-phone-number")
     def on_add_phone_number(self) -> None:
         """
         Adds a field to input new phone number
         """
-        container = self.query_one('#phone-number', Container)
+        container = self.query_one("#phone-number", Container)
         # New label
-        label = Label(f"Phone Number {self.phone_number_counter}:", classes="form-label", id=f"phone_label_{self.phone_number_counter}")
+        label = Label(
+            f"Phone Number {self.phone_number_counter}:",
+            classes="form-label",
+            id=f"phone_label_{self.phone_number_counter}",
+        )
         # New input
         input_field = Input(
             placeholder="00 12 34 56 78",
             id=f"phone_number_{self.phone_number_counter}",
-            type='number',
-            classes="form-input"
+            type="number",
+            classes="form-input",
         )
 
         # Add widgets to container
-        container.mount(label, before='#phone-number-buttons-container')
-        container.mount(input_field, before='#phone-number-buttons-container')
- 
+        container.mount(label, before="#phone-number-buttons-container")
+        container.mount(
+            input_field, before="#phone-number-buttons-container"
+        )
+
         # Increment phone counter
         self.phone_number_counter += 1
 
@@ -456,7 +647,7 @@ class CreateContactScreen(Screen):
     def go_create(self) -> None:
         self._collect_form_data()
         self.dismiss(self.contact_data)
-        
+
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
         self.dismiss(None)
@@ -467,102 +658,150 @@ class CreateContactScreen(Screen):
         phone_numbers = []
 
         for input in all_inputs:
-            if input.id.startswith('phone_number_'):
-                if input.value:
-                    phone_numbers.append(input.value)
+            if (
+                input.id
+                and input.id.startswith("phone_number_")
+                and input.value
+            ):
+                phone_numbers.append(input.value)
 
         self.contact_data = {
-            "contact_last_name": self.query_one("#contact_last_name", Input).value,
-            "contact_first_name": self.query_one("#contact_first_name", Input).value,
+            "contact_last_name": self.query_one(
+                "#contact_last_name", Input
+            ).value,
+            "contact_first_name": self.query_one(
+                "#contact_first_name", Input
+            ).value,
             "email": self.query_one("#email", Input).value,
             "phone_numbers": phone_numbers,
         }
+
 
 class UpdateContactScreen(Screen):
     """
     Screen to update a contact with editable phone numbers.
     """
 
-    SUB_TITLE = 'UPDATE CONTACT'
-    CSS_PATH = 'styles/update_contact_screen.tcss'
+    SUB_TITLE = "UPDATE CONTACT"
+    CSS_PATH = "styles/update_contact_screen.tcss"
 
     def __init__(self, contact_data: dict, **kwargs):
         super().__init__(**kwargs)
         self.contact_data = contact_data
         self.updated_contact_data = {}
         # Counter for additional phone numbers (starts after the existing ones)
-        self.phone_number_counter = len(contact_data.get('phone_numbers', []))
+        self.phone_number_counter = len(
+            contact_data.get("phone_numbers", [])
+        )
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Container(classes='update-contact-main-container'):
+        with Container(classes="update-contact-main-container"):
             yield Static(
                 f"Updating Contact: {self.contact_data['contact_first_name']} {self.contact_data['contact_last_name']}",
-                classes='updating-contact-static'
+                classes="updating-contact-static",
             )
-            with Container(id='update-contact-data', classes='update-contact-data-input-container'):
+            with Container(
+                id="update-contact-data",
+                classes="update-contact-data-input-container",
+            ):
                 yield Label("Contact Last Name:", classes="form-label")
                 yield Input(
-                    value=self.contact_data.get('contact_last_name', ''),
+                    value=self.contact_data.get("contact_last_name", ""),
                     id="contact_last_name",
-                    type='text',
-                    classes="form-input"
+                    type="text",
+                    classes="form-input",
                 )
                 yield Label("Contact First Name:", classes="form-label")
                 yield Input(
-                    value=self.contact_data.get('contact_first_name', ''),
+                    value=self.contact_data.get("contact_first_name", ""),
                     id="contact_first_name",
-                    type='text',
-                    classes="form-input"
+                    type="text",
+                    classes="form-input",
                 )
                 yield Label("Email:", classes="form-label")
                 yield Input(
-                    value=self.contact_data.get('email', ''),
+                    value=self.contact_data.get("email", ""),
                     id="email",
-                    type='text',
-                    classes="form-input"
+                    type="text",
+                    classes="form-input",
                 )
-            with Container(id='update-phone-number', classes='update-phone-number-input-container'):
+            with Container(
+                id="update-phone-number",
+                classes="update-phone-number-input-container",
+            ):
                 # Loads existing phone numbers
-                for i, phone in enumerate(self.contact_data.get('phone_numbers', [])):
-                    yield Label(f"Phone Number {i+1}:", classes="form-label", id=f"phone_label_{i}")
+                for i, phone in enumerate(
+                    self.contact_data.get("phone_numbers", [])
+                ):
+                    yield Label(
+                        f"Phone Number {i + 1}:",
+                        classes="form-label",
+                        id=f"phone_label_{i}",
+                    )
                     yield Input(
                         value=phone,
                         id=f"phone_number_{i}",
-                        type='number',
-                        classes="form-input"
+                        type="number",
+                        classes="form-input",
                     )
-                with Container(classes='update-phone-number-buttons-container'):
-                    yield Button("Add a number", id="add-phone-number", variant="default")
-            with Container(classes='update-contact-buttons-container'):
-                yield Button("Update", id="update", variant="primary", classes='update-contact-button')
-                yield Button("Cancel", id="cancel", variant="default", classes='update-contact-button')
+                with Container(
+                    classes="update-phone-number-buttons-container"
+                ):
+                    yield Button(
+                        "Add a number",
+                        id="add-phone-number",
+                        variant="default",
+                    )
+            with Container(classes="update-contact-buttons-container"):
+                yield Button(
+                    "Update",
+                    id="update",
+                    variant="primary",
+                    classes="update-contact-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="update-contact-button",
+                )
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        self.query_one('#update-contact-data', Container).border_title = 'Personal Data'
-        self.query_one('#update-contact-data', Container).border_subtitle = 'Edit relevant fields'
-        self.query_one('#update-phone-number', Container).border_title = 'Phone Numbers'
-        self.query_one('#update-phone-number', Container).border_subtitle = 'Edit relevant fields'
+        self.query_one(
+            "#update-contact-data", Container
+        ).border_title = "Personal Data"
+        self.query_one(
+            "#update-contact-data", Container
+        ).border_subtitle = "Edit relevant fields"
+        self.query_one(
+            "#update-phone-number", Container
+        ).border_title = "Phone Numbers"
+        self.query_one(
+            "#update-phone-number", Container
+        ).border_subtitle = "Edit relevant fields"
 
     @on(Button.Pressed, "#add-phone-number")
     def on_add_phone_number(self) -> None:
         """
         Add a new phone number input field before the button container.
         """
-        container = self.query_one('#update-phone-number', Container)
-        buttons_container = self.query_one('.update-phone-number-buttons-container', Container)
+        container = self.query_one("#update-phone-number", Container)
+        buttons_container = self.query_one(
+            ".update-phone-number-buttons-container", Container
+        )
 
         label = Label(
             f"Phone Number {self.phone_number_counter + 1}:",
             classes="form-label",
-            id=f"phone_label_{self.phone_number_counter + 1}"
+            id=f"phone_label_{self.phone_number_counter + 1}",
         )
         input_field = Input(
             placeholder="00 12 34 56 78",
             id=f"phone_number_{self.phone_number_counter + 1}",
-            type='number',
-            classes="form-input"
+            type="number",
+            classes="form-input",
         )
 
         container.mount(label, before=buttons_container)
@@ -585,14 +824,19 @@ class UpdateContactScreen(Screen):
         phone_numbers = []
 
         for input in all_inputs:
-            if input.id.startswith("phone_number_"):
-                if input.value:
-                    phone_numbers.append(input.value)
+            if (
+                input.id
+                and input.id.startswith("phone_number_")
+                and input.value
+            ):
+                phone_numbers.append(input.value)
 
         self.updated_contact_data = {
-            'id': self.contact_data['contact_id'],
-            'last_name': self.query_one("#contact_last_name", Input).value,
-            'first_name': self.query_one("#contact_first_name", Input).value,
-            'email': self.query_one("#email", Input).value,
-            'phone_numbers': phone_numbers
+            "id": self.contact_data["contact_id"],
+            "last_name": self.query_one("#contact_last_name", Input).value,
+            "first_name": self.query_one(
+                "#contact_first_name", Input
+            ).value,
+            "email": self.query_one("#email", Input).value,
+            "phone_numbers": phone_numbers,
         }

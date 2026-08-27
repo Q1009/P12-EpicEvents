@@ -5,7 +5,15 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Footer, Header, Input, Label, Select
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Input,
+    Label,
+    Select,
+)
 
 from models import Collaborator, Department
 
@@ -14,9 +22,7 @@ class CollaboratorScreen(Screen):
     """Screen that displays a table of collaborators."""
 
     SUB_TITLE = "COLLABORATORS"
-
     CSS_PATH = "styles/collaborator_screen.tcss"
-
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("b", "go_back", "Back"),
     ]
@@ -38,19 +44,29 @@ class CollaboratorScreen(Screen):
             yield DataTable(id="collaborator-events-table")
             with Container(classes="collaborator-buttons-container"):
                 yield Button(
-                    "Create Collaborator", id="create-collaborator", variant="primary"
+                    "Create Collaborator",
+                    id="create-collaborator",
+                    variant="primary",
                 )
                 yield Button(
-                    "Update Collaborator", id="update-collaborator", variant="warning"
+                    "Update Collaborator",
+                    id="update-collaborator",
+                    variant="warning",
                 )
                 yield Button(
-                    "Delete Collaborator", id="delete-collaborator", variant="error"
+                    "Delete Collaborator",
+                    id="delete-collaborator",
+                    variant="error",
                 )
             with Container(classes="customers-events-buttons-container"):
                 yield Button(
-                    "Consult Customer", id="consult-customer", variant="primary"
+                    "Consult Customer",
+                    id="consult-customer",
+                    variant="primary",
                 )
-                yield Button("Consult Event", id="consult-event", variant="warning")
+                yield Button(
+                    "Consult Event", id="consult-event", variant="warning"
+                )
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -58,11 +74,15 @@ class CollaboratorScreen(Screen):
         self.build_collaborators_table()
         self.build_collaborator_customers_table()
         self.build_collaborator_events_table()
-
+        
+        # Initialize default selections with the first available collaborator,
+        # customer, and event to ensure the UI has valid selections on load.
         if self.collaborators:
             self.selected_collaborator_id = self.collaborators[0].id
             if self.collaborators[0].customers:
-                self.selected_customer_id = self.collaborators[0].customers[0].id
+                self.selected_customer_id = (
+                    self.collaborators[0].customers[0].id
+                )
             if self.collaborators[0].events:
                 self.selected_event_id = self.collaborators[0].events[0].id
 
@@ -199,10 +219,14 @@ class CollaboratorScreen(Screen):
         """Saves highlighted collaborator id"""
         row_index = event.cursor_row
         if 0 <= row_index < len(self.collaborators):
-            self.selected_collaborator_id = self.collaborators[row_index].id
+            self.selected_collaborator_id = self.collaborators[
+                row_index
+            ].id
 
     @on(DataTable.RowHighlighted, "#collaborator-customers-table")
-    def on_customer_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+    def on_customer_row_highlighted(
+        self, event: DataTable.RowHighlighted
+    ) -> None:
         """Saves highlighted customer id"""
         row_index = event.cursor_row
 
@@ -219,11 +243,15 @@ class CollaboratorScreen(Screen):
             if selected_collaborator and 0 <= row_index < len(
                 selected_collaborator.customers
             ):
-                selected_customer = selected_collaborator.customers[row_index]
+                selected_customer = selected_collaborator.customers[
+                    row_index
+                ]
                 self.selected_customer_id = selected_customer.id
 
     @on(DataTable.RowHighlighted, "#collaborator-events-table")
-    def on_event_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+    def on_event_row_highlighted(
+        self, event: DataTable.RowHighlighted
+    ) -> None:
         """Saves highlighted event id"""
         row_index = event.cursor_row
 
@@ -249,7 +277,9 @@ class CollaboratorScreen(Screen):
 
     @on(Button.Pressed, "#update-collaborator")
     def go_update_collaborator(self) -> None:
-        self.dismiss(("update_collaborator", self.selected_collaborator_id))
+        self.dismiss(
+            ("update_collaborator", self.selected_collaborator_id)
+        )
 
     @on(Button.Pressed, "#consult-customer")
     def go_consult_customer(self) -> None:
@@ -280,16 +310,21 @@ class CreateCollaboratorScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="create-collaborator-main-container"):
             with Container(
-                id="collaborator-data", classes="collaborator-data-input-container"
+                id="collaborator-data",
+                classes="collaborator-data-input-container",
             ):
-                yield Label("Collaborator Last Name:", classes="form-label")
+                yield Label(
+                    "Collaborator Last Name:", classes="form-label"
+                )
                 yield Input(
                     placeholder="Doe",
                     id="collaborator_last_name",
                     type="text",
                     classes="form-input",
                 )
-                yield Label("Collaborator First Name:", classes="form-label")
+                yield Label(
+                    "Collaborator First Name:", classes="form-label"
+                )
                 yield Input(
                     placeholder="John",
                     id="collaborator_first_name",
@@ -308,7 +343,10 @@ class CreateCollaboratorScreen(Screen):
                 classes="collaborator-department-input-container",
             ):
                 department_options = [
-                    (department.name.value, department.name.value)  # (valeur, label)
+                    (
+                        department.name.value,
+                        department.name.value,
+                    )  # (valeur, label)
                     for department in self.departments
                 ]
                 yield Select(
@@ -316,7 +354,9 @@ class CreateCollaboratorScreen(Screen):
                     id="collaborator-department-select",  # ID pour la récupération
                     prompt="Select a department",  # Texte par défaut
                 )
-            with Container(classes="create-collaborator-buttons-container"):
+            with Container(
+                classes="create-collaborator-buttons-container"
+            ):
                 yield Button(
                     "Create",
                     id="create",
@@ -332,12 +372,16 @@ class CreateCollaboratorScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        collaborator_data_container = self.query_one("#collaborator-data", Container)
+        collaborator_data_container = self.query_one(
+            "#collaborator-data", Container
+        )
         collaborator_department_container = self.query_one(
             "#collaborator-department", Container
         )
         collaborator_data_container.border_title = "Personal Data"
-        collaborator_department_container.border_title = "Department Selection"
+        collaborator_department_container.border_title = (
+            "Department Selection"
+        )
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
