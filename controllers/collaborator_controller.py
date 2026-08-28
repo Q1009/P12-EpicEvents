@@ -5,7 +5,6 @@ from services import PasswordServices
 from views import (
     CollaboratorScreen,
     CreateCollaboratorScreen,
-    DeleteCollaboratorScreen,
     UpdateCollaboratorScreen,
 )
 
