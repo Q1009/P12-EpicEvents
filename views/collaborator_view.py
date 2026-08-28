@@ -4,7 +4,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
-from textual.screen import Screen
+from textual.screen import ModalScreen, Screen
 from textual.widgets import (
     Button,
     DataTable,
@@ -36,6 +36,8 @@ class CollaboratorScreen(Screen):
     def __init__(self, collaborators: list[Collaborator]) -> None:
         super().__init__()
         self.collaborators = collaborators
+        self.selected_collaborator_first_name: str = None
+        self.selected_collaborator_last_name: str = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -64,9 +66,13 @@ class CollaboratorScreen(Screen):
                     "Consult Customer",
                     id="consult-customer",
                     variant="primary",
+                    disabled=True,
                 )
                 yield Button(
-                    "Consult Event", id="consult-event", variant="warning"
+                    "Consult Event",
+                    id="consult-event",
+                    variant="warning",
+                    disabled=True,
                 )
         yield Footer(show_command_palette=False)
 
@@ -210,10 +216,21 @@ class CollaboratorScreen(Screen):
             self.load_collaborator_events(
                 collaborator_events_table, selected_collaborator
             )
+            self.selected_collaborator_first_name = (
+                selected_collaborator.first_name
+            )
+            self.selected_collaborator_last_name = (
+                selected_collaborator.last_name
+            )
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
         self.dismiss("back")
+
+    def _delete_collaborator(self, collaborator_id):
+        self.dismiss(
+            ("delete_collaborator", collaborator_id)
+        )
 
     @on(DataTable.RowHighlighted, "#collaborators-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
@@ -280,6 +297,17 @@ class CollaboratorScreen(Screen):
     def go_update_collaborator(self) -> None:
         self.dismiss(
             ("update_collaborator", self.selected_collaborator_id)
+        )
+
+    @on(Button.Pressed, "#delete-collaborator")
+    def go_delete_collaborator(self) -> None:
+        delete_collaborator_screen = DeleteCollaboratorScreen(
+            self.selected_collaborator_id,
+            self.selected_collaborator_first_name,
+            self.selected_collaborator_last_name,
+        )
+        self.app.push_screen(
+            delete_collaborator_screen, callback=self._delete_collaborator
         )
 
     @on(Button.Pressed, "#consult-customer")
@@ -414,7 +442,9 @@ class UpdateCollaboratorScreen(Screen):
     SUB_TITLE = "UPDATE COLLABORATOR"
     CSS_PATH = "styles/update_collaborator_screen.tcss"
 
-    def __init__(self, collaborator_data: dict, departments: list[Department]):
+    def __init__(
+        self, collaborator_data: dict, departments: list[Department]
+    ):
         super().__init__()
         self.collaborator_data = collaborator_data
         self.updated_collaborator_data = {}
@@ -427,7 +457,9 @@ class UpdateCollaboratorScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="update-collaborator-main-container"):
             yield Static(
-                f"Updating Collaborator: {self.collaborator_data['collaborator_first_name']} {self.collaborator_data['collaborator_last_name']}",
+                "Updating Collaborator: "
+                f"{self.collaborator_data['collaborator_first_name']} "
+                f"{self.collaborator_data['collaborator_last_name']}",
                 classes="updating-collaborator-static",
             )
             with Container(
@@ -443,7 +475,9 @@ class UpdateCollaboratorScreen(Screen):
                 )
                 yield Label("Collaborator First Name:")
                 yield Input(
-                    value=self.collaborator_data.get("collaborator_first_name", ""),
+                    value=self.collaborator_data.get(
+                        "collaborator_first_name", ""
+                    ),
                     id="collaborator_first_name",
                 )
             with Container(
@@ -503,7 +537,9 @@ class UpdateCollaboratorScreen(Screen):
 
     def _collect_form_data(self):
         """ """
-        selected_department = self.query_one("#update-collaborator-department-select", Select).value
+        selected_department = self.query_one(
+            "#update-collaborator-department-select", Select
+        ).value
 
         self.updated_collaborator_data = {
             "id": self.collaborator_data["collaborator_id"],
@@ -515,3 +551,62 @@ class UpdateCollaboratorScreen(Screen):
             ).value,
             "department": selected_department,
         }
+
+
+class DeleteCollaboratorScreen(ModalScreen):
+    """ """
+
+    CSS_PATH = "styles/delete_collaborator_screen.tcss"
+
+    def __init__(
+        self,
+        collaborator_id,
+        collaborator_first_name,
+        collaborator_last_name,
+    ):
+        super().__init__()
+        self.collaborator_id = collaborator_id
+        self.collaborator_first_name = collaborator_first_name
+        self.collaborator_last_name = collaborator_last_name
+
+    def compose(self):
+        """
+        Compose the modal screen to confirm user choice to delete collaborator.
+        """
+        with Container(classes="delete-collaborator-main-container"):
+            yield Label(
+                "Are you sure you want to delete",
+                classes="updating-collaborator-message-start-label",
+            )
+            yield Label(
+                f"{self.collaborator_first_name} "
+                f"{self.collaborator_last_name}",
+                classes="updating-collaborator-fullname-label",
+            )
+            yield Label(
+                "from the system ?",
+                classes="updating-collaborator-message-end-label",
+            )
+            with Container(
+                classes="delete-collaborator-buttons-container"
+            ):
+                yield Button(
+                    "Delete",
+                    id="delete",
+                    variant="error",
+                    classes="delete-collaborator-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="delete-collaborator-button",
+                )
+
+    @on(Button.Pressed, "#delete")
+    def go_update(self) -> None:
+        self.dismiss(self.collaborator_id)
+
+    @on(Button.Pressed, "#cancel")
+    def go_back(self) -> None:
+        self.dismiss(None)

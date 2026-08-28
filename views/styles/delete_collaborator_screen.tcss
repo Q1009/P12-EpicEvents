@@ -1,0 +1,51 @@
+.delete-collaborator-main-container {
+    layout: vertical;
+    border: solid $error;
+    width: 50%;
+    height: 40%;
+    overflow: auto auto;
+    align: center middle;
+    offset: 0 -30%;
+}
+
+.updating-collaborator-message-start-label{
+    height: auto;
+    width: 100%;
+    content-align: center middle;
+    margin: 0 0 1 0;
+}
+
+.updating-collaborator-fullname-label{
+    height: auto;
+    width: 100%;
+    content-align: center middle;
+    text-style: bold;
+    color: $primary;
+}
+
+.updating-collaborator-message-end-label{
+    height: auto;
+    width: 100%;
+    content-align: center middle;
+    margin: 1 0 1 0;
+}
+
+.delete-collaborator-buttons-container {
+    layout: horizontal;
+    align: center middle;
+    height: auto;
+    width: 100%;
+}
+
+.delete-collaborator-button {
+    width: 25%;
+    height: auto;
+}
+
+#delete {
+    margin: 0 1 0 0;
+}
+
+#cancel {
+    margin: 0 0 0 1;
+}

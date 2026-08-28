@@ -5,6 +5,7 @@ from services import PasswordServices
 from views import (
     CollaboratorScreen,
     CreateCollaboratorScreen,
+    DeleteCollaboratorScreen,
     UpdateCollaboratorScreen,
 )
 
@@ -60,8 +61,10 @@ class CollaboratorController:
                     update_collaborator_screen,
                     callback=self.update_collaborator,
                 )
-            case "delete_collaborator":
-                pass
+            case ("delete_collaborator", collaborator_id):
+                self.delete_collaborator(
+                    collaborator_id
+                )
             case ("consult_customer", customer_id):
                 pass
             case ("consult_event", event_id):
@@ -180,5 +183,20 @@ class CollaboratorController:
         )
         self.start(self.on_back_callback)
 
-    def delete_collaborator(self):
-        pass
+    def delete_collaborator(self, collaborator_id):
+        if not collaborator_id:
+            self.epic_events_app.notify(
+                "Collaborator delete cancelled", severity="warning"
+            )
+            self.start(self.on_back_callback)
+            return
+
+        self.session.query(Collaborator).filter(
+            Collaborator.id == collaborator_id
+        ).delete()
+
+        self.session.commit()
+        self.epic_events_app.notify(
+            "Collaborator successfully deleted", severity="information"
+        )
+        self.start(self.on_back_callback)

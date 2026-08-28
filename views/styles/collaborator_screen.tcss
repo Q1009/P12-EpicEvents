@@ -1,3 +1,7 @@
+DeleteCollaboratorScreen {
+    align: center middle;
+}
+
 .collaborator-main-container {
     layout: grid;
     grid-size: 2;

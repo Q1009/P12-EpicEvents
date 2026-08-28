@@ -2,6 +2,7 @@ from .authentication_view import AuthenticationScreen
 from .collaborator_view import (
     CollaboratorScreen,
     CreateCollaboratorScreen,
+    DeleteCollaboratorScreen,
     UpdateCollaboratorScreen,
 )
 from .create_event_view import CreateEventScreen
