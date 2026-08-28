@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session
-from models import Event
-from views import EventScreen, CreateEventScreen
-from services import AuthenticationServices
-from .authentication_controller import AuthenticationController
+
+from authentication.authentication_controller import (
+    AuthenticationController,
+)
+from events.event_model import Event
+from events.event_view import EventScreen
+from services.authentication_services import AuthenticationServices
+
 
 class EventController:
 
@@ -22,8 +26,8 @@ class EventController:
         match user_choice:
             case 'create_event':
                 self.epic_events_app.notify('Create Event', severity='error')
-                create_event_screen = CreateEventScreen()
-                self.epic_events_app.push_screen(create_event_screen, callback=self.handle_user_choice)
+                # create_event_screen = CreateEventScreen()
+                # self.epic_events_app.push_screen(create_event_screen, callback=self.handle_user_choice)
             case 'display_all_events':
                 all_events = self.get_all_events(self.session)
                 all_events_screen = EventScreen(all_events)

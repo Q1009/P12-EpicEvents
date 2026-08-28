@@ -1,12 +1,15 @@
 from sqlalchemy.orm import Session, joinedload
 
-from models import Collaborator, Department
-from services import PasswordServices
-from views import (
+from collaborators.collaborator_model import (
+    Collaborator,
+    Department,
+)
+from collaborators.collaborator_view import (
     CollaboratorScreen,
     CreateCollaboratorScreen,
     UpdateCollaboratorScreen,
 )
+from services.authentication_services import PasswordServices
 
 
 class CollaboratorController:

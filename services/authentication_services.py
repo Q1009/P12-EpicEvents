@@ -7,10 +7,15 @@ import jwt
 from bcrypt import checkpw, gensalt, hashpw
 from sqlalchemy.orm import Session
 
-from config import settings
-from keys import get_private_key, get_public_key
-from models import Collaborator
-from tokens import clear_tokens, load_tokens, save_tokens, tokens_exist
+from collaborators.collaborator_model import Collaborator
+from config.settings import settings
+from keys.rsa_key_management import get_private_key, get_public_key
+from tokens.token_management import (
+    clear_tokens,
+    load_tokens,
+    save_tokens,
+    tokens_exist,
+)
 
 
 class AuthenticationError(Exception):

@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from models.associations import customers_contacts_association
-from models.base_model import Base
+from customers.associations import customers_contacts_association
+from main.base_model import Base
 
 
 class Customer(Base):

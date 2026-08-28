@@ -2,16 +2,21 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session, joinedload
 
-from models import Contact, Customer, PhoneNumber
-from views import (
+from authentication.authentication_controller import (
+    AuthenticationController,
+)
+from customers.customer_model import (
+    Contact,
+    Customer,
+    PhoneNumber,
+)
+from customers.customer_view import (
     CreateContactScreen,
     CreateCustomerScreen,
     CustomerScreen,
     UpdateContactScreen,
     UpdateCustomerScreen,
 )
-
-from .authentication_controller import AuthenticationController
 
 
 class CustomerController:

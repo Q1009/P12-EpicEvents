@@ -1,10 +1,14 @@
-from models import Collaborator
-from views import AuthenticatedMainScreen, UnauthenticatedMainScreen
-
-from .authentication_controller import AuthenticationController
-from .collaborator_controller import CollaboratorController
-from .customer_controller import CustomerController
-from .event_controller import EventController
+from authentication.authentication_controller import (
+    AuthenticationController,
+)
+from collaborators.collaborator_controller import CollaboratorController
+from collaborators.collaborator_model import Collaborator
+from customers.customer_controller import CustomerController
+from events.event_controller import EventController
+from main.main_view import (
+    AuthenticatedMainScreen,
+    UnauthenticatedMainScreen,
+)
 
 
 class MainController:

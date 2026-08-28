@@ -4,8 +4,11 @@ Authentication Controller
 Handles user login, logout, and session state.
 """
 
-from services import AuthenticationError, AuthenticationServices
-from views import AuthenticationScreen
+from authentication.authentication_view import AuthenticationScreen
+from services.authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+)
 
 
 class AuthenticationController:

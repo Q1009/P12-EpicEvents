@@ -1,27 +1,9 @@
-from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Prompt
-from rich.text import Text
-from rich import box
-from textual.app import App, ComposeResult
-from textual.widgets import Input, Button, Header, Static, Footer
-from textual.screen import Screen
-from textual.containers import Container
 from textual import on
-from textual.events import Key
+from textual.app import ComposeResult
+from textual.containers import Container
+from textual.screen import Screen
+from textual.widgets import Button, Footer, Header, Input
 
-console = Console()
-
-class InstructionFooter(Static):
-    """Widget personnalisé pour l'encart d'instructions"""
-    def __init__(self):
-        super().__init__()
-        self.update(
-            "[dim]Use [bold]Tab[/bold] to navigate | "
-            "[bold]Enter[/bold] to select | "
-            "[bold]Esc[/bold] to return[/dim]"
-        )
-        self.styles.border = ("round", "dimgrey")
 
 class AuthenticationScreen(Screen):
 

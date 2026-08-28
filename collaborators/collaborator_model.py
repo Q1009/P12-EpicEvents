@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
 
-from models.base_model import Base
+from main.base_model import Base
 
 
 class DepartmentName(PyEnum):

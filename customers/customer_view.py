@@ -17,8 +17,8 @@ from textual.widgets import (
 )
 from textual.widgets.selection_list import Selection
 
-from models import Contact, Customer
-from services import format_french_datetime
+from customers.customer_model import Contact, Customer
+from services.date_services import format_french_datetime
 
 
 class CustomerScreen(Screen):

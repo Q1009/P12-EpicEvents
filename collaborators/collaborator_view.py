@@ -16,7 +16,7 @@ from textual.widgets import (
     Static,
 )
 
-from models import Collaborator, Department
+from collaborators.collaborator_model import Collaborator, Department
 
 
 class CollaboratorScreen(Screen):

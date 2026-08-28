@@ -1,9 +1,12 @@
-from models import Event
-from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, DataTable, Label, Button
-from textual import on
-from textual.screen import Screen
 from datetime import datetime
+
+from textual import on
+from textual.app import App, ComposeResult
+from textual.screen import Screen
+from textual.widgets import Button, DataTable, Footer, Header, Label
+
+from events.event_model import Event
+
 
 class EventScreen(Screen):
     """

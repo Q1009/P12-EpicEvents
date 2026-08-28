@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, Table
 
-from models.base_model import Base
+from main.base_model import Base
 
 # Association tables for Many-to-Many relationships
 

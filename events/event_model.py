@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from models.base_model import Base
+from main.base_model import Base
 
 
 class Event(Base):

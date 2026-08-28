@@ -22,12 +22,12 @@ config.set_main_option(
 )
 
 # Import your models here to ensure they are registered with Alembic
-from models import Base, Table
-from models import Collaborator, Department, DepartmentName
-from models import Customer, Contact, PhoneNumber
-from models import Event, Location
-from models import Contract, ContractStatus
-from models import customers_contacts_association
+from main.base_model import Base, Table
+from contracts.contract_model import Contract, ContractStatus
+from collaborators.collaborator_model import Collaborator, Department, DepartmentName
+from customers.customer_model import Customer, Contact, PhoneNumber
+from events.event_model import Event, Location
+from customers.associations import customers_contacts_association
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -1,7 +1,7 @@
 from enum import Enum
 
-from models.collaborator_model import DepartmentName
-from models.permission_model import Permission
+from collaborators.collaborator_model import DepartmentName
+from permissions.permission_model import Permission
 
 
 class RoleName(Enum):

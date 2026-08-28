@@ -17,7 +17,9 @@ Dependencies:
 from collections.abc import Callable
 from functools import wraps
 
-from models import ROLE_PERMISSIONS, Collaborator, Permission, RoleName
+from collaborators.collaborator_model import Collaborator
+from permissions.permission_model import Permission
+from permissions.role_model import ROLE_PERMISSIONS, RoleName
 
 
 class PermissionError(Exception):

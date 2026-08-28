@@ -11,11 +11,11 @@ from faker import Faker
 from config.settings import settings
 
 # 1. Import models
-from models.base_model import Base
-from models.event_model import Event, Location
-from models.customer_model import Customer, Contact, PhoneNumber
-from models.collaborator_model import Collaborator, Department, DepartmentName
-from models.contract_model import Contract, ContractStatus
+from main.base_model import Base
+from events.event_model import Event, Location
+from customers.customer_model import Customer, Contact, PhoneNumber
+from collaborators.collaborator_model import Collaborator, Department, DepartmentName
+from contracts.contract_model import Contract, ContractStatus
 
 # 2. Session and Faker configuration
 engine = create_engine(settings.DB_URL)
