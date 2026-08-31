@@ -105,8 +105,8 @@ class ContractScreen(Screen):
         table.add_column("Sales Representative", key="sales_representative")
         table.add_column("Total Amount", key="total_amount")
         table.add_column("Amount Due", key="amount_due")
-        table.add_column("Created At", key="created_at")
         table.add_column("Status", key="status")
+        table.add_column("Created At", key="created_at")
 
         table.loading = True
         self.load_contracts(table)
@@ -130,8 +130,8 @@ class ContractScreen(Screen):
                 sales_representative,
                 contract.total_amount,
                 contract.amount_due,
-                created_at,
                 contract.status.name,
+                created_at,
             )
 
         table.loading = False
