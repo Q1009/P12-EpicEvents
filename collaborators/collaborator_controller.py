@@ -86,7 +86,7 @@ class CollaboratorController:
             self.session.query(Collaborator)
             .options(
                 joinedload(Collaborator.department),
-                joinedload(Collaborator.customers),  # Keep c-ustomers
+                joinedload(Collaborator.customers),
                 joinedload(Collaborator.events),
             )
             .all()

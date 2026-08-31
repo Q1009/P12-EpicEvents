@@ -117,7 +117,7 @@ class CollaboratorScreen(Screen):
 
         for collaborator in self.collaborators:
             # Department
-            department = collaborator.department.name.value
+            department = collaborator.department.name.name
             # Number of customers
             nb_customers = len(collaborator.customers)
             # Number of events
@@ -373,7 +373,7 @@ class CreateCollaboratorScreen(Screen):
             ):
                 department_options = [
                     (
-                        department.name.value,
+                        department.name.name,
                         department,
                     )
                     for department in self.departments
@@ -486,7 +486,7 @@ class UpdateCollaboratorScreen(Screen):
             ):
                 department_options = [
                     (
-                        department.name.value,
+                        department.name.name,
                         department,
                     )
                     for department in self.departments
