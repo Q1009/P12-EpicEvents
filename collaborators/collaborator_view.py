@@ -23,7 +23,7 @@ class CollaboratorScreen(Screen):
     """Screen that displays a table of collaborators."""
 
     SUB_TITLE = "COLLABORATORS"
-    CSS_PATH = "styles/collaborator_screen.tcss"
+    CSS_PATH = "../styles/collaborator_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("b", "go_back", "Back"),
     ]
@@ -328,7 +328,7 @@ class CreateCollaboratorScreen(Screen):
 
     SUB_TITLE = "CREATE COLLABORATOR"
 
-    CSS_PATH = "styles/create_collaborator_screen.tcss"
+    CSS_PATH = "../styles/create_collaborator_screen.tcss"
 
     def __init__(self, departments: list[Department]):
         super().__init__()
@@ -440,7 +440,7 @@ class UpdateCollaboratorScreen(Screen):
     """ """
 
     SUB_TITLE = "UPDATE COLLABORATOR"
-    CSS_PATH = "styles/update_collaborator_screen.tcss"
+    CSS_PATH = "../styles/update_collaborator_screen.tcss"
 
     def __init__(
         self, collaborator_data: dict, departments: list[Department]
@@ -556,7 +556,7 @@ class UpdateCollaboratorScreen(Screen):
 class DeleteCollaboratorScreen(ModalScreen):
     """ """
 
-    CSS_PATH = "styles/delete_collaborator_screen.tcss"
+    CSS_PATH = "../styles/delete_collaborator_screen.tcss"
 
     def __init__(
         self,

@@ -25,7 +25,7 @@ class CustomerScreen(Screen):
     """Screen that displays a table of customers."""
 
     SUB_TITLE = "CUSTOMERS"
-    CSS_PATH = "styles/customer_screen.tcss"
+    CSS_PATH = "../styles/customer_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("b", "go_back", "Back"),
     ]
@@ -294,7 +294,7 @@ class CreateCustomerScreen(Screen):
     """Screen that displays a form to create a new customer."""
 
     SUB_TITLE = "CREATE CUSTOMERS"
-    CSS_PATH = "styles/create_customer_screen.tcss"
+    CSS_PATH = "../styles/create_customer_screen.tcss"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -415,7 +415,7 @@ class UpdateCustomerScreen(Screen):
     """ """
 
     SUB_TITLE = "UPDATE CUSTOMERS"
-    CSS_PATH = "styles/update_customer_screen.tcss"
+    CSS_PATH = "../styles/update_customer_screen.tcss"
 
     def __init__(self, customer_data: dict, contacts: list[Contact]):
         super().__init__()
@@ -540,7 +540,7 @@ class CreateContactScreen(Screen):
     """ """
 
     SUB_TITLE = "CREATE CONTACT"
-    CSS_PATH = "styles/create_contact_screen.tcss"
+    CSS_PATH = "../styles/create_contact_screen.tcss"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -687,7 +687,7 @@ class UpdateContactScreen(Screen):
     """
 
     SUB_TITLE = "UPDATE CONTACT"
-    CSS_PATH = "styles/update_contact_screen.tcss"
+    CSS_PATH = "../styles/update_contact_screen.tcss"
 
     def __init__(self, contact_data: dict, **kwargs):
         super().__init__(**kwargs)

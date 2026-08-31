@@ -18,7 +18,7 @@ class AuthenticatedMainScreen(Screen[str]):
     """
 
     SUB_TITLE = "HOME"
-    CSS_PATH = "styles/main_screen.tcss"
+    CSS_PATH = "../styles/main_screen.tcss"
 
     def __init__(self, user_name) -> None:
         self.user_name = user_name
@@ -62,7 +62,7 @@ class UnauthenticatedMainScreen(Screen[str]):
     """
 
     SUB_TITLE = "WELCOME"
-    CSS_PATH = "styles/main_screen.tcss"
+    CSS_PATH = "../styles/main_screen.tcss"
 
     def __init__(self) -> None:
         super().__init__()

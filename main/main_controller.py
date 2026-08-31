@@ -46,7 +46,6 @@ class MainController:
         # Get user_name
         user: Collaborator = self.authentication_controller.get_user_info()
         user_name = user.first_name
-        # user_name = 'Quentin'
         authenticated_main_screen = AuthenticatedMainScreen(user_name)
         self.epic_events_app.push_screen(
             authenticated_main_screen, callback=self.handle_user_choice

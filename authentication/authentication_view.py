@@ -9,7 +9,7 @@ class AuthenticationScreen(Screen):
 
     SUB_TITLE = 'AUTHENTICATION'
 
-    CSS_PATH = 'styles/authentication_screen.tcss'
+    CSS_PATH = '../styles/authentication_screen.tcss'
     
     def __init__(self):
         super().__init__()
