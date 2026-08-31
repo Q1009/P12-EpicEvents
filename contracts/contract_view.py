@@ -4,7 +4,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
-from textual.screen import ModalScreen, Screen
+from textual.screen import Screen
 from textual.widgets import (
     Button,
     DataTable,
@@ -45,7 +45,9 @@ class ContractScreen(Screen):
         with Container(classes="contract-main-container"):
             yield DataTable(id="contracts-table")
             yield DataTable(id="contract-customer-table")
-            yield ProgressBar(id="contract-payment-progressbar", show_eta=False)
+            yield ProgressBar(
+                id="contract-payment-progressbar", show_eta=False
+            )
             yield DataTable(id="contract-event-table")
             with Container(classes="contract-buttons-container"):
                 yield Button(
@@ -85,15 +87,13 @@ class ContractScreen(Screen):
         self.build_contract_customer_table()
         self.build_contract_payment_progressbar()
         self.build_contract_event_table()
-        
+
         # Initialize default selections with the first available contract,
         # customer, and event to ensure the UI has valid selections on load.
         if self.contracts:
             self.selected_contract_id = self.contracts[0].id
             if self.contracts[0].customer:
-                self.selected_customer_id = (
-                    self.contracts[0].customer.id
-                )
+                self.selected_customer_id = self.contracts[0].customer.id
             if self.contracts[0].event:
                 self.selected_event_id = self.contracts[0].event.id
 
@@ -105,7 +105,9 @@ class ContractScreen(Screen):
 
         # Configure table columns
         table.add_column("ID", key="contract_id")
-        table.add_column("Sales Representative", key="sales_representative")
+        table.add_column(
+            "Sales Representative", key="sales_representative"
+        )
         table.add_column("Total Amount", key="total_amount")
         table.add_column("Amount Due", key="amount_due")
         table.add_column("Status", key="status")
@@ -190,10 +192,14 @@ class ContractScreen(Screen):
         table.loading = False
 
     def build_contract_payment_progressbar(self) -> None:
-        progress_bar = self.query_one("#contract-payment-progressbar", ProgressBar)
+        progress_bar = self.query_one(
+            "#contract-payment-progressbar", ProgressBar
+        )
         progress_bar.border_title = "Amount Paid - %"
 
-    def load_contract_payment(self, progressbar: ProgressBar, contract: Contract) -> None:
+    def load_contract_payment(
+        self, progressbar: ProgressBar, contract: Contract
+    ) -> None:
         total_amount = contract.total_amount
         amount_due = contract.amount_due
         paid_amount = total_amount - amount_due
@@ -243,18 +249,14 @@ class ContractScreen(Screen):
         self.dismiss("back")
 
     def _delete_contract(self, contract_id):
-        self.dismiss(
-            ("delete_contract", contract_id)
-        )
+        self.dismiss(("delete_contract", contract_id))
 
     @on(DataTable.RowHighlighted, "#contracts-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted contract id"""
         row_index = event.cursor_row
         if 0 <= row_index < len(self.contracts):
-            self.selected_contract_id = self.contracts[
-                row_index
-            ].id
+            self.selected_contract_id = self.contracts[row_index].id
 
     @on(Button.Pressed, "#create-contract")
     def go_create_contract(self) -> None:
@@ -262,9 +264,7 @@ class ContractScreen(Screen):
 
     @on(Button.Pressed, "#update-contract")
     def go_update_contract(self) -> None:
-        self.dismiss(
-            ("update_contract", self.selected_contract_id)
-        )
+        self.dismiss(("update_contract", self.selected_contract_id))
 
     @on(Button.Pressed, "#create-event")
     def go_create_event(self) -> None:
@@ -326,11 +326,7 @@ class CreateContractScreen(Screen):
             ):
                 customer_options = [
                     (
-                        (
-                            customer.first_name
-                            + " "
-                            + customer.last_name
-                        ),
+                        (customer.first_name + " " + customer.last_name),
                         customer,
                     )
                     for customer in self.customers
@@ -340,9 +336,7 @@ class CreateContractScreen(Screen):
                     id="contract-customer-select",
                     prompt="Select a customer",
                 )
-            with Container(
-                classes="create-contract-buttons-container"
-            ):
+            with Container(classes="create-contract-buttons-container"):
                 yield Button(
                     "Create",
                     id="create",
@@ -365,9 +359,7 @@ class CreateContractScreen(Screen):
             "#contract-customer", Container
         )
         contract_data_container.border_title = "Contract Data"
-        contract_customer_container.border_title = (
-            "Customer Selection"
-        )
+        contract_customer_container.border_title = "Customer Selection"
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
@@ -392,15 +384,14 @@ class CreateContractScreen(Screen):
             ).value,
         }
 
+
 class UpdateContractScreen(Screen):
     """ """
 
     SUB_TITLE = "UPDATE CONTRACT"
     CSS_PATH = "../styles/update_contract_screen.tcss"
 
-    def __init__(
-        self, contract_data: dict, customers: list[Customer]
-    ):
+    def __init__(self, contract_data: dict, customers: list[Customer]):
         super().__init__()
         self.customers = customers
         self.contract_data = contract_data
@@ -417,7 +408,7 @@ class UpdateContractScreen(Screen):
                 f"{self.contract_data['contract_id']} "
                 "associated to "
                 f"{self.contract_data['contract_customer'].first_name} "
-                f"{self.contract_data["contract_customer"].last_name}",
+                f"{self.contract_data['contract_customer'].last_name}",
                 classes="updating-contract-static",
             )
             with Container(
@@ -427,9 +418,7 @@ class UpdateContractScreen(Screen):
                 yield Label("Contract Total Amount:")
                 yield Input(
                     value=str(
-                        self.contract_data.get(
-                            "contract_total_amount", 0
-                        )
+                        self.contract_data.get("contract_total_amount", 0)
                     ),
                     id="contract_total_amount",
                     type="number",
@@ -437,9 +426,7 @@ class UpdateContractScreen(Screen):
                 yield Label("Contract Amount Due:")
                 yield Input(
                     value=str(
-                        self.contract_data.get(
-                            "contract_amount_due", 0
-                        )
+                        self.contract_data.get("contract_amount_due", 0)
                     ),
                     id="contract_amount_due",
                     type="number",
@@ -450,11 +437,7 @@ class UpdateContractScreen(Screen):
             ):
                 customer_options = [
                     (
-                        (
-                            customer.first_name
-                            + " "
-                            + customer.last_name
-                        ),
+                        (customer.first_name + " " + customer.last_name),
                         customer,
                     )
                     for customer in self.customers
@@ -463,7 +446,7 @@ class UpdateContractScreen(Screen):
                     customer_options,
                     id="update-contract-customer-select",
                     prompt="Select a customer",
-                    value=self.contract_data.get("contract_customer")
+                    value=self.contract_data.get("contract_customer"),
                 )
             with Container(
                 id="update-contract-status",
@@ -480,7 +463,7 @@ class UpdateContractScreen(Screen):
                     status_options,
                     id="update-contract-status-select",
                     prompt="Select a status",
-                    value=self.contract_data.get("contract_status")
+                    value=self.contract_data.get("contract_status"),
                 )
             with Container(classes="update-contract-buttons-container"):
                 yield Button(
@@ -511,12 +494,8 @@ class UpdateContractScreen(Screen):
         )
         contract_data_container.border_title = "Contract Data"
         contract_data_container.border_subtitle = "Edit relevant fields"
-        contract_customer_container.border_title = (
-            "Customer Selection"
-        )
-        contract_status_container.border_title = (
-            "Status Selection"
-        )
+        contract_customer_container.border_title = "Customer Selection"
+        contract_status_container.border_title = "Status Selection"
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
@@ -531,6 +510,9 @@ class UpdateContractScreen(Screen):
         selected_customer = self.query_one(
             "#update-contract-customer-select", Select
         ).value
+        selected_status = self.query_one(
+            "#update-contract-status-select", Select
+        ).value
 
         self.updated_contract_data = {
             "contract_id": self.contract_data["contract_id"],
@@ -541,5 +523,5 @@ class UpdateContractScreen(Screen):
                 "#contract_amount_due", Input
             ).value,
             "contract_customer": selected_customer,
-            "contract_status": self.contract_data["contract_status"],
+            "contract_status": selected_status,
         }

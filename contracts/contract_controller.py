@@ -44,8 +44,8 @@ class ContractController:
             case ("update_contract", contract_id):
                 # pass
                 all_customers = self.get_all_customers()
-                contract_to_update = (
-                    self.load_contract_data_for_update(contract_id)
+                contract_to_update = self.load_contract_data_for_update(
+                    contract_id
                 )
                 update_contract_screen = UpdateContractScreen(
                     contract_to_update, all_customers
@@ -85,9 +85,7 @@ class ContractController:
         )
 
     def get_all_customers(self) -> list[Customer]:
-        return (
-            self.session.query(Customer).all()
-        )
+        return self.session.query(Customer).all()
 
     def load_contract_data_for_update(self, contract_id: int):
         """ """
@@ -146,10 +144,14 @@ class ContractController:
             Contract.id == updated_contract_data["contract_id"]
         ).update(
             {
-                "total_amount": updated_contract_data["contract_total_amount"],
+                "total_amount": updated_contract_data[
+                    "contract_total_amount"
+                ],
                 "amount_due": updated_contract_data["contract_amount_due"],
                 "status": updated_contract_data["contract_status"],
-                "customer_id": updated_contract_data["contract_customer"].id,
+                "customer_id": updated_contract_data[
+                    "contract_customer"
+                ].id,
             }
         )
 
