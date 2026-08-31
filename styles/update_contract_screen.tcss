@@ -15,12 +15,19 @@
 }
 
 .update-contract-data-input-container {
+    row-span: 2;
+    overflow: auto auto;
+    border: round $secondary;
+    height: 100%;
+}
+
+.update-contract-customer-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
 }
 
-.update-contract-customer-input-container {
+.update-contract-status-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;

@@ -522,6 +522,7 @@ class UpdateCollaboratorScreen(Screen):
             "#update-collaborator-department", Container
         )
         collaborator_data_container.border_title = "Personal Data"
+        collaborator_data_container.border_subtitle = "Edit relevant fields"
         collaborator_department_container.border_title = (
             "Department Selection"
         )

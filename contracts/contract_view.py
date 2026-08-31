@@ -131,7 +131,7 @@ class ContractScreen(Screen):
                 contract.total_amount,
                 contract.amount_due,
                 created_at,
-                contract.status,
+                contract.status.name,
             )
 
         table.loading = False
@@ -423,7 +423,7 @@ class UpdateContractScreen(Screen):
                     ),
                     id="contract_amount_due",
                     type="number",
-                ) # RAJOUTER CHANGEMENT DE STATUS
+                )
             with Container(
                 id="update-contract-customer",
                 classes="update-contract-customer-input-container",
@@ -445,6 +445,23 @@ class UpdateContractScreen(Screen):
                     prompt="Select a customer",
                     value=self.contract_data.get("contract_customer")
                 )
+            with Container(
+                id="update-contract-status",
+                classes="update-contract-status-input-container",
+            ):
+                status_options = [
+                    (
+                        status.name,
+                        status,
+                    )
+                    for status in ContractStatus
+                ]
+                yield Select(
+                    status_options,
+                    id="update-contract-status-select",
+                    prompt="Select a status",
+                    value=self.contract_data.get("contract_status")
+                )
             with Container(classes="update-contract-buttons-container"):
                 yield Button(
                     "Update",
@@ -461,7 +478,7 @@ class UpdateContractScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def _on_mount(self):
-        """Set container border title"""
+        """Set container border title and subtitle"""
 
         contract_data_container = self.query_one(
             "#update-contract-data", Container
@@ -469,9 +486,16 @@ class UpdateContractScreen(Screen):
         contract_customer_container = self.query_one(
             "#update-contract-customer", Container
         )
+        contract_status_container = self.query_one(
+            "#update-contract-status", Container
+        )
         contract_data_container.border_title = "Contract Data"
+        contract_data_container.border_subtitle = "Edit relevant fields"
         contract_customer_container.border_title = (
             "Customer Selection"
+        )
+        contract_status_container.border_title = (
+            "Status Selection"
         )
 
     @on(Button.Pressed, "#update")
