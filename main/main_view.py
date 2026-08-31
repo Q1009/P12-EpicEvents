@@ -34,7 +34,7 @@ class AuthenticatedMainScreen(Screen[str]):
             yield OptionList(
                 Option("Events", id="events"),
                 None,
-                Option("Contracts", id="contracts", disabled=True),
+                Option("Contracts", id="contracts", disabled=False),
                 None,
                 Option("Customers", id="customers"),
                 None,

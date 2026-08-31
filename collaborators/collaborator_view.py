@@ -333,7 +333,7 @@ class CreateCollaboratorScreen(Screen):
     def __init__(self, departments: list[Department]):
         super().__init__()
         self.departments = departments
-        self.customer_data = {}
+        self.collabortor_data = {}
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -415,7 +415,7 @@ class CreateCollaboratorScreen(Screen):
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
         self._collect_form_data()
-        self.dismiss(self.customer_data)
+        self.dismiss(self.collaborator_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
@@ -423,7 +423,7 @@ class CreateCollaboratorScreen(Screen):
 
     def _collect_form_data(self) -> dict:
         """Collect all form data into a dictionary."""
-        self.customer_data = {
+        self.collaborator_data = {
             "collaborator_last_name": self.query_one(
                 "#collaborator_last_name", Input
             ).value,

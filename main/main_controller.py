@@ -3,6 +3,7 @@ from authentication.authentication_controller import (
 )
 from collaborators.collaborator_controller import CollaboratorController
 from collaborators.collaborator_model import Collaborator
+from contracts.contract_controller import ContractController
 from customers.customer_controller import CustomerController
 from events.event_controller import EventController
 from main.main_view import (
@@ -30,8 +31,9 @@ class MainController:
         self.collaborator_controller = CollaboratorController(
             self.epic_events_app, self.session
         )
-        # Views
-        # self.main_screen = main_screen
+        self.contract_controller = ContractController(
+            self.epic_events_app, self.session
+        )
 
     def start(self):
         """ """
@@ -46,6 +48,7 @@ class MainController:
         # Get user_name
         user: Collaborator = self.authentication_controller.get_user_info()
         user_name = user.first_name
+
         authenticated_main_screen = AuthenticatedMainScreen(user_name)
         self.epic_events_app.push_screen(
             authenticated_main_screen, callback=self.handle_user_choice
@@ -62,38 +65,31 @@ class MainController:
         """Callback when user choses from main menu"""
         match user_choice:
             case "login":
-                # Retourner Login au controlleur
                 self.authentication_controller.login(
                     on_success=self.display_authenticated_main_menu,
                     on_cancel=self.display_unauthenticated_main_menu,
                 )
             case "events":
-                # Retourner Events au controlleur
                 self.event_controller.start(
                     on_back=self.display_authenticated_main_menu
                 )
             case "contracts":
-                # Retourner Contracts au controlleur
-                # self.contract_controller.start()
-                pass
+                self.contract_controller.start(
+                    on_back=self.display_authenticated_main_menu
+                )
             case "customers":
-                # Retourner Customers au controlleur
                 self.customer_controller.start(
                     on_back=self.display_authenticated_main_menu
                 )
             case "collaborators":
-                # Retourner Customers au controlleur
                 self.collaborator_controller.start(
                     on_back=self.display_authenticated_main_menu
                 )
             case "profile":
-                # Retourner Profile au controlleur
                 # self.profile_controller.start()
                 pass
             case "logout":
-                # Logout from the application
                 self.authentication_controller.logout()
                 self.display_unauthenticated_main_menu()
             case "quit":
-                # Quit application
                 self.epic_events_app.exit()
