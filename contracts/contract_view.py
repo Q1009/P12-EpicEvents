@@ -12,6 +12,7 @@ from textual.widgets import (
     Header,
     Input,
     Label,
+    ProgressBar,
     Select,
     Static,
 )
@@ -44,6 +45,7 @@ class ContractScreen(Screen):
         with Container(classes="contract-main-container"):
             yield DataTable(id="contracts-table")
             yield DataTable(id="contract-customer-table")
+            yield ProgressBar(id="contract-payment-progressbar", show_eta=False)
             yield DataTable(id="contract-event-table")
             with Container(classes="contract-buttons-container"):
                 yield Button(
@@ -81,6 +83,7 @@ class ContractScreen(Screen):
         """ """
         self.build_contracts_table()
         self.build_contract_customer_table()
+        self.build_contract_payment_progressbar()
         self.build_contract_event_table()
         
         # Initialize default selections with the first available contract,
@@ -186,6 +189,16 @@ class ContractScreen(Screen):
 
         table.loading = False
 
+    def build_contract_payment_progressbar(self) -> None:
+        progress_bar = self.query_one("#contract-payment-progressbar", ProgressBar)
+        progress_bar.border_title = "Amount Paid - %"
+
+    def load_contract_payment(self, progressbar: ProgressBar, contract: Contract) -> None:
+        total_amount = contract.total_amount
+        amount_due = contract.amount_due
+        paid_amount = total_amount - amount_due
+        progressbar.update(total=total_amount, progress=paid_amount)
+
     def watch_selected_contract_id(self, new_id: int | None) -> None:
         """
         Watcher that loads customers and events based on the contract
@@ -197,12 +210,16 @@ class ContractScreen(Screen):
         contract_event_table = self.query_one(
             "#contract-event-table", DataTable
         )
+        contract_payment_progressbar = self.query_one(
+            "#contract-payment-progressbar", ProgressBar
+        )
 
         if new_id is None:
             contract_customer_table.clear()
             self.selected_customer_id = None
             contract_event_table.clear()
             self.selected_event_id = None
+            contract_payment_progressbar.update()
             return
 
         # Get contract by ID
@@ -216,6 +233,9 @@ class ContractScreen(Screen):
             )
             self.load_contract_event(
                 contract_event_table, selected_contract
+            )
+            self.load_contract_payment(
+                contract_payment_progressbar, selected_contract
             )
 
     def action_go_back(self) -> None:

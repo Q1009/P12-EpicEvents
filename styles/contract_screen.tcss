@@ -2,7 +2,7 @@
     layout: grid;
     grid-size: 2;
     grid-columns: 2fr 1fr;
-    grid-rows: 2fr 2fr 5;
+    grid-rows: 2fr 1fr 2fr 5;
     grid-gutter: 1;
     overflow: auto auto;
     border: round $primary;
@@ -10,13 +10,21 @@
 
 #contracts-table {
     border: round $secondary;
-    row-span: 2;
+    row-span: 3;
     height: 100%;
 }
 
 #contract-customer-table {
     border: round $secondary;
     height: 100%;
+}
+
+#contract-payment-progressbar {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+    width: 100%;
+    align: center middle;
 }
 
 #contract-event-table {
