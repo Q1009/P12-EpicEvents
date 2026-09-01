@@ -287,7 +287,6 @@ class CreateContractScreen(Screen):
     """Screen that displays a form to create a new contract."""
 
     SUB_TITLE = "CREATE CONTRACT"
-
     CSS_PATH = "../styles/create_contract_screen.tcss"
 
     def __init__(self, customers: list[Customer]):

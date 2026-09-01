@@ -1,74 +1,219 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from authentication.authentication_controller import (
-    AuthenticationController,
+from collaborators.collaborator_model import Collaborator, DepartmentName
+from contracts.contract_model import Contract, ContractStatus
+from events.event_model import Event, Location
+from events.event_view import (
+    CreateEventScreen,
+    EventScreen,
+    UpdateEventScreen,
 )
-from events.event_model import Event
-from events.event_view import EventScreen
-from services.authentication_services import AuthenticationServices
 
 
 class EventController:
+    """ """
 
     def __init__(self, epic_events_app, session):
-        self.session = session
+        self.session: Session = session
         self.epic_events_app = epic_events_app
         self.on_back_callback = None
 
-    def start(self, on_back):
+    def start(self, on_back=None):
         self.on_back_callback = on_back
-        events = self.get_all_events(self.session)
+        events = self.get_all_events()
         events_screen = EventScreen(events)
-        self.epic_events_app.push_screen(events_screen, callback=self.handle_user_choice)
+        self.epic_events_app.push_screen(
+            events_screen, callback=self.handle_user_choice
+        )
 
-    def handle_user_choice(self, user_choice: str):
-        """Callback when user choses from main menu"""
+    def handle_user_choice(self, user_choice):
+        """Callback when user chooses from event menu"""
         match user_choice:
-            case 'create_event':
-                self.epic_events_app.notify('Create Event', severity='error')
-                # create_event_screen = CreateEventScreen()
-                # self.epic_events_app.push_screen(create_event_screen, callback=self.handle_user_choice)
-            case 'display_all_events':
-                all_events = self.get_all_events(self.session)
-                all_events_screen = EventScreen(all_events)
-                self.epic_events_app.push_screen(all_events_screen, callback=self.handle_user_choice)
-            case 'display_own_events':
-                # user_id = self.get_user_id()
-                own_events = self.get_events_by_user_id(self.session, user_id=4)
-                own_events_screen = EventScreen(own_events)
-                self.epic_events_app.push_screen(own_events_screen, callback=self.handle_user_choice)
-            case 'display_unsupported_events':
-                unsupported_events = self.get_unsupported_events(self.session)
-                unsupported_events_screen = EventScreen(unsupported_events)
-                self.epic_events_app.push_screen(unsupported_events_screen, callback=self.handle_user_choice)
-            case 'back':
+            case "create_event":
+                all_locations = self.get_all_locations()
+                signed_contracts = self.get_signed_contracts()
+                create_event_screen = CreateEventScreen(
+                    all_locations, signed_contracts
+                )
+                self.epic_events_app.push_screen(
+                    create_event_screen,
+                    callback=self.create_event,
+                )
+            case ("create_event", contract_id):
+                all_locations = self.get_all_locations()
+                signed_contracts = self.get_signed_contracts()
+                create_event_screen = CreateEventScreen(
+                    all_locations, signed_contracts, contract_id
+                )
+                self.epic_events_app.push_screen(
+                    create_event_screen,
+                    callback=self.create_event,
+                )
+            case ("update_event", event_id):
+                all_locations = self.get_all_locations()
+                signed_contracts = self.get_signed_contracts()
+                support_representatives = (
+                    self.get_support_representatives()
+                )
+                event_to_update = self.load_event_data_for_update(event_id)
+                update_event_screen = UpdateEventScreen(
+                    event_to_update,
+                    all_locations,
+                    support_representatives,
+                    signed_contracts,
+                )
+                self.epic_events_app.push_screen(
+                    update_event_screen,
+                    callback=self.update_event,
+                )
+            case "create_location":
+                pass
+                # event_data_for_event = self.get_data(event_id)
+                # self.create_location(
+                #     event_data_for_event
+                # )
+            case ("update_location", location_id):
+                pass
+                # event_data_for_event = self.get_data(event_id)
+                # self.update_location(
+                #     event_data_for_event
+                # )
+            case ("consult_customer", customer_id):
+                pass
+            case ("consult_contract", contract_id):
+                pass
+            case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-            case 'quit':
+                return
+            case "quit":
                 self.epic_events_app.exit()
 
-    def get_all_events(self, session: Session) -> list[Event]:
+    def get_all_events(self) -> list[Event]:
         """
+        Returns all events from the database.
         """
-        return session.query(Event).all()
+        return (
+            self.session.query(Event)
+            .options(
+                joinedload(Event.contract),
+                joinedload(Event.location),
+                joinedload(Event.support_representative),
+            )
+            .all()
+        )
 
-    def get_events_by_user_id(self, session: Session, user_id: int) -> list[Event]:
-        """
-        Returns all events where support_representative_id matches the given user_id.
-        """
-        return session.query(Event).filter(Event.support_representative_id == user_id).all()
+    def get_all_locations(self) -> list[Location]:
+        return self.session.query(Location).all()
 
-    def get_unsupported_events(self, session: Session) -> list[Event]:
-        """
-        Returns all events that have no support_representative_id assigned.
-        """
-        return session.query(Event).filter(Event.support_representative_id.is_(None)).all()
+    def get_signed_contracts(self) -> list[Contract]:
+        return (
+            self.session.query(Contract)
+            .filter(Contract.status == ContractStatus.SIGNED)
+            .all()
+        )
 
-    def create_event(self):
+    def get_support_representatives(self) -> list[Collaborator]:
+        return (
+            self.session.query(Collaborator)
+            .filter(Collaborator.department.name == DepartmentName.SUPPORT)
+            .all()
+        )
+
+    def load_event_data_for_update(self, event_id: int):
+        event = (
+            self.session.query(Event).filter(Event.id == event_id).first()
+        )
+
+        return {
+            "event_id": event.id,
+            "event_name": event.name,
+            "event_start_date": event.start_date,
+            "event_end_date": event.end_date,
+            "event_attendees": event.attendees,
+            "event_description": event.description,
+            "event_contract": event.contract,
+            "event_location": event.location,
+            "event_support_representative": event.support_representative,
+        }
+
+    def create_event(self, new_event_data):
+        """ """
+        # If creation is cancelled
+        if not new_event_data:
+            self.epic_events_app.notify(
+                "Event creation cancelled", severity="warning"
+            )
+            self.start(self.on_back_callback)
+            return
+
+        # Else, transform raw data (dict) from submitted form
+        event_location = new_event_data["event_location"]
+        if isinstance(event_location, Location):
+            new_event_location = event_location
+        else:
+            new_event_location = Location(
+                name=event_location["name"],
+                street_number=event_location["street_number"],
+                street_name=event_location["street_name"],
+                zip_code=event_location["zip_code"],
+                city=event_location["city"],
+            )
+            self.session.add(new_event_location)
+
+        # Create event object with transformed data
+        event = Event(
+            name=new_event_data["event_name"],
+            start_date=new_event_data["event_start_date"],
+            end_date=new_event_data["event_end_date"],
+            attendees=new_event_data["event_attendees"],
+            description=new_event_data["event_description"],
+            contract=new_event_data["event_contract"],
+            location=new_event_location,
+        )
+        # event.location.append(new_event_location)
+
+        self.session.add(event)
+        self.session.commit()
+        self.epic_events_app.notify(
+            "Event successfully created", severity="information"
+        )
+        self.start(self.on_back_callback)
+
+    def update_event(self, updated_event_data):
+        """ """
+        if not updated_event_data:
+            self.epic_events_app.notify(
+                "Event update cancelled", severity="warning"
+            )
+            self.start(self.on_back_callback)
+            return
+
+        self.session.query(Event).filter(
+            Event.id == updated_event_data["event_id"]
+        ).update(
+            {
+                "name": updated_event_data["event_name"],
+                "start_date": updated_event_data["event_start_date"],
+                "end_date": updated_event_data["event_end_date"],
+                "attendees": updated_event_data["event_attendees"],
+                "description": updated_event_data["event_description"],
+                "contract_id": updated_event_data["event_contract"].id,
+                "location_id": updated_event_data["event_location"].id,
+                "support_representative_id": updated_event_data[
+                    "event_support_representative"
+                ].id,
+            }
+        )
+
+        self.session.commit()
+        self.epic_events_app.notify(
+            "Event successfully updated", severity="information"
+        )
+        self.start(self.on_back_callback)
+
+    def create_location(self):
         pass
 
-    def update_event(self):
-        pass
-
-    def delete_event(self):
+    def update_location(self):
         pass
