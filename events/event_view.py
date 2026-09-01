@@ -47,10 +47,10 @@ class EventScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="event-main-container"):
             yield DataTable(id="events-table")
-            yield DataTable(id="event-contract-table")
-            yield DataTable(id="event-notes-table")
             yield DataTable(id="event-location-table")
             yield DataTable(id="event-customer-table")
+            yield DataTable(id="event-notes-table")
+            yield DataTable(id="event-contract-table")
             with Container(classes="event-location-buttons-container"):
                 yield Button(
                     "Create Event",
@@ -141,11 +141,12 @@ class EventScreen(Screen):
                 + event.contract.customer.last_name
             )
             # Support Representative
-            support_representative = (
-                event.support_representative.first_name
-                + " "
-                + event.support_representative.last_name
-            )
+            if event.support_representative:
+                support_representative = (
+                    event.support_representative.first_name
+                    + " "
+                    + event.support_representative.last_name
+                )
             # Date conversion
             start_date = format_french_datetime(event.start_date)
             end_date = format_french_datetime(event.end_date)
@@ -177,12 +178,11 @@ class EventScreen(Screen):
     def load_event_customer(self, table: DataTable, event: Event) -> None:
         table.clear()
 
-        if event.customer:
-            table.add_row(
-                event.contract.customer.id,
-                event.contract.customer.first_name,
-                event.contract.customer.last_name,
-            )
+        table.add_row(
+            event.contract.customer.id,
+            event.contract.customer.first_name,
+            event.contract.customer.last_name,
+        )
 
         table.loading = False
 
@@ -382,7 +382,7 @@ class CreateEventScreen(Screen):
                 yield Input(
                     placeholder="100",
                     id="event_attendees",
-                    type="int",
+                    type="integer",
                     classes="form-input",
                 )
                 yield Label("Event Notes", classes="form-label")
@@ -396,44 +396,12 @@ class CreateEventScreen(Screen):
                     classes="form-input",
                 )
             with Container(
-                id="event-contract",
-                classes="event-contract-input-container",
-            ):
-                contract_options = [
-                    (
-                        (
-                            "Contract ID: "
-                            + contract.id
-                            + " with "
-                            + contract.customer.first_name
-                            + " "
-                            + contract.customer.last_name
-                        ),
-                        contract,
-                    )
-                    for contract in self.signed_contracts
-                ]
-                selected_contract = next(
-                    (
-                        contract
-                        for contract in self.signed_contracts
-                        if contract.id == self.contract_id
-                    ),
-                    None,
-                )
-                yield Select(
-                    contract_options,
-                    id="event-contract-select",
-                    prompt="Select a contract",
-                    value=selected_contract,
-                )
-            with Container(
                 id="event-location",
                 classes="event-location-input-container",
             ):
                 with RadioSet(id="event-location-input-choice"):
-                    yield RadioButton("Existing location", value=True)
-                    yield RadioButton("New location")
+                    yield RadioButton("Existing location", value=True, classes="event-location-radio-button")
+                    yield RadioButton("New location", classes="event-location-radio-button")
                 with Container(
                     classes="event-location-select-input-container",
                     id="event-location-select-input-container",
@@ -479,7 +447,7 @@ class CreateEventScreen(Screen):
                     yield Input(
                         placeholder="34567",
                         id="location_zip_code",
-                        type="int",
+                        type="integer",
                         classes="form-input",
                     )
                     yield Label("City", classes="form-label")
@@ -489,6 +457,42 @@ class CreateEventScreen(Screen):
                         type="text",
                         classes="form-input",
                     )
+            with Container(
+                id="event-contract",
+                classes="event-contract-input-container",
+            ):
+                contract_options = [
+                    (
+                        (
+                            "Contract ID: "
+                            + str(contract.id)
+                            + " with "
+                            + contract.customer.first_name
+                            + " "
+                            + contract.customer.last_name
+                        ),
+                        contract,
+                    )
+                    for contract in self.signed_contracts
+                ]
+                selected_contract = next(
+                    (
+                        contract
+                        for contract in self.signed_contracts
+                        if contract.id == self.contract_id
+                    ),
+                    None,
+                )
+                select_kwargs = {
+                    "id": "event-contract-select",
+                    "prompt": "Select a contract",
+                }
+                if selected_contract is not None:
+                    select_kwargs["value"] = selected_contract
+
+                yield Select(
+                    contract_options, **select_kwargs
+                )
             with Container(classes="create-event-buttons-container"):
                 yield Button(
                     "Create",
@@ -686,7 +690,7 @@ class UpdateEventScreen(Screen):
                     (
                         (
                             "Contract ID: "
-                            + contract.id
+                            + str(contract.id)
                             + " with "
                             + contract.customer.first_name
                             + " "

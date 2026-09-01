@@ -1,0 +1,53 @@
+.event-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
+    grid-rows: 2fr 1fr 2fr 5;
+    grid-gutter: 1;
+    overflow: auto auto;
+    border: round $primary;
+}
+
+#events-table {
+    border: round $secondary;
+    row-span: 2;
+    height: 100%;
+}
+
+#event-customer-table {
+    border: round $secondary;
+    height: 100%;
+}
+
+#event-contract-table {
+    border: round $secondary;
+    height: 100%;
+}
+
+#event-location-table {
+    border: round $secondary;
+    height: 100%;
+}
+
+#event-notes-table {
+    border: round $secondary;
+    height: 100%;
+}
+
+.event-location-buttons-container {
+    layout: grid;
+    grid-size: 4;
+    grid-gutter: 1;
+    align: center middle;
+    border: round $secondary;
+    height: 5;
+}
+
+.customer-contract-buttons-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    align: center middle;
+    border: round $secondary;
+    height: 5;
+}

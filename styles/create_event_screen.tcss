@@ -1,0 +1,55 @@
+.create-event-main-container {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto auto 5;
+    border: round $primary;
+    overflow: auto auto;
+    content-align: center middle;
+}
+
+.event-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.event-contract-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
+.event-location-input-container {
+    row-span: 2;
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+    align: center middle;
+}
+
+#event-location-input-choice {
+    layout: horizontal;
+    align: center middle;
+    height: auto;
+    border: round $accent;
+}
+
+.event-location-radio-button {
+    width: auto;
+    height: auto;
+}
+
+.create-event-buttons-container {
+    column-span: 2;
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 100%;
+}
+
+.create-event-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}
