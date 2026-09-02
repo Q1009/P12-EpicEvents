@@ -12,6 +12,9 @@ from events.event_view import (
     EventScreen,
     UpdateEventScreen,
 )
+from services.date_services import (
+    format_utc_datetime,
+)
 
 
 class EventController:
@@ -59,7 +62,9 @@ class EventController:
                 )
             case ("update_event", event_id):
                 all_locations = self.get_all_locations()
-                signed_contracts = self.get_signed_contracts_with_event()
+                signed_contracts = (
+                    self.get_signed_contracts_without_event()
+                )
                 support_representatives = (
                     self.get_support_representatives()
                 )
@@ -113,13 +118,6 @@ class EventController:
 
     def get_all_locations(self) -> list[Location]:
         return self.session.query(Location).all()
-
-    def get_signed_contracts_with_event(self) -> list[Contract]:
-        return (
-            self.session.query(Contract)
-            .filter(Contract.status == ContractStatus.SIGNED)
-            .all()
-        )
 
     def get_signed_contracts_without_event(self) -> list[Contract]:
         return (
@@ -180,17 +178,24 @@ class EventController:
             )
             self.session.add(new_event_location)
 
+        # Date conversion from french to utc
+        new_event_start_date = format_utc_datetime(
+            new_event_data["event_start_date"]
+        )
+        new_event_end_date = format_utc_datetime(
+            new_event_data["event_end_date"]
+        )
+
         # Create event object with transformed data
         event = Event(
             name=new_event_data["event_name"],
-            start_date=new_event_data["event_start_date"],
-            end_date=new_event_data["event_end_date"],
+            start_date=new_event_start_date,
+            end_date=new_event_end_date,
             attendees=new_event_data["event_attendees"],
             description=new_event_data["event_description"],
             contract=new_event_data["event_contract"],
             location=new_event_location,
         )
-        # event.location.append(new_event_location)
 
         self.session.add(event)
         self.session.commit()
@@ -208,13 +213,21 @@ class EventController:
             self.start(self.on_back_callback)
             return
 
+        # Date conversion from french to utc
+        updated_event_start_date = format_utc_datetime(
+            updated_event_data["event_start_date"]
+        )
+        updated_event_end_date = format_utc_datetime(
+            updated_event_data["event_end_date"]
+        )
+
         self.session.query(Event).filter(
             Event.id == updated_event_data["event_id"]
         ).update(
             {
                 "name": updated_event_data["event_name"],
-                "start_date": updated_event_data["event_start_date"],
-                "end_date": updated_event_data["event_end_date"],
+                "start_date": updated_event_start_date,
+                "end_date": updated_event_end_date,
                 "attendees": updated_event_data["event_attendees"],
                 "description": updated_event_data["event_description"],
                 "contract_id": updated_event_data["event_contract"].id,

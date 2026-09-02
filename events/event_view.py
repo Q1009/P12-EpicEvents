@@ -367,14 +367,14 @@ class CreateEventScreen(Screen):
                 )
                 yield Label("Event Start Date", classes="form-label")
                 yield Input(
-                    placeholder="DD/MM/YYYY (HH:MM)",
+                    placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_start_date",
                     type="text",
                     classes="form-input",
                 )
                 yield Label("Event End Date", classes="form-label")
                 yield Input(
-                    placeholder="DD/MM/YYYY (HH:MM)",
+                    placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_end_date",
                     type="text",
                     classes="form-input",
@@ -567,7 +567,7 @@ class CreateEventScreen(Screen):
         )
 
         # Get location format depending on user input choice
-        if radio_set.pressed.label == "Existing location":
+        if radio_set.pressed_button.label == "Existing location":
             # Existing location : use Select value
             location_data = self.query_one(
                 "#event-location-select", Select
@@ -652,22 +652,12 @@ class UpdateEventScreen(Screen):
                 )
                 yield Label("Event Start Date", classes="form-label")
                 yield Input(
-                    value=str(
-                        self.event_data.get(
-                            "event_start_date", "DD/MM/YYYY (HH:MM)"
-                        )
-                    ),
                     id="event_start_date",
                     type="text",
                     classes="form-input",
                 )
                 yield Label("Event End Date", classes="form-label")
                 yield Input(
-                    value=str(
-                        self.event_data.get(
-                            "event_end_date", "DD/MM/YYYY (HH:MM)"
-                        )
-                    ),
                     id="event_end_date",
                     type="text",
                     classes="form-input",
@@ -689,6 +679,10 @@ class UpdateEventScreen(Screen):
                 id="update-event-contract",
                 classes="update-event-contract-input-container",
             ):
+                # Add current contract which is not eventless
+                self.signed_contracts.append(
+                    self.event_data.get("event_contract")
+                )
                 contract_options = [
                     (
                         (
@@ -780,7 +774,7 @@ class UpdateEventScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def _on_mount(self):
-        """Set container border title and subtitle"""
+        """Set container border title and subtitle and widget values"""
 
         event_data_container = self.query_one(
             "#update-event-data", Container
@@ -801,6 +795,19 @@ class UpdateEventScreen(Screen):
         event_support_representative_container.border_title = (
             "Support Representative Selection"
         )
+
+        # Convert dates from UTC to french format
+        event_start_date_input = self.query_one("#event_start_date", Input)
+        event_end_date_input = self.query_one("#event_end_date", Input)
+        event_start_date = format_french_datetime(
+            self.event_data["event_start_date"]
+        )
+        event_end_date = format_french_datetime(
+            self.event_data["event_end_date"]
+        )
+
+        event_start_date_input.value = event_start_date
+        event_end_date_input.value = event_end_date
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
