@@ -50,7 +50,7 @@ class EventScreen(Screen):
             yield DataTable(id="events-table")
             yield DataTable(id="event-location-table")
             yield DataTable(id="event-customer-table")
-            yield DataTable(id="event-notes-table")
+            yield TextArea(id="event-notes-text-area", read_only=True)
             yield DataTable(id="event-contract-table")
             with Container(classes="event-location-buttons-container"):
                 yield Button(
@@ -94,7 +94,7 @@ class EventScreen(Screen):
 
         self.build_events_table()
         self.build_event_contract_table()
-        self.build_event_notes_table()
+        self.build_event_notes_text_area()
         self.build_event_location_table()
         self.build_event_customer_table()
 
@@ -242,22 +242,18 @@ class EventScreen(Screen):
 
         table.loading = False
 
-    def build_event_notes_table(self) -> None:
-        table = self.query_one("#event-notes-table", DataTable)
-        table.border_title = "Associated Notes"
-        table.cursor_type = "row"
-        table.zebra_stripes = True
+    def build_event_notes_text_area(self) -> None:
+        text_area = self.query_one("#event-notes-text-area", TextArea)
+        text_area.border_title = "Associated Notes"
 
-        table.add_column("Notes", key="notes_content")
+        text_area.loading = True
 
-        table.loading = True
+    def load_event_notes(self, text_area: TextArea, event: Event) -> None:
+        text_area.clear()
 
-    def load_event_notes(self, table: DataTable, event: Event) -> None:
-        table.clear()
+        text_area.load_text(text=event.description)
 
-        table.add_row(event.description, height=None)
-
-        table.loading = False
+        text_area.loading = False
 
     def watch_selected_event_id(self, new_id: int | None) -> None:
         """
@@ -273,7 +269,9 @@ class EventScreen(Screen):
         event_contract_table = self.query_one(
             "#event-contract-table", DataTable
         )
-        event_notes_table = self.query_one("#event-notes-table", DataTable)
+        event_notes_text_area = self.query_one(
+            "#event-notes-text-area", TextArea
+        )
 
         if new_id is None:
             event_customer_table.clear()
@@ -293,7 +291,7 @@ class EventScreen(Screen):
             self.load_event_customer(event_customer_table, selected_event)
             self.load_event_location(event_location_table, selected_event)
             self.load_event_contract(event_contract_table, selected_event)
-            self.load_event_notes(event_notes_table, selected_event)
+            self.load_event_notes(event_notes_text_area, selected_event)
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
