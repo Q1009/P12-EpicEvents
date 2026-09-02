@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
 
-from collaborators.collaborator_model import Collaborator, DepartmentName
+from collaborators.collaborator_model import (
+    Collaborator,
+    Department,
+    DepartmentName,
+)
 from contracts.contract_model import Contract, ContractStatus
 from events.event_model import Event, Location
 from events.event_view import (
@@ -31,7 +35,9 @@ class EventController:
         match user_choice:
             case "create_event":
                 all_locations = self.get_all_locations()
-                signed_contracts = self.get_signed_contracts()
+                signed_contracts = (
+                    self.get_signed_contracts_without_event()
+                )
                 create_event_screen = CreateEventScreen(
                     all_locations, signed_contracts
                 )
@@ -41,7 +47,9 @@ class EventController:
                 )
             case ("create_event", contract_id):
                 all_locations = self.get_all_locations()
-                signed_contracts = self.get_signed_contracts()
+                signed_contracts = (
+                    self.get_signed_contracts_without_event()
+                )
                 create_event_screen = CreateEventScreen(
                     all_locations, signed_contracts, contract_id
                 )
@@ -51,7 +59,7 @@ class EventController:
                 )
             case ("update_event", event_id):
                 all_locations = self.get_all_locations()
-                signed_contracts = self.get_signed_contracts()
+                signed_contracts = self.get_signed_contracts_with_event()
                 support_representatives = (
                     self.get_support_representatives()
                 )
@@ -106,17 +114,28 @@ class EventController:
     def get_all_locations(self) -> list[Location]:
         return self.session.query(Location).all()
 
-    def get_signed_contracts(self) -> list[Contract]:
+    def get_signed_contracts_with_event(self) -> list[Contract]:
         return (
             self.session.query(Contract)
             .filter(Contract.status == ContractStatus.SIGNED)
             .all()
         )
 
+    def get_signed_contracts_without_event(self) -> list[Contract]:
+        return (
+            self.session.query(Contract)
+            .filter(
+                Contract.status == ContractStatus.SIGNED,
+                Contract.event == None,
+            )
+            .all()
+        )
+
     def get_support_representatives(self) -> list[Collaborator]:
         return (
             self.session.query(Collaborator)
-            .filter(Collaborator.department.name == DepartmentName.SUPPORT)
+            .join(Collaborator.department)
+            .filter(Department.name == DepartmentName.SUPPORT)
             .all()
         )
 

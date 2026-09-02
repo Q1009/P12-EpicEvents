@@ -1,14 +1,21 @@
-.create-event-main-container {
+.update-event-main-container {
     layout: grid;
     grid-size: 2;
     grid-gutter: 1;
-    grid-rows: auto auto 5;
+    grid-rows: auto 20% 20% 20% auto;
     border: round $primary;
     overflow: auto auto;
+}
+
+.updating-event-static {
+    column-span: 2;
+    border: round $secondary;
+    height: auto;
     content-align: center middle;
 }
 
-.event-data-input-container {
+.update-event-data-input-container {
+    row-span: 3;
     overflow: auto auto;
     border: round $secondary;
     height: 100%;
@@ -19,39 +26,25 @@
     min-height: 25%;
 }
 
-.event-contract-input-container {
+.update-event-contract-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
 }
 
-.event-location-input-container {
-    row-span: 2;
+.update-event-location-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
-    align: center middle;
 }
 
-#event-location-input-choice {
-    layout: horizontal;
-    align: center middle;
-    height: auto;
-    border: round $panel;
-}
-
-.event-location-select-input-container {
-    align: center top;
-    border: round $boost;
+.update-event-support-representative-input-container {
+    overflow: auto auto;
+    border: round $secondary;
     height: auto;
 }
 
-.event-location-radio-button {
-    width: auto;
-    height: auto;
-}
-
-.create-event-buttons-container {
+.update-event-buttons-container {
     column-span: 2;
     layout: horizontal;
     align: center top;
@@ -59,7 +52,7 @@
     width: 100%;
 }
 
-.create-event-button {
+.update-event-button {
     width: auto;
     height: auto;
     margin: 0 2;

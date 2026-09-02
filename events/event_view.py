@@ -16,6 +16,7 @@ from textual.widgets import (
     RadioSet,
     Select,
     Static,
+    TextArea,
 )
 
 from collaborators.collaborator_model import Collaborator
@@ -66,7 +67,7 @@ class EventScreen(Screen):
                     "Create Location",
                     id="create-location",
                     variant="primary",
-                    disabled=True
+                    disabled=True,
                 )
                 yield Button(
                     "Update Location",
@@ -147,6 +148,8 @@ class EventScreen(Screen):
                     + " "
                     + event.support_representative.last_name
                 )
+            else:
+                support_representative = None
             # Date conversion
             start_date = format_french_datetime(event.start_date)
             end_date = format_french_datetime(event.end_date)
@@ -386,13 +389,12 @@ class CreateEventScreen(Screen):
                     classes="form-input",
                 )
                 yield Label("Event Notes", classes="form-label")
-                yield Input(
+                yield TextArea(
                     placeholder=(
                         "Description, details or specific requests "
                         "regarding the event"
                     ),
                     id="event_description",
-                    type="text",
                     classes="form-input",
                 )
             with Container(
@@ -400,8 +402,15 @@ class CreateEventScreen(Screen):
                 classes="event-location-input-container",
             ):
                 with RadioSet(id="event-location-input-choice"):
-                    yield RadioButton("Existing location", value=True, classes="event-location-radio-button")
-                    yield RadioButton("New location", classes="event-location-radio-button")
+                    yield RadioButton(
+                        "Existing location",
+                        value=True,
+                        classes="event-location-radio-button",
+                    )
+                    yield RadioButton(
+                        "New location",
+                        classes="event-location-radio-button",
+                    )
                 with Container(
                     classes="event-location-select-input-container",
                     id="event-location-select-input-container",
@@ -490,9 +499,7 @@ class CreateEventScreen(Screen):
                 if selected_contract is not None:
                     select_kwargs["value"] = selected_contract
 
-                yield Select(
-                    contract_options, **select_kwargs
-                )
+                yield Select(contract_options, **select_kwargs)
             with Container(classes="create-event-buttons-container"):
                 yield Button(
                     "Create",
@@ -595,15 +602,14 @@ class CreateEventScreen(Screen):
                 "#event_attendees", Input
             ).value,
             "event_description": self.query_one(
-                "#event_description", Input
-            ).value,
+                "#event_description", TextArea
+            ).text,
             "event_contract": selected_contract,
             "event_location": location_data,
         }
 
 
 class UpdateEventScreen(Screen):
-
     SUB_TITLE = "UPDATE EVENT"
     CSS_PATH = "../styles/update_event_screen.tcss"
 
@@ -672,14 +678,13 @@ class UpdateEventScreen(Screen):
                 yield Input(
                     value=str(self.event_data.get("event_attendees", 0)),
                     id="event_attendees",
-                    type="int",
+                    type="integer",
                     classes="form-input",
                 )
                 yield Label("Event Notes", classes="form-label")
-                yield Input(
-                    value=self.event_data.get("event_description", ""),
+                yield TextArea(
+                    text=self.event_data.get("event_description", ""),
                     id="event_description",
-                    type="text",
                     classes="form-input",
                 )
             with Container(
@@ -742,18 +747,24 @@ class UpdateEventScreen(Screen):
                     (
                         support_representative
                         for support_representative in self.support_representatives
-                        if support_representative.id
+                        if support_representative
                         == self.event_data.get(
                             "event_support_representative"
-                        ).id
+                        )
                     ),
                     None,
                 )
+                select_kwargs = {
+                    "id": "update-event-support-representative-select",
+                    "prompt": "Select a support representative",
+                }
+                if selected_support_representative is not None:
+                    select_kwargs["value"] = (
+                        selected_support_representative
+                    )
+
                 yield Select(
-                    support_representatives_options,
-                    id="update-event-support-representative-select",
-                    prompt="Select a support representative",
-                    value=selected_support_representative,
+                    support_representatives_options, **select_kwargs
                 )
             with Container(classes="update-event-buttons-container"):
                 yield Button(
@@ -826,8 +837,8 @@ class UpdateEventScreen(Screen):
                 "#event_attendees", Input
             ).value,
             "event_description": self.query_one(
-                "#event_description", Input
-            ).value,
+                "#event_description", TextArea
+            ).text,
             "event_contract": selected_contract,
             "event_location": selected_location,
             "event_support_representative": selected_support_representative,
