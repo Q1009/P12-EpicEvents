@@ -80,7 +80,7 @@ class EventScreen(Screen):
                     "Consult Customer",
                     id="consult-customer",
                     variant="primary",
-                    disabled=True,
+                    disabled=False,
                 )
                 yield Button(
                     "Consult Contract",
@@ -287,11 +287,17 @@ class EventScreen(Screen):
             (c for c in self.events if c.id == new_id), None
         )
 
+        # Load tables based on selected_event
         if selected_event:
             self.load_event_customer(event_customer_table, selected_event)
             self.load_event_location(event_location_table, selected_event)
             self.load_event_contract(event_contract_table, selected_event)
             self.load_event_notes(event_notes_text_area, selected_event)
+
+        # Updates other selected_attributes_id
+        self.selected_contract_id = selected_event.contract.id
+        self.selected_customer_id = selected_event.contract.customer.id
+        self.selected_location_id = selected_event.location.id
 
     def action_go_back(self) -> None:
         """Return to previous screen."""

@@ -28,10 +28,10 @@ class CustomerController:
             self.epic_events_app, self.session
         )
 
-    def start(self, on_back=None):
+    def start(self, customer_id=None, on_back=None):
         self.on_back_callback = on_back
         customers = self.get_all_customers()
-        customers_screen = CustomerScreen(customers)
+        customers_screen = CustomerScreen(customers, customer_id)
         self.epic_events_app.push_screen(
             customers_screen, callback=self.handle_user_choice
         )
@@ -39,21 +39,6 @@ class CustomerController:
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from customer menu"""
         match user_choice:
-            case "display_all_customers":
-                all_customers = self.get_all_customers()
-                all_customers_screen = CustomerScreen(all_customers)
-                self.epic_events_app.push_screen(
-                    all_customers_screen, callback=self.handle_user_choice
-                )
-            # case 'display_own_customers':
-            # user_id = self.get_user_id()
-            # own_customers = self.get_customers_by_sales_rep_id(self.session, user_id=4)
-            # own_customers_screen = CustomerScreen(own_customers)
-            # self.epic_events_app.push_screen(own_customers_screen, callback=self.handle_user_choice)
-            # case 'display_customers_without_rep':
-            # customers_without_rep = self.get_customers_without_sales_rep(self.session)
-            # customers_without_rep_screen = CustomerScreen(customers_without_rep)
-            # self.epic_events_app.push_screen(customers_without_rep_screen, callback=self.handle_user_choice)
             case "create_customer":
                 create_customer_screen = CreateCustomerScreen()
                 self.epic_events_app.push_screen(
@@ -92,14 +77,10 @@ class CustomerController:
             case "quit":
                 self.epic_events_app.exit()
 
-    def handle_update_customer_(self):
-        """ """
-
     def get_all_customers(self) -> list[Customer]:
         """
         Returns all customers from the database.
         """
-        # return session.query(Customer).all()
         return (
             self.session.query(Customer)
             .options(
@@ -118,7 +99,6 @@ class CustomerController:
             .filter(Customer.id == customer_id)
             .first()
         )
-        # for contact in customer.contacts:
 
         return {
             "customer_id": customer.id,
@@ -186,7 +166,7 @@ class CustomerController:
             self.epic_events_app.notify(
                 "Customer creation cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(on_back=self.on_back_callback)
             return
 
         # Else, transform raw data (dict) from submitted form
@@ -219,7 +199,7 @@ class CustomerController:
         self.epic_events_app.notify(
             "Customer successfully created", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(on_back=self.on_back_callback)
 
     def update_customer(self, updated_customer_data):
         """ """
@@ -227,7 +207,7 @@ class CustomerController:
             self.epic_events_app.notify(
                 "Customer update cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(on_back=self.on_back_callback)
             return
 
         self.session.query(Customer).filter(
@@ -261,10 +241,7 @@ class CustomerController:
         self.epic_events_app.notify(
             "Customer successfully updated", severity="information"
         )
-        self.start(self.on_back_callback)
-
-    def delete_customer(self):
-        pass
+        self.start(on_back=self.on_back_callback)
 
     def create_contact(self, new_contact_data):
         """ """
@@ -273,7 +250,7 @@ class CustomerController:
             self.epic_events_app.notify(
                 "Contact creation cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(on_back=self.on_back_callback)
             return
 
         # Else, transform raw data (dict) from submitted form
@@ -295,7 +272,7 @@ class CustomerController:
         self.epic_events_app.notify(
             "Contact successfully created", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(on_back=self.on_back_callback)
 
     def update_contact(self, updated_contact_data):
         """
@@ -305,7 +282,7 @@ class CustomerController:
             self.epic_events_app.notify(
                 "Contact update cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(on_back=self.on_back_callback)
             return
 
         contact_id = updated_contact_data["id"]
@@ -341,4 +318,4 @@ class CustomerController:
         self.epic_events_app.notify(
             "Contact successfully updated", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(on_back=self.on_back_callback)

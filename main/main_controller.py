@@ -43,6 +43,38 @@ class MainController:
         else:
             self.display_unauthenticated_main_menu()
 
+    def handle_user_choice(self, user_choice: str):
+        """Callback when user choses from main menu"""
+        match user_choice:
+            case "login":
+                self.authentication_controller.login(
+                    on_success=self.display_authenticated_main_menu,
+                    on_cancel=self.display_unauthenticated_main_menu,
+                )
+            case "events":
+                self.event_controller.start(
+                    on_back=self.display_authenticated_main_menu,
+                    on_consult_customer=self.push_customer_screen,
+                )
+            case "contracts":
+                self.contract_controller.start(
+                    on_back=self.display_authenticated_main_menu
+                )
+            case "customers":
+                self.push_customer_screen()
+            case "collaborators":
+                self.collaborator_controller.start(
+                    on_back=self.display_authenticated_main_menu
+                )
+            case "profile":
+                # self.profile_controller.start()
+                pass
+            case "logout":
+                self.authentication_controller.logout()
+                self.display_unauthenticated_main_menu()
+            case "quit":
+                self.epic_events_app.exit()
+
     def display_authenticated_main_menu(self):
         """ """
         # Get user_name
@@ -61,35 +93,12 @@ class MainController:
             unauthenticated_main_screen, callback=self.handle_user_choice
         )
 
-    def handle_user_choice(self, user_choice: str):
-        """Callback when user choses from main menu"""
-        match user_choice:
-            case "login":
-                self.authentication_controller.login(
-                    on_success=self.display_authenticated_main_menu,
-                    on_cancel=self.display_unauthenticated_main_menu,
-                )
-            case "events":
-                self.event_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
-            case "contracts":
-                self.contract_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
-            case "customers":
-                self.customer_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
-            case "collaborators":
-                self.collaborator_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
-            case "profile":
-                # self.profile_controller.start()
-                pass
-            case "logout":
-                self.authentication_controller.logout()
-                self.display_unauthenticated_main_menu()
-            case "quit":
-                self.epic_events_app.exit()
+    def push_customer_screen(self, customer_id: int | None = None):
+        """Call the start method of customer_controller,
+        with optional customer_id argument
+        and mandatory callback method argument.
+        """
+        self.customer_controller.start(
+            customer_id=customer_id,
+            on_back=self.display_authenticated_main_menu,
+        )

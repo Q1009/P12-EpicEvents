@@ -34,9 +34,12 @@ class CustomerScreen(Screen):
     selected_customer_id: reactive[int | None] = reactive(None)
     selected_contact_id: reactive[int | None] = reactive(None)
 
-    def __init__(self, customers: list[Customer]) -> None:
+    def __init__(
+        self, customers: list[Customer], customer_id: int | None = None
+    ) -> None:
         super().__init__()
         self.customers = customers
+        self.pre_selected_customer_id = customer_id
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -82,7 +85,28 @@ class CustomerScreen(Screen):
         self.build_contacts_table()
         self.build_phone_numbers_table()
 
-        if self.customers:
+        # Setting initial selected_customer_id and selected_contact_id
+        # If a customer id was given to constructor
+        if self.pre_selected_customer_id is not None:
+            customer = next(
+                (
+                    c
+                    for c in self.customers
+                    if c.id == self.pre_selected_customer_id
+                ),
+                None,
+            )
+            if customer:
+                self.selected_customer_id = customer.id
+                if customer.contacts:
+                    self.selected_contact_id = customer.contacts[0].id
+                row_index = self.customers.index(customer)
+                self.query_one("#customers-table", DataTable).move_cursor(
+                    row=row_index
+                )
+
+        # If not, use first customer
+        elif self.customers:
             self.selected_customer_id = self.customers[0].id
             if self.customers[0].contacts:
                 self.selected_contact_id = self.customers[0].contacts[0].id

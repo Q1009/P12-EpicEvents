@@ -24,9 +24,12 @@ class EventController:
         self.session: Session = session
         self.epic_events_app = epic_events_app
         self.on_back_callback = None
+        self.on_consult_customer_callback = None
+        self.on_consult_contract_callback = None
 
-    def start(self, on_back=None):
+    def start(self, on_back=None, on_consult_customer=None):
         self.on_back_callback = on_back
+        self.on_consult_customer_callback = on_consult_customer
         events = self.get_all_events()
         events_screen = EventScreen(events)
         self.epic_events_app.push_screen(
@@ -92,9 +95,12 @@ class EventController:
                 #     event_data_for_event
                 # )
             case ("consult_customer", customer_id):
-                pass
+                self.on_consult_customer_callback(customer_id)
+                return
             case ("consult_contract", contract_id):
                 pass
+                # self.on_consult_contract_callback()
+                # return
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -161,7 +167,9 @@ class EventController:
             self.epic_events_app.notify(
                 "Event creation cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                self.on_back_callback, self.on_consult_customer_callback
+            )
             return
 
         # Else, transform raw data (dict) from submitted form
@@ -202,7 +210,9 @@ class EventController:
         self.epic_events_app.notify(
             "Event successfully created", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            self.on_back_callback, self.on_consult_customer_callback
+        )
 
     def update_event(self, updated_event_data):
         """ """
@@ -210,7 +220,9 @@ class EventController:
             self.epic_events_app.notify(
                 "Event update cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                self.on_back_callback, self.on_consult_customer_callback
+            )
             return
 
         # Date conversion from french to utc
@@ -242,7 +254,9 @@ class EventController:
         self.epic_events_app.notify(
             "Event successfully updated", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            self.on_back_callback, self.on_consult_customer_callback
+        )
 
     def create_location(self):
         pass
