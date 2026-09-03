@@ -20,10 +20,10 @@ class ContractController:
         self.epic_events_app = epic_events_app
         self.on_back_callback = None
 
-    def start(self, on_back=None):
+    def start(self, contract_id=None, on_back=None):
         self.on_back_callback = on_back
         contracts = self.get_all_contracts()
-        contracts_screen = ContractScreen(contracts)
+        contracts_screen = ContractScreen(contracts, contract_id)
         self.epic_events_app.push_screen(
             contracts_screen, callback=self.handle_user_choice
         )

@@ -27,9 +27,15 @@ class EventController:
         self.on_consult_customer_callback = None
         self.on_consult_contract_callback = None
 
-    def start(self, on_back=None, on_consult_customer=None):
+    def start(
+        self,
+        on_back=None,
+        on_consult_customer=None,
+        on_consult_contract=None,
+    ):
         self.on_back_callback = on_back
         self.on_consult_customer_callback = on_consult_customer
+        self.on_consult_contract_callback = on_consult_contract
         events = self.get_all_events()
         events_screen = EventScreen(events)
         self.epic_events_app.push_screen(
@@ -98,9 +104,8 @@ class EventController:
                 self.on_consult_customer_callback(customer_id)
                 return
             case ("consult_contract", contract_id):
-                pass
-                # self.on_consult_contract_callback()
-                # return
+                self.on_consult_contract_callback(contract_id)
+                return
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -168,7 +173,9 @@ class EventController:
                 "Event creation cancelled", severity="warning"
             )
             self.start(
-                self.on_back_callback, self.on_consult_customer_callback
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_contract=self.on_consult_contract_callback,
             )
             return
 
@@ -211,7 +218,9 @@ class EventController:
             "Event successfully created", severity="information"
         )
         self.start(
-            self.on_back_callback, self.on_consult_customer_callback
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_contract=self.on_consult_contract_callback,
         )
 
     def update_event(self, updated_event_data):
@@ -221,7 +230,9 @@ class EventController:
                 "Event update cancelled", severity="warning"
             )
             self.start(
-                self.on_back_callback, self.on_consult_customer_callback
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_contract=self.on_consult_contract_callback,
             )
             return
 
@@ -255,7 +266,9 @@ class EventController:
             "Event successfully updated", severity="information"
         )
         self.start(
-            self.on_back_callback, self.on_consult_customer_callback
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_contract=self.on_consult_contract_callback,
         )
 
     def create_location(self):

@@ -33,12 +33,15 @@ class ContractScreen(Screen):
 
     # Reactive variables
     selected_contract_id: reactive[int | None] = reactive(None)
-    selected_customer_id: reactive[int | None] = reactive(None)
-    selected_event_id: reactive[int | None] = reactive(None)
 
-    def __init__(self, contracts: list[Contract]) -> None:
+    def __init__(
+        self, contracts: list[Contract], contract_id: int | None = None
+    ) -> None:
         super().__init__()
         self.contracts = contracts
+        self.pre_selected_contract_id = contract_id
+        self.selected_customer_id = None
+        self.selected_event_id = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -88,14 +91,26 @@ class ContractScreen(Screen):
         self.build_contract_payment_progressbar()
         self.build_contract_event_table()
 
-        # Initialize default selections with the first available contract,
-        # customer, and event to ensure the UI has valid selections on load.
-        if self.contracts:
+        # Setting initial selected_contract_id: triggering the watcher
+        # If a contract id was given to constructor
+        if self.pre_selected_contract_id is not None:
+            contract = next(
+                (
+                    c
+                    for c in self.contracts
+                    if c.id == self.pre_selected_contract_id
+                ),
+                None,
+            )
+            if contract:
+                self.selected_contract_id = contract.id
+                row_index = self.contracts.index(contract)
+                self.query_one("#contracts-table", DataTable).move_cursor(
+                    row=row_index
+                )
+        # If not, use first contract
+        elif self.contracts:
             self.selected_contract_id = self.contracts[0].id
-            if self.contracts[0].customer:
-                self.selected_customer_id = self.contracts[0].customer.id
-            if self.contracts[0].event:
-                self.selected_event_id = self.contracts[0].event.id
 
     def build_contracts_table(self) -> None:
         table = self.query_one("#contracts-table", DataTable)
@@ -234,6 +249,7 @@ class ContractScreen(Screen):
         )
 
         if selected_contract:
+            # Load associated widgets based on selected_contract
             self.load_contract_customer(
                 contract_customer_table, selected_contract
             )
@@ -243,6 +259,10 @@ class ContractScreen(Screen):
             self.load_contract_payment(
                 contract_payment_progressbar, selected_contract
             )
+            # Update other selected_attributes_id
+            self.selected_customer_id = selected_contract.customer.id
+            if selected_contract.event:
+                self.selected_event_id = selected_contract.event.id
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
