@@ -19,9 +19,15 @@ class CollaboratorController:
         self.session: Session = session
         self.epic_events_app = epic_events_app
         self.on_back_callback = None
+        self.on_consult_customer_callback = None
+        self.on_consult_event_callback = None
 
-    def start(self, on_back=None):
+    def start(
+        self, on_back=None, on_consult_customer=None, on_consult_event=None
+    ):
         self.on_back_callback = on_back
+        self.on_consult_customer_callback = on_consult_customer
+        self.on_consult_event_callback = on_consult_event
         collaborators = self.get_all_collaborators()
         collaborators_screen = CollaboratorScreen(collaborators)
         self.epic_events_app.push_screen(
@@ -31,17 +37,7 @@ class CollaboratorController:
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from collaborator menu"""
         match user_choice:
-            case "display_all_collaborators":
-                all_collaborators = self.get_all_collaborators()
-                all_collaborators_screen = CollaboratorScreen(
-                    all_collaborators
-                )
-                self.epic_events_app.push_screen(
-                    all_collaborators_screen,
-                    callback=self.handle_user_choice,
-                )
             case "create_collaborator":
-                # pass
                 all_departments = self.get_all_departments()
                 create_collaborator_screen = CreateCollaboratorScreen(
                     all_departments
@@ -51,7 +47,6 @@ class CollaboratorController:
                     callback=self.create_collaborator,
                 )
             case ("update_collaborator", collaborator_id):
-                # pass
                 all_departments = self.get_all_departments()
                 collaborator_to_update = (
                     self.load_collaborator_data_for_update(collaborator_id)
@@ -64,13 +59,13 @@ class CollaboratorController:
                     callback=self.update_collaborator,
                 )
             case ("delete_collaborator", collaborator_id):
-                self.delete_collaborator(
-                    collaborator_id
-                )
+                self.delete_collaborator(collaborator_id)
             case ("consult_customer", customer_id):
-                pass
+                self.on_consult_customer_callback(customer_id)
+                return
             case ("consult_event", event_id):
-                pass
+                self.on_consult_event_callback(event_id)
+                return
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -118,7 +113,11 @@ class CollaboratorController:
             self.epic_events_app.notify(
                 "Collaborator creation cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_event=self.on_consult_event_callback,
+            )
             return
 
         # Else, transform raw data (dict) from submitted form
@@ -147,7 +146,11 @@ class CollaboratorController:
         self.epic_events_app.notify(
             "Collaborator successfully created", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_event=self.on_consult_event_callback,
+        )
 
     def update_collaborator(self, updated_collaborator_data):
         """ """
@@ -155,7 +158,11 @@ class CollaboratorController:
             self.epic_events_app.notify(
                 "Collaborator update cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_event=self.on_consult_event_callback,
+            )
             return
 
         # Update email
@@ -183,14 +190,22 @@ class CollaboratorController:
         self.epic_events_app.notify(
             "Collaborator successfully updated", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_event=self.on_consult_event_callback,
+        )
 
     def delete_collaborator(self, collaborator_id):
         if not collaborator_id:
             self.epic_events_app.notify(
                 "Collaborator delete cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_event=self.on_consult_event_callback,
+            )
             return
 
         self.session.query(Collaborator).filter(
@@ -201,4 +216,8 @@ class CollaboratorController:
         self.epic_events_app.notify(
             "Collaborator successfully deleted", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_event=self.on_consult_event_callback,
+        )

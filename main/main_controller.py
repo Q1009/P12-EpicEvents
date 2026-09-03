@@ -58,9 +58,7 @@ class MainController:
             case "customers":
                 self.push_customer_screen()
             case "collaborators":
-                self.collaborator_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
+                self.push_collaborator_screen()
             case "profile":
                 # self.profile_controller.start()
                 pass
@@ -88,14 +86,16 @@ class MainController:
             unauthenticated_main_screen, callback=self.handle_user_choice
         )
 
-    def push_customer_screen(self, customer_id: int | None = None):
-        """Call the start method of customer_controller,
-        with optional customer_id argument
-        and mandatory callback method argument.
+    def push_event_screen(self, event_id: int | None = None):
+        """Call the start method of event_controller,
+        with optional event_id argument
+        and mandatory callback methods arguments.
         """
-        self.customer_controller.start(
-            customer_id=customer_id,
+        self.event_controller.start(
+            event_id=event_id,
             on_back=self.display_authenticated_main_menu,
+            on_consult_customer=self.push_customer_screen,
+            on_consult_contract=self.push_contract_screen,
         )
 
     def push_contract_screen(self, contract_id: int | None = None):
@@ -110,14 +110,22 @@ class MainController:
             on_consult_event=self.push_event_screen,
         )
 
-    def push_event_screen(self, event_id: int | None = None):
-        """Call the start method of event_controller,
-        with optional event_id argument
-        and mandatory callback methods arguments.
+    def push_customer_screen(self, customer_id: int | None = None):
+        """Call the start method of customer_controller,
+        with optional customer_id argument
+        and mandatory callback method argument.
         """
-        self.event_controller.start(
-            event_id=event_id,
+        self.customer_controller.start(
+            customer_id=customer_id,
+            on_back=self.display_authenticated_main_menu,
+        )
+
+    def push_collaborator_screen(self):
+        """Call the start method of collaborator_controller,
+        with mandatory callback methods arguments.
+        """
+        self.collaborator_controller.start(
             on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
-            on_consult_contract=self.push_contract_screen,
+            on_consult_event=self.push_event_screen,
         )

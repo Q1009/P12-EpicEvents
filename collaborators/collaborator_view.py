@@ -66,13 +66,11 @@ class CollaboratorScreen(Screen):
                     "Consult Customer",
                     id="consult-customer",
                     variant="primary",
-                    disabled=True,
                 )
                 yield Button(
                     "Consult Event",
                     id="consult-event",
                     variant="warning",
-                    disabled=True,
                 )
         yield Footer(show_command_palette=False)
 
@@ -81,17 +79,10 @@ class CollaboratorScreen(Screen):
         self.build_collaborators_table()
         self.build_collaborator_customers_table()
         self.build_collaborator_events_table()
-        
-        # Initialize default selections with the first available collaborator,
-        # customer, and event to ensure the UI has valid selections on load.
+
+        # Setting initial selected_collaborator_id: triggering the watcher
         if self.collaborators:
             self.selected_collaborator_id = self.collaborators[0].id
-            if self.collaborators[0].customers:
-                self.selected_customer_id = (
-                    self.collaborators[0].customers[0].id
-                )
-            if self.collaborators[0].events:
-                self.selected_event_id = self.collaborators[0].events[0].id
 
     def build_collaborators_table(self) -> None:
         table = self.query_one("#collaborators-table", DataTable)
@@ -141,7 +132,7 @@ class CollaboratorScreen(Screen):
         table.cursor_type = "row"
         table.zebra_stripes = True
 
-        table.add_column("ID", key="id")
+        table.add_column("ID", key="customer_id")
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
 
@@ -167,7 +158,7 @@ class CollaboratorScreen(Screen):
         table.cursor_type = "row"
         table.zebra_stripes = True
 
-        table.add_column("ID", key="id")
+        table.add_column("ID", key="event_id")
         table.add_column("Event Name", key="event_name")
 
         table.loading = True
@@ -196,41 +187,65 @@ class CollaboratorScreen(Screen):
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
+        consult_customer_button = self.query_one(
+            "#consult-customer", Button
+        )
+        consult_event_button = self.query_one("#consult-event", Button)
 
         if new_id is None:
             collaborator_customers_table.clear()
             self.selected_customer_id = None
             collaborator_events_table.clear()
             self.selected_event_id = None
-            return
+        else:
+            # Get collaborator by ID
+            selected_collaborator = next(
+                (c for c in self.collaborators if c.id == new_id), None
+            )
+            if selected_collaborator:
+                # Load associated widgets bases on selected_collaborator
+                self.load_collaborator_customers(
+                    collaborator_customers_table, selected_collaborator
+                )
+                self.load_collaborator_events(
+                    collaborator_events_table, selected_collaborator
+                )
+                # Update other selected_attributes_id
+                self.selected_collaborator_first_name = (
+                    selected_collaborator.first_name
+                )
+                self.selected_collaborator_last_name = (
+                    selected_collaborator.last_name
+                )
+                if selected_collaborator.customers:
+                    self.selected_customer_id = (
+                        selected_collaborator.customers[0].id
+                    )
+                else:
+                    self.selected_customer_id = None
+                if selected_collaborator.events:
+                    self.selected_event_id = selected_collaborator.events[
+                        0
+                    ].id
+                else:
+                    self.selected_event_id = None
+            else:
+                # Update other selected_attributes_id
+                self.selected_customer_id = None
+                self.selected_event_id = None
 
-        # Get collaborator by ID
-        selected_collaborator = next(
-            (c for c in self.collaborators if c.id == new_id), None
+        # Enable or disable consult buttons
+        consult_customer_button.disabled = (
+            self.selected_customer_id is None
         )
-
-        if selected_collaborator:
-            self.load_collaborator_customers(
-                collaborator_customers_table, selected_collaborator
-            )
-            self.load_collaborator_events(
-                collaborator_events_table, selected_collaborator
-            )
-            self.selected_collaborator_first_name = (
-                selected_collaborator.first_name
-            )
-            self.selected_collaborator_last_name = (
-                selected_collaborator.last_name
-            )
+        consult_event_button.disabled = self.selected_event_id is None
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
         self.dismiss("back")
 
     def _delete_collaborator(self, collaborator_id):
-        self.dismiss(
-            ("delete_collaborator", collaborator_id)
-        )
+        self.dismiss(("delete_collaborator", collaborator_id))
 
     @on(DataTable.RowHighlighted, "#collaborators-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
@@ -246,48 +261,30 @@ class CollaboratorScreen(Screen):
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted customer id"""
-        row_index = event.cursor_row
-
-        # Get collaborator associated to highlighted customer
-        if self.selected_collaborator_id:
-            selected_collaborator = next(
-                (
-                    c
-                    for c in self.collaborators
-                    if c.id == self.selected_collaborator_id
-                ),
-                None,
-            )
-            if selected_collaborator and 0 <= row_index < len(
-                selected_collaborator.customers
-            ):
-                selected_customer = selected_collaborator.customers[
-                    row_index
-                ]
-                self.selected_customer_id = selected_customer.id
+        collaborator_customers_table = self.query_one(
+            "#collaborator-customers-table", DataTable
+        )
+        # Get value from the cell
+        customer_id = collaborator_customers_table.get_cell(
+            event.row_key, "customer_id"
+        )
+        # Update selected_attribute_id
+        self.selected_customer_id = customer_id
 
     @on(DataTable.RowHighlighted, "#collaborator-events-table")
     def on_event_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted event id"""
-        row_index = event.cursor_row
-
-        # Get collaborator associated to highlighted event
-        if self.selected_collaborator_id:
-            selected_collaborator = next(
-                (
-                    c
-                    for c in self.collaborators
-                    if c.id == self.selected_collaborator_id
-                ),
-                None,
-            )
-            if selected_collaborator and 0 <= row_index < len(
-                selected_collaborator.events
-            ):
-                selected_event = selected_collaborator.events[row_index]
-                self.selected_event_id = selected_event.id
+        collaborator_events_table = self.query_one(
+            "#collaborator-events-table", DataTable
+        )
+        # Get value from the cell
+        event_id = collaborator_events_table.get_cell(
+            event.row_key, "event_id"
+        )
+        # Update selected_attribute_id
+        self.selected_event_id = event_id
 
     @on(Button.Pressed, "#create-collaborator")
     def go_create_collaborator(self) -> None:
@@ -317,10 +314,6 @@ class CollaboratorScreen(Screen):
     @on(Button.Pressed, "#consult-event")
     def go_consult_event(self) -> None:
         self.dismiss(("consult_event", self.selected_event_id))
-
-    @on(Button.Pressed, "#back")
-    def go_back(self) -> None:
-        self.dismiss("back")
 
 
 class CreateCollaboratorScreen(Screen):
@@ -436,6 +429,7 @@ class CreateCollaboratorScreen(Screen):
             ).value,
         }
 
+
 class UpdateCollaboratorScreen(Screen):
     """ """
 
@@ -495,9 +489,11 @@ class UpdateCollaboratorScreen(Screen):
                     department_options,
                     id="update-collaborator-department-select",
                     prompt="Select a department",
-                    value=self.collaborator_data.get("department")
+                    value=self.collaborator_data.get("department"),
                 )
-            with Container(classes="update-collaborator-buttons-container"):
+            with Container(
+                classes="update-collaborator-buttons-container"
+            ):
                 yield Button(
                     "Update",
                     id="update",
@@ -522,7 +518,9 @@ class UpdateCollaboratorScreen(Screen):
             "#update-collaborator-department", Container
         )
         collaborator_data_container.border_title = "Personal Data"
-        collaborator_data_container.border_subtitle = "Edit relevant fields"
+        collaborator_data_container.border_subtitle = (
+            "Edit relevant fields"
+        )
         collaborator_department_container.border_title = (
             "Department Selection"
         )
