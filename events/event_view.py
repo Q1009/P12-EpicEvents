@@ -37,9 +37,12 @@ class EventScreen(Screen):
     # Reactive variables
     selected_event_id: reactive[int | None] = reactive(None)
 
-    def __init__(self, events: list[Event]) -> None:
+    def __init__(
+        self, events: list[Event], event_id: int | None = None
+    ) -> None:
         super().__init__()
         self.events = events
+        self.pre_selected_event_id = event_id
         self.selected_contract_id = None
         self.selected_location_id = None
         self.selected_customer_id = None
@@ -80,13 +83,11 @@ class EventScreen(Screen):
                     "Consult Customer",
                     id="consult-customer",
                     variant="primary",
-                    disabled=False,
                 )
                 yield Button(
                     "Consult Contract",
                     id="consult-contract",
                     variant="warning",
-                    disabled=False,
                 )
         yield Footer(show_command_palette=False)
 
@@ -98,17 +99,26 @@ class EventScreen(Screen):
         self.build_event_location_table()
         self.build_event_customer_table()
 
-        # Initialize default selections with the first available event,
-        # customer, and event to ensure the UI has valid selections on load.
-        if self.events:
+        # Setting initial selected_event_id: triggering the watcher
+        # If a event id was given to constructor
+        if self.pre_selected_event_id is not None:
+            event = next(
+                (
+                    e
+                    for e in self.events
+                    if e.id == self.pre_selected_event_id
+                ),
+                None,
+            )
+            if event:
+                self.selected_event_id = event.id
+                row_index = self.events.index(event)
+                self.query_one("#events-table", DataTable).move_cursor(
+                    row=row_index
+                )
+        # If not, use first event
+        elif self.events:
             self.selected_event_id = self.events[0].id
-            if self.events[0].contract:
-                self.selected_contract_id = self.events[0].contract.id
-                self.selected_customer_id = self.events[
-                    0
-                ].contract.customer.id
-            if self.events[0].location:
-                self.selected_location_id = self.events[0].location.id
 
     def build_events_table(self) -> None:
         table = self.query_one("#events-table", DataTable)
@@ -333,9 +343,9 @@ class EventScreen(Screen):
     def go_consult_contract(self) -> None:
         self.dismiss(("consult_contract", self.selected_contract_id))
 
-    @on(Button.Pressed, "#back")
-    def go_back(self) -> None:
-        self.dismiss("back")
+    # @on(Button.Pressed, "#back")
+    # def go_back(self) -> None:
+    #     self.dismiss("back")
 
 
 class CreateEventScreen(Screen):

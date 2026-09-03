@@ -52,15 +52,9 @@ class MainController:
                     on_cancel=self.display_unauthenticated_main_menu,
                 )
             case "events":
-                self.event_controller.start(
-                    on_back=self.display_authenticated_main_menu,
-                    on_consult_customer=self.push_customer_screen,
-                    on_consult_contract=self.push_contract_screen,
-                )
+                self.push_event_screen()
             case "contracts":
-                self.contract_controller.start(
-                    on_back=self.display_authenticated_main_menu
-                )
+                self.push_contract_screen()
             case "customers":
                 self.push_customer_screen()
             case "collaborators":
@@ -107,9 +101,23 @@ class MainController:
     def push_contract_screen(self, contract_id: int | None = None):
         """Call the start method of contract_controller,
         with optional contract_id argument
-        and mandatory callback method argument.
+        and mandatory callback methods arguments.
         """
         self.contract_controller.start(
             contract_id=contract_id,
             on_back=self.display_authenticated_main_menu,
+            on_consult_customer=self.push_customer_screen,
+            on_consult_event=self.push_event_screen,
+        )
+
+    def push_event_screen(self, event_id: int | None = None):
+        """Call the start method of event_controller,
+        with optional event_id argument
+        and mandatory callback methods arguments.
+        """
+        self.event_controller.start(
+            event_id=event_id,
+            on_back=self.display_authenticated_main_menu,
+            on_consult_customer=self.push_customer_screen,
+            on_consult_contract=self.push_contract_screen,
         )

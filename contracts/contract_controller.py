@@ -19,9 +19,19 @@ class ContractController:
         self.session: Session = session
         self.epic_events_app = epic_events_app
         self.on_back_callback = None
+        self.on_consult_customer_callback = None
+        self.on_consult_event_callback = None
 
-    def start(self, contract_id=None, on_back=None):
+    def start(
+        self,
+        contract_id=None,
+        on_back=None,
+        on_consult_customer=None,
+        on_consult_event=None,
+    ):
         self.on_back_callback = on_back
+        self.on_consult_customer_callback = on_consult_customer
+        self.on_consult_event_callback = on_consult_event
         contracts = self.get_all_contracts()
         contracts_screen = ContractScreen(contracts, contract_id)
         self.epic_events_app.push_screen(
@@ -61,9 +71,11 @@ class ContractController:
                 #     contract_data_for_event
                 # )
             case ("consult_customer", customer_id):
-                pass
+                self.on_consult_customer_callback(customer_id)
+                return
             case ("consult_event", event_id):
-                pass
+                self.on_consult_event_callback(event_id)
+                return
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -110,7 +122,11 @@ class ContractController:
             self.epic_events_app.notify(
                 "Contract creation cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_event=self.on_consult_event_callback,
+            )
             return
 
         # Else, transform raw data (dict) from submitted form
@@ -129,7 +145,11 @@ class ContractController:
         self.epic_events_app.notify(
             "Contract successfully created", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_event=self.on_consult_event_callback,
+        )
 
     def update_contract(self, updated_contract_data):
         """ """
@@ -137,7 +157,11 @@ class ContractController:
             self.epic_events_app.notify(
                 "Contract update cancelled", severity="warning"
             )
-            self.start(self.on_back_callback)
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_event=self.on_consult_event_callback,
+            )
             return
 
         self.session.query(Contract).filter(
@@ -159,7 +183,11 @@ class ContractController:
         self.epic_events_app.notify(
             "Contract successfully updated", severity="information"
         )
-        self.start(self.on_back_callback)
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_event=self.on_consult_event_callback,
+        )
 
     def create_event(self, contract_data_for_event):
         pass

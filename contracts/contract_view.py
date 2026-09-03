@@ -67,20 +67,17 @@ class ContractScreen(Screen):
                     "Create Event",
                     id="create-event",
                     variant="success",
-                    disabled=True,
                 )
             with Container(classes="customer-event-buttons-container"):
                 yield Button(
                     "Consult Customer",
                     id="consult-customer",
                     variant="primary",
-                    disabled=True,
                 )
                 yield Button(
                     "Consult Event",
                     id="consult-event",
                     variant="warning",
-                    disabled=True,
                 )
         yield Footer(show_command_palette=False)
 
@@ -234,6 +231,11 @@ class ContractScreen(Screen):
         contract_payment_progressbar = self.query_one(
             "#contract-payment-progressbar", ProgressBar
         )
+        consult_customer_button = self.query_one(
+            "#consult-customer", Button
+        )
+        consult_event_button = self.query_one("#consult-event", Button)
+        create_event_button = self.query_one("#create-event", Button)
 
         if new_id is None:
             contract_customer_table.clear()
@@ -263,13 +265,23 @@ class ContractScreen(Screen):
             self.selected_customer_id = selected_contract.customer.id
             if selected_contract.event:
                 self.selected_event_id = selected_contract.event.id
+            else:
+                self.selected_event_id = None
+        else:
+            self.selected_customer_id = None
+            self.selected_event_id = None
+
+        # Enable or disable consult buttons
+        consult_customer_button.disabled = (
+            self.selected_customer_id is None
+        )
+        consult_event_button.disabled = self.selected_event_id is None
+        # Enable or disable create event button
+        create_event_button.disabled = self.selected_event_id is not None
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
         self.dismiss("back")
-
-    def _delete_contract(self, contract_id):
-        self.dismiss(("delete_contract", contract_id))
 
     @on(DataTable.RowHighlighted, "#contracts-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
@@ -297,10 +309,6 @@ class ContractScreen(Screen):
     @on(Button.Pressed, "#consult-event")
     def go_consult_event(self) -> None:
         self.dismiss(("consult_event", self.selected_event_id))
-
-    @on(Button.Pressed, "#back")
-    def go_back(self) -> None:
-        self.dismiss("back")
 
 
 class CreateContractScreen(Screen):
