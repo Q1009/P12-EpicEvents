@@ -7,9 +7,6 @@ import jwt
 from bcrypt import checkpw, gensalt, hashpw
 from sqlalchemy.orm import Session
 
-# temporary, should be removed once contract feature is implemented
-from contracts.contract_model import Contract
-
 from collaborators.collaborator_model import Collaborator
 from config.settings import settings
 from keys.rsa_key_management import get_private_key, get_public_key
