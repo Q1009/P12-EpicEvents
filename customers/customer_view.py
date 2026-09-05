@@ -48,8 +48,8 @@ class CustomerScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="customer-main-container"):
             yield DataTable(id="customers-table")
-            yield DataTable(id="contacts-table")
-            yield DataTable(id="phone-numbers-table")
+            yield DataTable(id="customer-contacts-table")
+            yield DataTable(id="contact-phone-numbers-table")
             with Container(classes="customer-contact-buttons-container"):
                 yield Button(
                     "Create Customer",
@@ -81,7 +81,7 @@ class CustomerScreen(Screen):
         self.build_contacts_table()
         self.build_phone_numbers_table()
 
-        # Setting initial selected_customer_id and selected_contact_id
+        # Setting initial selected_customer_id: triggering the watcher
         # If a customer id was given to constructor
         if self.pre_selected_customer_id is not None:
             customer = next(
@@ -93,9 +93,7 @@ class CustomerScreen(Screen):
                 None,
             )
             if customer:
-                self.selected_customer_id = customer.id
-                if customer.contacts:
-                    self.selected_contact_id = customer.contacts[0].id
+                # Moving cursor will update selected_customer_id
                 row_index = self.customers.index(customer)
                 self.query_one("#customers-table", DataTable).move_cursor(
                     row=row_index
@@ -104,8 +102,6 @@ class CustomerScreen(Screen):
         # If not, use first customer
         elif self.customers:
             self.selected_customer_id = self.customers[0].id
-            if self.customers[0].contacts:
-                self.selected_contact_id = self.customers[0].contacts[0].id
 
     def build_customers_table(self) -> None:
         table = self.query_one("#customers-table", DataTable)
@@ -114,11 +110,11 @@ class CustomerScreen(Screen):
         table.zebra_stripes = True
 
         # Configure table columns
-        table.add_column("ID", key="id")
+        table.add_column("ID", key="customer_id")
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
         table.add_column("Company Name", key="company_name")
-        table.add_column("Sales Representative")
+        table.add_column("Sales Representative", key="sales_representative")
         table.add_column("Created At", key="created_at")
         table.add_column("Updated At", key="updated_at")
 
@@ -153,12 +149,12 @@ class CustomerScreen(Screen):
         table.loading = False
 
     def build_contacts_table(self) -> None:
-        table = self.query_one("#contacts-table", DataTable)
+        table = self.query_one("#customer-contacts-table", DataTable)
         table.border_title = "Contacts"
         table.cursor_type = "row"
         table.zebra_stripes = True
 
-        table.add_column("ID", key="id")
+        table.add_column("ID", key="contact_id")
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
         table.add_column("Email", key="email")
@@ -176,10 +172,10 @@ class CustomerScreen(Screen):
                 contact.email,
             )
 
-            table.loading = False
+        table.loading = False
 
     def build_phone_numbers_table(self) -> None:
-        table = self.query_one("#phone-numbers-table", DataTable)
+        table = self.query_one("#contact-phone-numbers-table", DataTable)
         table.border_title = "Phone Numbers"
         table.cursor_type = "row"
         table.zebra_stripes = True
@@ -199,10 +195,11 @@ class CustomerScreen(Screen):
 
     def watch_selected_customer_id(self, new_id: int | None) -> None:
         """
-        Watcher that loads contacts and phone numbers based on the client
-        highlighted in customers-table
+        Watcher that loads customer-contacts-table and updated
+        selected_contact_id based on the client highlighted
+        in customers-table
         """
-        contacts_table = self.query_one("#contacts-table", DataTable)
+        contacts_table = self.query_one("#customer-contacts-table", DataTable)
 
         if new_id is None:
             contacts_table.clear()
@@ -220,18 +217,18 @@ class CustomerScreen(Screen):
 
     def watch_selected_contact_id(self, new_id: int | None) -> None:
         """
-        Watcher that loads phone numbers based on the contact
-        highlighted in contacts-table
+        Watcher that loads contact-phone-numbers-table
+        based on the contact highlighted in customer-contacts-table
         """
         phone_numbers_table = self.query_one(
-            "#phone-numbers-table", DataTable
+            "#contact-phone-numbers-table", DataTable
         )
 
         if new_id is None:
             phone_numbers_table.clear()
             return
 
-        # Trouve le contact sélectionné dans le client actuellement sélectionné
+        # Get contact by ID
         if self.selected_customer_id:
             selected_customer = next(
                 (
@@ -262,32 +259,35 @@ class CustomerScreen(Screen):
     @on(DataTable.RowHighlighted, "#customers-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted customer id"""
-        row_index = event.cursor_row
-        if 0 <= row_index < len(self.customers):
-            self.selected_customer_id = self.customers[row_index].id
+        customers_table = self.query_one(
+            "#customers-table", DataTable
+        )
+        # Get value from the cell
+        customer_id = customers_table.get_cell(
+            event.row_key, "customer_id"
+        )
+        # Update selected_attribute_id
+        self.selected_customer_id = customer_id
 
-    @on(DataTable.RowHighlighted, "#contacts-table")
+    @on(DataTable.RowHighlighted, "#customer-contacts-table")
     def on_contact_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted contact id"""
-        row_index = event.cursor_row
 
-        # Récupère le contact correspondant à la ligne sélectionnée
-        if self.selected_customer_id:
-            selected_customer = next(
-                (
-                    c
-                    for c in self.customers
-                    if c.id == self.selected_customer_id
-                ),
-                None,
-            )
-            if selected_customer and 0 <= row_index < len(
-                selected_customer.contacts
-            ):
-                selected_contact = selected_customer.contacts[row_index]
-                self.selected_contact_id = selected_contact.id
+        # Prevent cases due to .clear()
+        if event.row_key.value is None:
+            return
+        
+        customer_contacts_table = self.query_one(
+            "#customer-contacts-table", DataTable
+        )
+        # Get value from the cell
+        contact_id = customer_contacts_table.get_cell(
+            event.row_key, "contact_id"
+        )
+        # Update selected_attribute_id
+        self.selected_contact_id = contact_id
 
     @on(Button.Pressed, "#create-customer")
     def go_create_customer(self) -> None:

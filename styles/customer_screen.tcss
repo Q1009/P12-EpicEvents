@@ -14,12 +14,12 @@
     height: 100%;
 }
 
-#contacts-table {
+#customer-contacts-table {
     border: round $secondary;
     height: 100%;
 }
 
-#phone-numbers-table{
+#contact-phone-numbers-table {
     border: round $secondary;
     height: 100%;
 }
