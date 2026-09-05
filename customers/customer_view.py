@@ -47,7 +47,7 @@ class CustomerScreen(Screen):
             yield DataTable(id="customers-table")
             yield DataTable(id="contacts-table")
             yield DataTable(id="phone-numbers-table")
-            with Container(classes="customer-buttons-container"):
+            with Container(classes="customer-contact-buttons-container"):
                 yield Button(
                     "Create Customer",
                     id="create-customer",
@@ -59,12 +59,6 @@ class CustomerScreen(Screen):
                     variant="warning",
                 )
                 yield Button(
-                    "Delete Customer",
-                    id="delete-customer",
-                    variant="error",
-                )
-            with Container(classes="contact-buttons-container"):
-                yield Button(
                     "Create Contact",
                     id="create-contact",
                     variant="primary",
@@ -74,9 +68,8 @@ class CustomerScreen(Screen):
                     id="update-contact",
                     variant="warning",
                 )
-                yield Button(
-                    "Delete Contact", id="delete-contact", variant="error"
-                )
+            with Container(classes="contact-buttons-container"):
+                pass
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -308,10 +301,6 @@ class CustomerScreen(Screen):
     @on(Button.Pressed, "#update-contact")
     def go_update_contact(self) -> None:
         self.dismiss(("update_contact", self.selected_contact_id))
-
-    @on(Button.Pressed, "#back")
-    def go_back(self) -> None:
-        self.dismiss("back")
 
 
 class CreateCustomerScreen(Screen):

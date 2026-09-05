@@ -24,9 +24,9 @@
     height: 100%;
 }
 
-.customer-buttons-container {
+.customer-contact-buttons-container {
     layout: grid;
-    grid-size: 3;
+    grid-size: 4;
     grid-gutter: 1;
     align: center middle;
     border: round $secondary;
