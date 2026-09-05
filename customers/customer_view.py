@@ -12,6 +12,9 @@ from textual.widgets import (
     Header,
     Input,
     Label,
+    RadioButton,
+    RadioSet,
+    Select,
     SelectionList,
     Static,
 )
@@ -309,8 +312,9 @@ class CreateCustomerScreen(Screen):
     SUB_TITLE = "CREATE CUSTOMERS"
     CSS_PATH = "../styles/create_customer_screen.tcss"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, contacts: list[Contact]):
+        super().__init__()
+        self.contacts = contacts
         self.customer_data = {}
 
     def compose(self) -> ComposeResult:
@@ -341,36 +345,69 @@ class CreateCustomerScreen(Screen):
                     classes="form-input",
                 )
             with Container(
-                id="contact-data", classes="contact-data-input-container"
+                id="customer-contact",
+                classes="customer-contact-input-container",
             ):
-                yield Label("Contact Last Name:", classes="form-label")
-                yield Input(
-                    placeholder="Smith",
-                    id="contact_last_name",
-                    type="text",
-                    classes="form-input",
-                )
-                yield Label("First Name:", classes="form-label")
-                yield Input(
-                    placeholder="Tom",
-                    id="contact_first_name",
-                    type="text",
-                    classes="form-input",
-                )
-                yield Label("Email:", classes="form-label")
-                yield Input(
-                    placeholder="tom.smith@example.com",
-                    id="email",
-                    type="text",
-                    classes="form-input",
-                )
-                yield Label("Phone Number:", classes="form-label")
-                yield Input(
-                    placeholder="00 12 34 56 78",
-                    id="phone_number",
-                    type="number",
-                    classes="form-input",
-                )
+                with RadioSet(id="customer-contact-input-choice"):
+                    yield RadioButton(
+                        "Existing contact",
+                        classes="customer-contact-radio-button",
+                    )
+                    yield RadioButton(
+                        "New contact",
+                        value=True,
+                        classes="customer-contact-radio-button",
+                    )
+                with Container(
+                    classes="customer-contact-select-input-container",
+                    id="customer-contact-select-input-container",
+                ):
+                    contact_options = [
+                        (
+                            (contact.first_name + " " + contact.last_name),
+                            contact,
+                        )
+                        for contact in self.contacts
+                    ]
+                    yield Select(
+                        contact_options,
+                        id="customer-contact-select",
+                        prompt="Select a contact",
+                    )
+                with Container(
+                    classes="customer-contact-form-input-container",
+                    id="customer-contact-form-input-container",
+                ):
+                    yield Label("Contact Last Name", classes="form-label")
+                    yield Input(
+                        placeholder="Smith",
+                        id="contact_last_name",
+                        type="text",
+                        classes="form-input",
+                    )
+                    yield Label("Contact First Name", classes="form-label")
+                    yield Input(
+                        placeholder="Tom",
+                        id="contact_first_name",
+                        type="text",
+                        classes="form-input",
+                    )
+                    yield Label("Contact Email", classes="form-label")
+                    yield Input(
+                        placeholder="tom.smith@contact.com",
+                        id="contact_email",
+                        type="text",
+                        classes="form-input",
+                    )
+                    yield Label(
+                        "Contact Phone Number", classes="form-label"
+                    )
+                    yield Input(
+                        placeholder="00 00 00 00 00",
+                        id="contact_phone_number",
+                        type="text",
+                        classes="form-input",
+                    )
             with Container(classes="create-customer-buttons-container"):
                 yield Button(
                     "Create",
@@ -390,9 +427,35 @@ class CreateCustomerScreen(Screen):
         customer_data_container = self.query_one(
             "#customer-data", Container
         )
-        contact_data_container = self.query_one("#contact-data", Container)
-        customer_data_container.border_title = "Personal Data"
-        contact_data_container.border_title = "Contact Data"
+        customer_contact_container = self.query_one(
+            "#customer-contact", Container
+        )
+        customer_data_container.border_title = "Customer Data"
+        customer_contact_container.border_title = "Contact Selection"
+
+        # Hide select container for customer input by default:
+        self.query_one(
+            "#customer-contact-select-input-container", Container
+        ).display = False
+
+    @on(RadioSet.Changed, "#customer-contact-input-choice")
+    def on_contact_input_choice_changed(
+        self, event: RadioSet.Changed
+    ) -> None:
+        """Toggle containers' display based on user radiobutton input"""
+        select_container = self.query_one(
+            "#customer-contact-select-input-container", Container
+        )
+        form_container = self.query_one(
+            "#customer-contact-form-input-container", Container
+        )
+
+        if event.pressed.label == "Existing contact":
+            select_container.display = True
+            form_container.display = False
+        else:
+            select_container.display = False
+            form_container.display = True
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
@@ -405,6 +468,31 @@ class CreateCustomerScreen(Screen):
 
     def _collect_form_data(self) -> dict:
         """Collect all form data into a dictionary."""
+        radio_set = self.query_one(
+            "#customer-contact-input-choice", RadioSet
+        )
+
+        # Get contact format depending on user input choice
+        if radio_set.pressed_button.label == "Existing contact":
+            # Existing contact : use Select value
+            contact_data = self.query_one(
+                "#customer-contact-select", Select
+            ).value
+        else:
+            # New contact : use Form inputs values
+            contact_data = {
+                "last_name": self.query_one(
+                    "#contact_last_name", Input
+                ).value,
+                "first_name": self.query_one(
+                    "#contact_first_name", Input
+                ).value,
+                "email": self.query_one("#contact_email", Input).value,
+                "phone_number": self.query_one(
+                    "#contact_phone_number", Input
+                ).value,
+            }
+
         self.customer_data = {
             "customer_last_name": self.query_one(
                 "#customer_last_name", Input
@@ -413,14 +501,7 @@ class CreateCustomerScreen(Screen):
                 "#customer_first_name", Input
             ).value,
             "company_name": self.query_one("#company_name", Input).value,
-            "contact_last_name": self.query_one(
-                "#contact_last_name", Input
-            ).value,
-            "contact_first_name": self.query_one(
-                "#contact_first_name", Input
-            ).value,
-            "email": self.query_one("#email", Input).value,
-            "phone_number": self.query_one("#phone_number", Input).value,
+            "customer_contact": contact_data,
         }
 
 

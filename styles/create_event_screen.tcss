@@ -46,6 +46,12 @@
     height: auto;
 }
 
+.event-location-form-input-container {
+    align: center top;
+    border: round $boost;
+    height: auto;
+}
+
 .event-location-radio-button {
     width: auto;
     height: auto;

@@ -40,7 +40,8 @@ class CustomerController:
         """Callback when user chooses from customer menu"""
         match user_choice:
             case "create_customer":
-                create_customer_screen = CreateCustomerScreen()
+                all_contacts = self.get_all_contacts()
+                create_customer_screen = CreateCustomerScreen(all_contacts)
                 self.epic_events_app.push_screen(
                     create_customer_screen, callback=self.create_customer
                 )
@@ -170,20 +171,24 @@ class CustomerController:
             return
 
         # Else, transform raw data (dict) from submitted form
+        # Contact
+        customer_contact = new_customer_data["customer_contact"]
+        if isinstance(customer_contact, Contact):
+            new_customer_contact = customer_contact
+        else:
+            new_customer_contact = Contact(
+                last_name=customer_contact["last_name"],
+                first_name=customer_contact["first_name"],
+                email=customer_contact["email"],
+            )
+            self.session.add(new_customer_contact)
 
-        # Contact first
-        contact = Contact(
-            first_name=new_customer_data["contact_first_name"],
-            last_name=new_customer_data["contact_last_name"],
-            email=new_customer_data["email"],
-        )
-        self.session.add(contact)
-
-        # Phone number
-        phone_number = PhoneNumber(
-            number=new_customer_data["phone_number"], contact=contact
-        )
-        self.session.add(phone_number)
+            # Phone Number
+            phone_number = PhoneNumber(
+                number=customer_contact["phone_number"],
+                contact=new_customer_contact,
+            )
+            self.session.add(phone_number)
 
         # Customer
         customer = Customer(
@@ -192,9 +197,10 @@ class CustomerController:
             company_name=new_customer_data["company_name"],
             sales_representative=self.authentication_controller.get_user_info(),
         )
-        customer.contacts.append(contact)
-
+        customer.contacts.append(new_customer_contact)
         self.session.add(customer)
+
+        # Commit session
         self.session.commit()
         self.epic_events_app.notify(
             "Customer successfully created", severity="information"
