@@ -20,6 +20,7 @@ from textual.widgets import (
 )
 from textual.widgets.selection_list import Selection
 
+from collaborators.collaborator_model import Collaborator
 from customers.customer_model import Contact, Customer
 from services.date_services import format_french_datetime
 
@@ -114,7 +115,9 @@ class CustomerScreen(Screen):
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
         table.add_column("Company Name", key="company_name")
-        table.add_column("Sales Representative", key="sales_representative")
+        table.add_column(
+            "Sales Representative", key="sales_representative"
+        )
         table.add_column("Created At", key="created_at")
         table.add_column("Updated At", key="updated_at")
 
@@ -199,7 +202,9 @@ class CustomerScreen(Screen):
         selected_contact_id based on the client highlighted
         in customers-table
         """
-        contacts_table = self.query_one("#customer-contacts-table", DataTable)
+        contacts_table = self.query_one(
+            "#customer-contacts-table", DataTable
+        )
 
         if new_id is None:
             contacts_table.clear()
@@ -259,9 +264,7 @@ class CustomerScreen(Screen):
     @on(DataTable.RowHighlighted, "#customers-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted customer id"""
-        customers_table = self.query_one(
-            "#customers-table", DataTable
-        )
+        customers_table = self.query_one("#customers-table", DataTable)
         # Get value from the cell
         customer_id = customers_table.get_cell(
             event.row_key, "customer_id"
@@ -278,7 +281,7 @@ class CustomerScreen(Screen):
         # Prevent cases due to .clear()
         if event.row_key.value is None:
             return
-        
+
         customer_contacts_table = self.query_one(
             "#customer-contacts-table", DataTable
         )
@@ -511,14 +514,17 @@ class UpdateCustomerScreen(Screen):
     SUB_TITLE = "UPDATE CUSTOMERS"
     CSS_PATH = "../styles/update_customer_screen.tcss"
 
-    def __init__(self, customer_data: dict, contacts: list[Contact]):
+    def __init__(
+        self,
+        customer_data: dict,
+        contacts: list[Contact],
+        sales_representatives: list[Collaborator],
+    ):
         super().__init__()
         self.customer_data = customer_data
         self.updated_customer_data = {}
         self.contacts = contacts
-        self.customer_contacts_ids = customer_data.get(
-            "customer_contacts_ids", []
-        )
+        self.sales_representatives = sales_representatives
 
     def compose(self):
         """
@@ -527,24 +533,26 @@ class UpdateCustomerScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="update-customer-main-container"):
             yield Static(
-                f"Updating Customer: {self.customer_data['customer_first_name']} {self.customer_data['customer_last_name']}",
+                "Updating Customer: "
+                f"{self.customer_data['customer_first_name']} "
+                f"{self.customer_data['customer_last_name']}",
                 classes="updating-customer-static",
             )
             with Container(
                 id="update-customer-data",
                 classes="update-customer-data-input-container",
             ):
+                yield Label("Customer Last Name:")
+                yield Input(
+                    value=self.customer_data.get("customer_last_name", ""),
+                    id="customer_last_name",
+                )
                 yield Label("Customer First Name:")
                 yield Input(
                     value=self.customer_data.get(
                         "customer_first_name", ""
                     ),
                     id="customer_first_name",
-                )
-                yield Label("Customer Last Name:")
-                yield Input(
-                    value=self.customer_data.get("customer_last_name", ""),
-                    id="customer_last_name",
                 )
                 yield Label("Company Name:")
                 yield Input(
@@ -555,8 +563,62 @@ class UpdateCustomerScreen(Screen):
                 id="update-contact-data",
                 classes="update-contact-data-select-container",
             ):
+                contacts_options = [
+                    Selection(
+                        prompt=f"{contact.first_name} {contact.last_name}",
+                        value=contact,
+                        initial_state=contact
+                        in self.customer_data["customer_contacts"],
+                    )
+                    for contact in self.contacts
+                ]
                 yield SelectionList(
-                    classes="update-customer-contacts-selection-list"
+                    *contacts_options,
+                    id="update-customer-contacts-selection-list",
+                    classes="update-customer-contacts-selection-list",
+                )
+            with Container(
+                id="update-customer-sales-representative",
+                classes="update-customer-sales-representative-input-container",
+            ):
+                # Add current collaborator if he is not from sales==
+                collab = self.customer_data.get(
+                    "customer_sales_representative"
+                )
+                if collab not in self.sales_representatives:
+                    self.sales_representatives.append(collab)
+                # ===================================================
+                sales_representatives_options = [
+                    (
+                        (
+                            sales_representative.first_name
+                            + " "
+                            + sales_representative.last_name
+                        ),
+                        sales_representative,
+                    )
+                    for sales_representative in self.sales_representatives
+                ]
+                selected_sales_representative = next(
+                    (
+                        sales_representative
+                        for sales_representative in self.sales_representatives
+                        if sales_representative
+                        == self.customer_data.get(
+                            "customer_sales_representative"
+                        )
+                    ),
+                    None,
+                )
+                select_kwargs = {
+                    "id": "update-customer-sales-representative-select",
+                    "prompt": "Select a sales representative",
+                }
+                if selected_sales_representative is not None:
+                    select_kwargs["value"] = selected_sales_representative
+
+                yield Select(
+                    sales_representatives_options, **select_kwargs
                 )
             with Container(classes="update-customer-buttons-container"):
                 yield Button(
@@ -585,21 +647,14 @@ class UpdateCustomerScreen(Screen):
             "#update-customer-data", Container
         ).border_subtitle = "Edit relevant fields"
         self.query_one(
+            "#update-customer-sales-representative", Container
+        ).border_title = "Sales Representative Selection"
+        self.query_one(
             "#update-contact-data", Container
         ).border_title = "Assigned Contacts"
         self.query_one(
             "#update-contact-data", Container
         ).border_subtitle = "Click on contact to assign/unassign"
-        for contact in self.contacts:
-            is_assigned = contact.id in self.customer_contacts_ids
-
-            self.query_one(SelectionList).add_option(
-                Selection(
-                    prompt=f"{contact.first_name} {contact.last_name}",
-                    value=contact.id,
-                    initial_state=is_assigned,
-                )
-            )
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
@@ -612,21 +667,25 @@ class UpdateCustomerScreen(Screen):
 
     def _collect_form_data(self):
         """ """
-        selection_list = self.query_one(SelectionList)
-        selected_contacts_ids = [
-            selection for selection in selection_list.selected
+        selected_sales_representative = self.query_one(
+            "#update-customer-sales-representative-select", Select
+        ).value
+        selected_contacts = [
+            selection
+            for selection in self.query_one(SelectionList).selected
         ]
 
         self.updated_customer_data = {
             "id": self.customer_data["customer_id"],
-            "first_name": self.query_one(
+            "customer_first_name": self.query_one(
                 "#customer_first_name", Input
             ).value,
-            "last_name": self.query_one(
+            "customer_last_name": self.query_one(
                 "#customer_last_name", Input
             ).value,
             "company_name": self.query_one("#company_name", Input).value,
-            "contact_ids": selected_contacts_ids,
+            "customer_sales_representative": selected_sales_representative,
+            "customer_contacts": selected_contacts,
         }
 
 
