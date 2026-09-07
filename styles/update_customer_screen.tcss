@@ -20,7 +20,14 @@
     height: auto;
 }
 
+.update-customer-sales-representative-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+}
+
 .update-contact-data-select-container {
+    row-span: 2;
     overflow: auto auto;
     border: round $secondary;
     height: auto;

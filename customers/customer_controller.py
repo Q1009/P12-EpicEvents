@@ -5,6 +5,11 @@ from sqlalchemy.orm import Session, joinedload
 from authentication.authentication_controller import (
     AuthenticationController,
 )
+from collaborators.collaborator_model import (
+    Collaborator,
+    Department,
+    DepartmentName,
+)
 from customers.customer_model import (
     Contact,
     Customer,
@@ -40,17 +45,21 @@ class CustomerController:
         """Callback when user chooses from customer menu"""
         match user_choice:
             case "create_customer":
-                create_customer_screen = CreateCustomerScreen()
+                all_contacts = self.get_all_contacts()
+                create_customer_screen = CreateCustomerScreen(all_contacts)
                 self.epic_events_app.push_screen(
                     create_customer_screen, callback=self.create_customer
                 )
             case ("update_customer", customer_id):
+                all_contacts = self.get_all_contacts()
+                sales_representatives = self.get_sales_representatives()
                 customer_to_update = self.load_customer_data_for_update(
                     customer_id
                 )
-                contacts = self.get_all_contacts()
                 update_customer_screen = UpdateCustomerScreen(
-                    customer_to_update, contacts
+                    customer_to_update,
+                    all_contacts,
+                    sales_representatives,
                 )
                 self.epic_events_app.push_screen(
                     update_customer_screen, callback=self.update_customer
@@ -92,6 +101,14 @@ class CustomerController:
             .all()
         )
 
+    def get_sales_representatives(self) -> list[Collaborator]:
+        return (
+            self.session.query(Collaborator)
+            .join(Collaborator.department)
+            .filter(Department.name == DepartmentName.SALES)
+            .all()
+        )
+
     def load_customer_data_for_update(self, customer_id: int):
         """ """
         customer = (
@@ -105,9 +122,8 @@ class CustomerController:
             "customer_first_name": customer.first_name,
             "customer_last_name": customer.last_name,
             "company_name": customer.company_name,
-            "customer_contacts_ids": [
-                contact.id for contact in customer.contacts
-            ],
+            "customer_contacts": customer.contacts,
+            "customer_sales_representative": customer.sales_representative,
         }
 
     def load_contact_data_for_update(self, contact_id: int):
@@ -170,20 +186,24 @@ class CustomerController:
             return
 
         # Else, transform raw data (dict) from submitted form
+        # Contact
+        customer_contact = new_customer_data["customer_contact"]
+        if isinstance(customer_contact, Contact):
+            new_customer_contact = customer_contact
+        else:
+            new_customer_contact = Contact(
+                last_name=customer_contact["last_name"],
+                first_name=customer_contact["first_name"],
+                email=customer_contact["email"],
+            )
+            self.session.add(new_customer_contact)
 
-        # Contact first
-        contact = Contact(
-            first_name=new_customer_data["contact_first_name"],
-            last_name=new_customer_data["contact_last_name"],
-            email=new_customer_data["email"],
-        )
-        self.session.add(contact)
-
-        # Phone number
-        phone_number = PhoneNumber(
-            number=new_customer_data["phone_number"], contact=contact
-        )
-        self.session.add(phone_number)
+            # Phone Number
+            phone_number = PhoneNumber(
+                number=customer_contact["phone_number"],
+                contact=new_customer_contact,
+            )
+            self.session.add(phone_number)
 
         # Customer
         customer = Customer(
@@ -192,9 +212,10 @@ class CustomerController:
             company_name=new_customer_data["company_name"],
             sales_representative=self.authentication_controller.get_user_info(),
         )
-        customer.contacts.append(contact)
-
+        customer.contacts.append(new_customer_contact)
         self.session.add(customer)
+
+        # Commit session
         self.session.commit()
         self.epic_events_app.notify(
             "Customer successfully created", severity="information"
@@ -210,32 +231,22 @@ class CustomerController:
             self.start(on_back=self.on_back_callback)
             return
 
-        self.session.query(Customer).filter(
-            Customer.id == updated_customer_data["id"]
-        ).update(
+        customer = (
+            self.session.query(Customer)
+            .filter(Customer.id == updated_customer_data["id"])
+        )
+
+        customer.update(
             {
-                "first_name": updated_customer_data["first_name"],
-                "last_name": updated_customer_data["last_name"],
+                "first_name": updated_customer_data["customer_first_name"],
+                "last_name": updated_customer_data["customer_last_name"],
                 "company_name": updated_customer_data["company_name"],
+                "sales_representative_id": updated_customer_data["customer_sales_representative"].id,
                 "updated_at": datetime.now(UTC),
             }
         )
 
-        customer = (
-            self.session.query(Customer)
-            .filter(Customer.id == updated_customer_data["id"])
-            .first()
-        )
-        if customer:
-            # Get selected contacts from update
-            selected_contacts = (
-                self.session.query(Contact)
-                .filter(
-                    Contact.id.in_(updated_customer_data["contact_ids"])
-                )
-                .all()
-            )
-            customer.contacts = selected_contacts
+        customer.first().contacts = updated_customer_data["customer_contacts"]
 
         self.session.commit()
         self.epic_events_app.notify(

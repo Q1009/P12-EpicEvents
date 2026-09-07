@@ -100,7 +100,7 @@ class ContractScreen(Screen):
                 None,
             )
             if contract:
-                self.selected_contract_id = contract.id
+                # Moving cursor will update selected_contract_id
                 row_index = self.contracts.index(contract)
                 self.query_one("#contracts-table", DataTable).move_cursor(
                     row=row_index
@@ -286,9 +286,15 @@ class ContractScreen(Screen):
     @on(DataTable.RowHighlighted, "#contracts-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted contract id"""
-        row_index = event.cursor_row
-        if 0 <= row_index < len(self.contracts):
-            self.selected_contract_id = self.contracts[row_index].id
+        contracts_table = self.query_one(
+            "#contracts-table", DataTable
+        )
+        # Get value from the cell
+        contract_id = contracts_table.get_cell(
+            event.row_key, "contract_id"
+        )
+        # Update selected_attribute_id
+        self.selected_contract_id = contract_id
 
     @on(Button.Pressed, "#create-contract")
     def go_create_contract(self) -> None:

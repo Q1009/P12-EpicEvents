@@ -111,7 +111,7 @@ class EventScreen(Screen):
                 None,
             )
             if event:
-                self.selected_event_id = event.id
+                # Moving cursor will update selected_event_id
                 row_index = self.events.index(event)
                 self.query_one("#events-table", DataTable).move_cursor(
                     row=row_index
@@ -315,9 +315,15 @@ class EventScreen(Screen):
     @on(DataTable.RowHighlighted, "#events-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted event id"""
-        row_index = event.cursor_row
-        if 0 <= row_index < len(self.events):
-            self.selected_event_id = self.events[row_index].id
+        events_table = self.query_one(
+            "#events-table", DataTable
+        )
+        # Get value from the cell
+        event_id = events_table.get_cell(
+            event.row_key, "event_id"
+        )
+        # Update selected_attribute_id
+        self.selected_event_id = event_id
 
     @on(Button.Pressed, "#create-event")
     def go_create_event(self) -> None:

@@ -14,9 +14,34 @@
     height: auto;
 }
 
-.contact-data-input-container {
+.customer-contact-input-container {
     overflow: auto auto;
     border: round $secondary;
+    height: auto;
+    align: center middle;
+}
+
+#customer-contact-input-choice {
+    layout: horizontal;
+    align: center middle;
+    height: auto;
+    border: round $panel;
+}
+
+.customer-contact-form-input-container {
+    align: center top;
+    border: round $boost;
+    height: auto;
+}
+
+.customer-contact-select-input-container {
+    align: center top;
+    border: round $boost;
+    height: auto;
+}
+
+.customer-contact-radio-button {
+    width: auto;
     height: auto;
 }
 

@@ -212,8 +212,9 @@ class EventController:
             contract=new_event_data["event_contract"],
             location=new_event_location,
         )
-
         self.session.add(event)
+
+        # Commit session
         self.session.commit()
         self.epic_events_app.notify(
             "Event successfully created", severity="information"

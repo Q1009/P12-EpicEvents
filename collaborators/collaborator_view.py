@@ -91,7 +91,7 @@ class CollaboratorScreen(Screen):
         table.zebra_stripes = True
 
         # Configure table columns
-        table.add_column("ID", key="id")
+        table.add_column("ID", key="collaborator_id")
         table.add_column("First Name", key="first_name")
         table.add_column("Last Name", key="last_name")
         table.add_column("Email", key="email")
@@ -250,17 +250,26 @@ class CollaboratorScreen(Screen):
     @on(DataTable.RowHighlighted, "#collaborators-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted collaborator id"""
-        row_index = event.cursor_row
-        if 0 <= row_index < len(self.collaborators):
-            self.selected_collaborator_id = self.collaborators[
-                row_index
-            ].id
+        collaborators_table = self.query_one(
+            "#collaborators-table", DataTable
+        )
+        # Get value from the cell
+        collaborator_id = collaborators_table.get_cell(
+            event.row_key, "collaborator_id"
+        )
+        # Update selected_attribute_id
+        self.selected_collaborator_id = collaborator_id
 
     @on(DataTable.RowHighlighted, "#collaborator-customers-table")
     def on_customer_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted customer id"""
+
+        # Prevent cases due to .clear()
+        if event.row_key.value is None:
+            return
+
         collaborator_customers_table = self.query_one(
             "#collaborator-customers-table", DataTable
         )
@@ -276,6 +285,11 @@ class CollaboratorScreen(Screen):
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted event id"""
+
+        # Prevent cases due to .clear()
+        if event.row_key.value is None:
+            return
+        
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
