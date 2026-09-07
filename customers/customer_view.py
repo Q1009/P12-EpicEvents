@@ -192,7 +192,10 @@ class CustomerScreen(Screen):
     ) -> None:
         table.clear()
         for phone_number in contact.phone_numbers:
-            table.add_row(phone_number.id, phone_number.number)
+            table.add_row(
+                phone_number.id,
+                phone_number.number,
+            )
 
         table.loading = False
 
@@ -278,13 +281,13 @@ class CustomerScreen(Screen):
     ) -> None:
         """Saves highlighted contact id"""
 
-        # Prevent cases due to .clear()
-        if event.row_key.value is None:
-            return
-
         customer_contacts_table = self.query_one(
             "#customer-contacts-table", DataTable
         )
+        # Prevent cases due to .clear() triggering a change in highlighted row
+        if event.row_key not in customer_contacts_table.rows:
+            return
+
         # Get value from the cell
         contact_id = customer_contacts_table.get_cell(
             event.row_key, "contact_id"
