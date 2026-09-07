@@ -70,7 +70,6 @@ class EventScreen(Screen):
                     "Create Location",
                     id="create-location",
                     variant="primary",
-                    disabled=True,
                 )
                 yield Button(
                     "Update Location",
@@ -860,4 +859,102 @@ class UpdateEventScreen(Screen):
             "event_contract": selected_contract,
             "event_location": selected_location,
             "event_support_representative": selected_support_representative,
+        }
+
+
+class CreateLocationScreen(Screen):
+    """Screen that displays a form to create a new location."""
+
+    SUB_TITLE = "CREATE LOCATION"
+    CSS_PATH = "../styles/create_location_screen.tcss"
+
+    def __init__(
+        self,
+    ):
+        super().__init__()
+        self.location_data = {}
+
+    def compose(self) -> ComposeResult:
+        yield Header(show_clock=True)
+        with Container(classes="create-location-main-container"):
+            with Container(
+                id="location-data",
+                classes="location-data-input-container",
+            ):
+                yield Label("Name", classes="form-label")
+                yield Input(
+                    placeholder="Location Name",
+                    id="location_name",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Number", classes="form-label")
+                yield Input(
+                    placeholder="3",
+                    id="location_street_number",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Street", classes="form-label")
+                yield Input(
+                    placeholder="Sunset Boulevard",
+                    id="location_street_name",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Zip Code", classes="form-label")
+                yield Input(
+                    placeholder="34567",
+                    id="location_zip_code",
+                    type="integer",
+                    classes="form-input",
+                )
+                yield Label("City", classes="form-label")
+                yield Input(
+                    placeholder="Night City",
+                    id="location_city",
+                    type="text",
+                    classes="form-input",
+                )
+            with Container(classes="create-location-buttons-container"):
+                yield Button(
+                    "Create",
+                    id="create",
+                    variant="primary",
+                    classes="create-location-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="create-location-button",
+                )
+        yield Footer(show_command_palette=False)
+
+    def on_mount(self) -> None:
+        location_data_container = self.query_one(
+            "#location-data", Container
+        )
+        location_data_container.border_title = "Location Data"
+
+    @on(Button.Pressed, "#create")
+    def go_create(self) -> None:
+        self._collect_form_data()
+        self.dismiss(self.location_data)
+
+    @on(Button.Pressed, "#cancel")
+    def go_back(self) -> None:
+        self.dismiss(None)
+
+    def _collect_form_data(self) -> dict:
+        self.location_data = {
+            "name": self.query_one("#location_name", Input).value,
+            "street_number": self.query_one(
+                "#location_street_number", Input
+            ).value,
+            "street_name": self.query_one(
+                "#location_street_name", Input
+            ).value,
+            "zip_code": self.query_one("#location_zip_code", Input).value,
+            "city": self.query_one("#location_city", Input).value,
         }

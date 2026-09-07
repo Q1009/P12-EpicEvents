@@ -1,0 +1,30 @@
+.create-location-main-container {
+    layout: grid;
+    grid-size: 1;
+    grid-gutter: 1;
+    grid-rows: auto;
+    border: round $primary;
+    overflow: auto auto;
+    content-align: center middle;
+    align: center top;
+}
+
+.location-data-input-container {
+    overflow: auto auto;
+    border: round $secondary;
+    height: auto;
+    width: 50%;
+}
+
+.create-location-buttons-container {
+    layout: horizontal;
+    align: center top;
+    height: auto;
+    width: 50%;
+}
+
+.create-location-button {
+    width: auto;
+    height: auto;
+    margin: 0 2;
+}

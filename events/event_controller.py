@@ -9,6 +9,7 @@ from contracts.contract_model import Contract, ContractStatus
 from events.event_model import Event, Location
 from events.event_view import (
     CreateEventScreen,
+    CreateLocationScreen,
     EventScreen,
     UpdateEventScreen,
 )
@@ -96,11 +97,11 @@ class EventController:
                     callback=self.update_event,
                 )
             case "create_location":
-                pass
-                # event_data_for_event = self.get_data(event_id)
-                # self.create_location(
-                #     event_data_for_event
-                # )
+                create_location_screen = CreateLocationScreen()
+                self.epic_events_app.push_screen(
+                    create_location_screen,
+                    callback=self.create_location,
+                )
             case ("update_location", location_id):
                 pass
                 # event_data_for_event = self.get_data(event_id)
@@ -279,8 +280,41 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
-    def create_location(self):
-        pass
+    def create_location(self, new_location_data):
+        """ """
+        # If creation is cancelled
+        if not new_location_data:
+            self.epic_events_app.notify(
+                "Location creation cancelled", severity="warning"
+            )
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_contract=self.on_consult_contract_callback,
+            )
+            return
+
+        # Else, transform raw data (dict) from submitted form
+
+        new_location = Location(
+            name=new_location_data["name"],
+            street_number=new_location_data["street_number"],
+            street_name=new_location_data["street_name"],
+            zip_code=new_location_data["zip_code"],
+            city=new_location_data["city"],
+        )
+        self.session.add(new_location)
+
+        # Commit session
+        self.session.commit()
+        self.epic_events_app.notify(
+            "Location successfully created", severity="information"
+        )
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_contract=self.on_consult_contract_callback,
+        )
 
     def update_location(self):
         pass
