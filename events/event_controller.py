@@ -30,6 +30,7 @@ class EventController:
     def start(
         self,
         event_id=None,
+        contract_id=None,
         on_back=None,
         on_consult_customer=None,
         on_consult_contract=None,
@@ -37,6 +38,11 @@ class EventController:
         self.on_back_callback = on_back
         self.on_consult_customer_callback = on_consult_customer
         self.on_consult_contract_callback = on_consult_contract
+
+        if contract_id is not None:
+            self.handle_user_choice(("create_event", contract_id))
+            return
+
         events = self.get_all_events()
         events_screen = EventScreen(events, event_id)
         self.epic_events_app.push_screen(

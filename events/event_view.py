@@ -315,13 +315,9 @@ class EventScreen(Screen):
     @on(DataTable.RowHighlighted, "#events-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted event id"""
-        events_table = self.query_one(
-            "#events-table", DataTable
-        )
+        events_table = self.query_one("#events-table", DataTable)
         # Get value from the cell
-        event_id = events_table.get_cell(
-            event.row_key, "event_id"
-        )
+        event_id = events_table.get_cell(event.row_key, "event_id")
         # Update selected_attribute_id
         self.selected_event_id = event_id
 
@@ -335,7 +331,7 @@ class EventScreen(Screen):
 
     @on(Button.Pressed, "#create-location")
     def go_create_location(self) -> None:
-        self.dismiss("create_event")
+        self.dismiss("create_location")
 
     @on(Button.Pressed, "#update-location")
     def go_update_location(self) -> None:
@@ -348,10 +344,6 @@ class EventScreen(Screen):
     @on(Button.Pressed, "#consult-contract")
     def go_consult_contract(self) -> None:
         self.dismiss(("consult_contract", self.selected_contract_id))
-
-    # @on(Button.Pressed, "#back")
-    # def go_back(self) -> None:
-    #     self.dismiss("back")
 
 
 class CreateEventScreen(Screen):

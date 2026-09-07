@@ -86,13 +86,16 @@ class MainController:
             unauthenticated_main_screen, callback=self.handle_user_choice
         )
 
-    def push_event_screen(self, event_id: int | None = None):
+    def push_event_screen(
+        self, event_id: int | None = None, contract_id: int | None = None
+    ):
         """Call the start method of event_controller,
         with optional event_id argument
         and mandatory callback methods arguments.
         """
         self.event_controller.start(
             event_id=event_id,
+            contract_id=contract_id,
             on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
             on_consult_contract=self.push_contract_screen,
@@ -108,6 +111,7 @@ class MainController:
             on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
             on_consult_event=self.push_event_screen,
+            on_create_event=self.push_event_screen,
         )
 
     def push_customer_screen(self, customer_id: int | None = None):

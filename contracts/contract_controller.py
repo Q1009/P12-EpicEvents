@@ -21,6 +21,7 @@ class ContractController:
         self.on_back_callback = None
         self.on_consult_customer_callback = None
         self.on_consult_event_callback = None
+        self.on_create_event_callback = None
 
     def start(
         self,
@@ -28,10 +29,12 @@ class ContractController:
         on_back=None,
         on_consult_customer=None,
         on_consult_event=None,
+        on_create_event=None,
     ):
         self.on_back_callback = on_back
         self.on_consult_customer_callback = on_consult_customer
         self.on_consult_event_callback = on_consult_event
+        self.on_create_event_callback = on_create_event
         contracts = self.get_all_contracts()
         contracts_screen = ContractScreen(contracts, contract_id)
         self.epic_events_app.push_screen(
@@ -42,7 +45,6 @@ class ContractController:
         """Callback when user chooses from contract menu"""
         match user_choice:
             case "create_contract":
-                # pass
                 all_customers = self.get_all_customers()
                 create_contract_screen = CreateContractScreen(
                     all_customers
@@ -52,7 +54,6 @@ class ContractController:
                     callback=self.create_contract,
                 )
             case ("update_contract", contract_id):
-                # pass
                 all_customers = self.get_all_customers()
                 contract_to_update = self.load_contract_data_for_update(
                     contract_id
@@ -65,16 +66,13 @@ class ContractController:
                     callback=self.update_contract,
                 )
             case ("create_event", contract_id):
-                pass
-                # contract_data_for_event = self.get_data(contract_id)
-                # self.create_event(
-                #     contract_data_for_event
-                # )
+                self.on_create_event_callback(contract_id=contract_id)
+                return
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
                 return
             case ("consult_event", event_id):
-                self.on_consult_event_callback(event_id)
+                self.on_consult_event_callback(event_id=event_id)
                 return
             case "back":
                 if self.on_back_callback:
@@ -126,6 +124,7 @@ class ContractController:
                 on_back=self.on_back_callback,
                 on_consult_customer=self.on_consult_customer_callback,
                 on_consult_event=self.on_consult_event_callback,
+                on_create_event=self.on_create_event_callback,
             )
             return
 
@@ -149,6 +148,7 @@ class ContractController:
             on_back=self.on_back_callback,
             on_consult_customer=self.on_consult_customer_callback,
             on_consult_event=self.on_consult_event_callback,
+            on_create_event=self.on_create_event_callback,
         )
 
     def update_contract(self, updated_contract_data):
@@ -161,6 +161,7 @@ class ContractController:
                 on_back=self.on_back_callback,
                 on_consult_customer=self.on_consult_customer_callback,
                 on_consult_event=self.on_consult_event_callback,
+                on_create_event=self.on_create_event_callback,
             )
             return
 
@@ -187,6 +188,7 @@ class ContractController:
             on_back=self.on_back_callback,
             on_consult_customer=self.on_consult_customer_callback,
             on_consult_event=self.on_consult_event_callback,
+            on_create_event=self.on_create_event_callback,
         )
 
     def create_event(self, contract_data_for_event):

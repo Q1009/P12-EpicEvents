@@ -277,7 +277,10 @@ class ContractScreen(Screen):
         )
         consult_event_button.disabled = self.selected_event_id is None
         # Enable or disable create event button
-        create_event_button.disabled = self.selected_event_id is not None
+        create_event_button.disabled = (
+            selected_contract.status != ContractStatus.SIGNED
+            or self.selected_event_id is not None
+        )
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
@@ -286,9 +289,7 @@ class ContractScreen(Screen):
     @on(DataTable.RowHighlighted, "#contracts-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted contract id"""
-        contracts_table = self.query_one(
-            "#contracts-table", DataTable
-        )
+        contracts_table = self.query_one("#contracts-table", DataTable)
         # Get value from the cell
         contract_id = contracts_table.get_cell(
             event.row_key, "contract_id"
