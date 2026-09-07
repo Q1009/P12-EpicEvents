@@ -1,4 +1,4 @@
-.create-location-main-container {
+.update-location-main-container {
     layout: grid;
     grid-size: 1;
     grid-gutter: 1;
@@ -8,21 +8,29 @@
     align: center middle;
 }
 
-.location-data-input-container {
+.updating-location-static {
+    border: round $secondary;
+    height: auto;
+    width: 50%;
+    content-align: center middle;
+}
+
+.update-location-data-input-container {
     overflow: auto auto;
     border: round $secondary;
     height: auto;
     width: 50%;
 }
 
-.create-location-buttons-container {
+.update-location-buttons-container {
+    column-span: 2;
     layout: horizontal;
     align: center top;
     height: auto;
     width: 50%;
 }
 
-.create-location-button {
+.update-location-button {
     width: auto;
     height: auto;
     margin: 0 2;

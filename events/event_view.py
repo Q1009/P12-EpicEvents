@@ -75,7 +75,6 @@ class EventScreen(Screen):
                     "Update Location",
                     id="update-location",
                     variant="warning",
-                    disabled=True,
                 )
             with Container(classes="customer-contract-buttons-container"):
                 yield Button(
@@ -957,4 +956,125 @@ class CreateLocationScreen(Screen):
             ).value,
             "zip_code": self.query_one("#location_zip_code", Input).value,
             "city": self.query_one("#location_city", Input).value,
+        }
+
+
+class UpdateLocationScreen(Screen):
+    """Screen that displays a form to update a location."""
+
+    SUB_TITLE = "UPDATE LOCATION"
+    CSS_PATH = "../styles/update_location_screen.tcss"
+
+    def __init__(
+        self,
+        location_data: dict,
+    ):
+        super().__init__()
+        self.location_data = location_data
+        self.updated_location_data = {}
+
+    def compose(self):
+        """
+        Compose the screen with a form to update location data.
+        """
+        yield Header(show_clock=True)
+        with Container(classes="update-location-main-container"):
+            yield Static(
+                "Updating location: "
+                f"{self.location_data['location_name']} ",
+                classes="updating-location-static",
+            )
+            with Container(
+                id="update-location-data",
+                classes="update-location-data-input-container",
+            ):
+                yield Label("Name", classes="form-label")
+                yield Input(
+                    value=self.location_data.get("location_name", ""),
+                    id="location_name",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Street Number", classes="form-label")
+                yield Input(
+                    value=self.location_data.get(
+                        "location_street_number", ""
+                    ),
+                    id="location_street_number",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Street Name", classes="form-label")
+                yield Input(
+                    value=self.location_data.get(
+                        "location_street_name", ""
+                    ),
+                    id="location_street_name",
+                    type="text",
+                    classes="form-input",
+                )
+                yield Label("Zip Code", classes="form-label")
+                yield Input(
+                    value=str(
+                        self.location_data.get("location_zip_code", 0)
+                    ),
+                    id="location_zip_code",
+                    type="integer",
+                    classes="form-input",
+                )
+                yield Label("City", classes="form-label")
+                yield Input(
+                    value=self.location_data.get("location_city", ""),
+                    id="location_city",
+                    type="text",
+                    classes="form-input",
+                )
+            with Container(classes="update-location-buttons-container"):
+                yield Button(
+                    "Update",
+                    id="update",
+                    variant="primary",
+                    classes="update-location-button",
+                )
+                yield Button(
+                    "Cancel",
+                    id="cancel",
+                    variant="default",
+                    classes="update-location-button",
+                )
+        yield Footer(show_command_palette=False)
+
+    def _on_mount(self):
+        """Set container border title and subtitle and widget values"""
+
+        location_data_container = self.query_one(
+            "#update-location-data", Container
+        )
+        location_data_container.border_title = "Location Data"
+        location_data_container.border_subtitle = "Edit relevant fields"
+
+    @on(Button.Pressed, "#update")
+    def go_update(self) -> None:
+        self._collect_form_data()
+        self.dismiss(self.updated_location_data)
+
+    @on(Button.Pressed, "#cancel")
+    def go_back(self) -> None:
+        self.dismiss(None)
+
+    def _collect_form_data(self):
+
+        self.updated_location_data = {
+            "location_id": self.location_data["location_id"],
+            "location_name": self.query_one("#location_name", Input).value,
+            "location_street_number": self.query_one(
+                "#location_street_number", Input
+            ).value,
+            "location_street_name": self.query_one(
+                "#location_street_name", Input
+            ).value,
+            "location_zip_code": self.query_one(
+                "#location_zip_code", Input
+            ).value,
+            "location_city": self.query_one("#location_city", Input).value,
         }

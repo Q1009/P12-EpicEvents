@@ -12,6 +12,7 @@ from events.event_view import (
     CreateLocationScreen,
     EventScreen,
     UpdateEventScreen,
+    UpdateLocationScreen,
 )
 from services.date_services import (
     format_utc_datetime,
@@ -103,11 +104,16 @@ class EventController:
                     callback=self.create_location,
                 )
             case ("update_location", location_id):
-                pass
-                # event_data_for_event = self.get_data(event_id)
-                # self.update_location(
-                #     event_data_for_event
-                # )
+                location_to_update = self.load_location_data_for_update(
+                    location_id
+                )
+                update_location_screen = UpdateLocationScreen(
+                    location_to_update
+                )
+                self.epic_events_app.push_screen(
+                    update_location_screen,
+                    callback=self.update_location,
+                )
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
                 return
@@ -171,6 +177,22 @@ class EventController:
             "event_contract": event.contract,
             "event_location": event.location,
             "event_support_representative": event.support_representative,
+        }
+
+    def load_location_data_for_update(self, location_id: int):
+        location = (
+            self.session.query(Location)
+            .filter(Location.id == location_id)
+            .first()
+        )
+
+        return {
+            "location_id": location.id,
+            "location_name": location.name,
+            "location_street_number": location.street_number,
+            "location_street_name": location.street_name,
+            "location_zip_code": location.zip_code,
+            "location_city": location.city,
         }
 
     def create_event(self, new_event_data):
@@ -316,5 +338,40 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
-    def update_location(self):
-        pass
+    def update_location(self, updated_location_data):
+        if not updated_location_data:
+            self.epic_events_app.notify(
+                "Location update cancelled", severity="warning"
+            )
+            self.start(
+                on_back=self.on_back_callback,
+                on_consult_customer=self.on_consult_customer_callback,
+                on_consult_contract=self.on_consult_contract_callback,
+            )
+            return
+
+        self.session.query(Location).filter(
+            Location.id == updated_location_data["location_id"]
+        ).update(
+            {
+                "name": updated_location_data["location_name"],
+                "street_number": updated_location_data[
+                    "location_street_number"
+                ],
+                "street_name": updated_location_data[
+                    "location_street_name"
+                ],
+                "zip_code": updated_location_data["location_zip_code"],
+                "city": updated_location_data["location_city"],
+            }
+        )
+
+        self.session.commit()
+        self.epic_events_app.notify(
+            "Location successfully updated", severity="information"
+        )
+        self.start(
+            on_back=self.on_back_callback,
+            on_consult_customer=self.on_consult_customer_callback,
+            on_consult_contract=self.on_consult_contract_callback,
+        )
