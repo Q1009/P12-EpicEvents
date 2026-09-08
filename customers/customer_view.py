@@ -280,7 +280,6 @@ class CustomerScreen(Screen):
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted contact id"""
-
         customer_contacts_table = self.query_one(
             "#customer-contacts-table", DataTable
         )

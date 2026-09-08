@@ -265,11 +265,6 @@ class CollaboratorScreen(Screen):
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted customer id"""
-
-        # Prevent cases due to .clear()
-        if event.row_key.value is None:
-            return
-
         collaborator_customers_table = self.query_one(
             "#collaborator-customers-table", DataTable
         )
@@ -285,11 +280,6 @@ class CollaboratorScreen(Screen):
         self, event: DataTable.RowHighlighted
     ) -> None:
         """Saves highlighted event id"""
-
-        # Prevent cases due to .clear()
-        if event.row_key.value is None:
-            return
-        
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
