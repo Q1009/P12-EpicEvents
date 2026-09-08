@@ -5,6 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
+from textual.validation import Integer, Length
 from textual.widgets import (
     Button,
     DataTable,
@@ -12,6 +13,8 @@ from textual.widgets import (
     Header,
     Input,
     Label,
+    MaskedInput,
+    Pretty,
     RadioButton,
     RadioSet,
     Select,
@@ -462,10 +465,10 @@ class CreateEventScreen(Screen):
                         classes="form-input",
                     )
                     yield Label("Zip Code", classes="form-label")
-                    yield Input(
-                        placeholder="34567",
+                    yield MaskedInput(
+                        placeholder="75000",
                         id="location_zip_code",
-                        type="integer",
+                        template="99999",
                         classes="form-input",
                     )
                     yield Label("City", classes="form-label")
@@ -594,7 +597,7 @@ class CreateEventScreen(Screen):
                     "#location_street_name", Input
                 ).value,
                 "zip_code": self.query_one(
-                    "#location_zip_code", Input
+                    "#location_zip_code", MaskedInput
                 ).value,
                 "city": self.query_one("#location_city", Input).value,
             }
@@ -867,6 +870,9 @@ class CreateLocationScreen(Screen):
     SUB_TITLE = "CREATE LOCATION"
     CSS_PATH = "../styles/create_location_screen.tcss"
 
+    # Reactive variables
+    is_form_valid: reactive[bool] = reactive(False)
+
     def __init__(
         self,
     ):
@@ -885,35 +891,69 @@ class CreateLocationScreen(Screen):
                     placeholder="Location Name",
                     id="location_name",
                     type="text",
+                    max_length=100,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Name: Field is required and cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Number", classes="form-label")
                 yield Input(
                     placeholder="3",
                     id="location_street_number",
                     type="text",
+                    max_length=10,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Number: Field is required and cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Street", classes="form-label")
                 yield Input(
                     placeholder="Sunset Boulevard",
                     id="location_street_name",
                     type="text",
+                    max_length=100,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Street: Field is required and cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Zip Code", classes="form-label")
-                yield Input(
-                    placeholder="34567",
+                yield MaskedInput(
+                    placeholder="75000",
                     id="location_zip_code",
-                    type="integer",
+                    template="99999",
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Zip Code: Field is required and cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("City", classes="form-label")
                 yield Input(
                     placeholder="Night City",
                     id="location_city",
                     type="text",
+                    max_length=50,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="City: Field is required and cannot be empty.",
+                        ),
+                    ],
                 )
             with Container(classes="create-location-buttons-container"):
                 yield Button(
@@ -921,6 +961,7 @@ class CreateLocationScreen(Screen):
                     id="create",
                     variant="primary",
                     classes="create-location-button",
+                    disabled=True,
                 )
                 yield Button(
                     "Cancel",
@@ -928,6 +969,7 @@ class CreateLocationScreen(Screen):
                     variant="default",
                     classes="create-location-button",
                 )
+            yield Pretty([], classes="create-location-pretty")
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -935,6 +977,81 @@ class CreateLocationScreen(Screen):
             "#location-data", Container
         )
         location_data_container.border_title = "Location Data"
+
+    def watch_is_form_valid(self, is_valid: bool) -> None:
+        """Disable/enable Create button based on form input validation."""
+        create_button = self.query_one("#create", Button)
+        create_button.disabled = not is_valid
+
+    def _validate_form(self) -> None:
+        """Validates every input field of the form and
+        updates `is_form_valid` reactive variable
+        """
+        widget_inputs = [
+            self.query_one("#location_name", Input),
+            self.query_one("#location_street_number", Input),
+            self.query_one("#location_street_name", Input),
+            self.query_one("#location_zip_code", MaskedInput),
+            self.query_one("#location_city", Input),
+        ]
+
+        # Check that all fields are valid
+        all_valid = False
+        all_valid = all(
+            widget_input.validate(widget_input.value).is_valid
+            for widget_input in widget_inputs
+        )
+
+        # Update reactive variable triggering watcher
+        self.is_form_valid = all_valid
+
+    @on(Input.Changed)
+    def show_input_invalid_reasons(self, event: Input.Changed) -> None:
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        if not event.validation_result.is_valid:
+            self.query_one(Pretty).update(
+                event.validation_result.failure_descriptions
+            )
+        else:
+            self.query_one(Pretty).update([])
+
+    @on(MaskedInput.Changed)
+    def show_minput_invalid_reasons(
+        self, event: MaskedInput.Changed
+    ) -> None:
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        if not event.validation_result.is_valid:
+            self.query_one(Pretty).update(
+                event.validation_result.failure_descriptions
+            )
+        else:
+            self.query_one(Pretty).update([])
+
+    @on(Input.Blurred)
+    def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        if not event.validation_result.is_valid:
+            self.query_one(Pretty).update(
+                event.validation_result.failure_descriptions
+            )
+        else:
+            self.query_one(Pretty).update([])
+
+    @on(MaskedInput.Blurred)
+    def show_minput_invalid_reasons_2(
+        self, event: MaskedInput.Blurred
+    ) -> None:
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        if not event.validation_result.is_valid:
+            self.query_one(Pretty).update(
+                event.validation_result.failure_descriptions
+            )
+        else:
+            self.query_one(Pretty).update([])
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
@@ -954,7 +1071,9 @@ class CreateLocationScreen(Screen):
             "street_name": self.query_one(
                 "#location_street_name", Input
             ).value,
-            "zip_code": self.query_one("#location_zip_code", Input).value,
+            "zip_code": self.query_one(
+                "#location_zip_code", MaskedInput
+            ).value,
             "city": self.query_one("#location_city", Input).value,
         }
 
@@ -1014,12 +1133,13 @@ class UpdateLocationScreen(Screen):
                     classes="form-input",
                 )
                 yield Label("Zip Code", classes="form-label")
-                yield Input(
-                    value=str(
-                        self.location_data.get("location_zip_code", 0)
+                yield MaskedInput(
+                    value=self.location_data.get(
+                        "location_zip_code", "99999"
                     ),
                     id="location_zip_code",
-                    type="integer",
+                    template="99999",
+                    placeholder="75000",
                     classes="form-input",
                 )
                 yield Label("City", classes="form-label")
@@ -1074,7 +1194,7 @@ class UpdateLocationScreen(Screen):
                 "#location_street_name", Input
             ).value,
             "location_zip_code": self.query_one(
-                "#location_zip_code", Input
+                "#location_zip_code", MaskedInput
             ).value,
             "location_city": self.query_one("#location_city", Input).value,
         }
