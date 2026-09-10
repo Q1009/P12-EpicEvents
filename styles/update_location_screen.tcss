@@ -35,3 +35,10 @@
     height: auto;
     margin: 0 2;
 }
+
+.update-location-pretty {
+    border: round $accent;
+    height: auto;
+    color: $error;
+    width: 50%;
+}
