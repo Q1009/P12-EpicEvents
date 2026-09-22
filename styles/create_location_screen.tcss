@@ -27,10 +27,3 @@
     height: auto;
     margin: 0 2;
 }
-
-.create-location-pretty {
-    border: round $accent;
-    height: auto;
-    color: $error;
-    width: 50%;
-}
