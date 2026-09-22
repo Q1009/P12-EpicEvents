@@ -21,6 +21,7 @@ from textual.widgets import (
     Static,
     TextArea,
 )
+from textual.widgets._select import SelectCurrent
 
 from collaborators.collaborator_model import Collaborator
 from contracts.contract_model import Contract
@@ -353,6 +354,9 @@ class CreateEventScreen(Screen):
     SUB_TITLE = "CREATE EVENT"
     CSS_PATH = "../styles/create_event_screen.tcss"
 
+    # Reactive variables
+    is_form_valid: reactive[bool] = reactive(False)
+
     def __init__(
         self,
         locations: list[Location],
@@ -377,20 +381,27 @@ class CreateEventScreen(Screen):
                     placeholder="Event Name or Customer Event",
                     id="event_name",
                     type="text",
+                    max_length=100,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Event Start Date", classes="form-label")
-                yield Input(
+                yield MaskedInput(
                     placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_start_date",
-                    type="text",
+                    template="99/99/9999 (99:99:99)",
                     classes="form-input",
                 )
                 yield Label("Event End Date", classes="form-label")
-                yield Input(
+                yield MaskedInput(
                     placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_end_date",
-                    type="text",
+                    template="99/99/9999 (99:99:99)",
                     classes="form-input",
                 )
                 yield Label("Number of attendees", classes="form-label")
@@ -399,6 +410,13 @@ class CreateEventScreen(Screen):
                     id="event_attendees",
                     type="integer",
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                        Integer(failure_description="Must be a valid number of guests.") 
+                    ],
                 )
                 yield Label("Event Notes", classes="form-label")
                 yield TextArea(
@@ -449,20 +467,40 @@ class CreateEventScreen(Screen):
                         id="location_name",
                         type="text",
                         classes="form-input",
+                        validators=[
+                            Length(
+                                maximum=99,
+                                failure_description="Name is too long.",
+                            ),
+                        ],
                     )
                     yield Label("Number", classes="form-label")
                     yield Input(
                         placeholder="3",
                         id="location_street_number",
                         type="text",
+                        max_length=10,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
                     yield Label("Street", classes="form-label")
                     yield Input(
                         placeholder="Sunset Boulevard",
                         id="location_street_name",
                         type="text",
+                        max_length=100,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
                     yield Label("Zip Code", classes="form-label")
                     yield MaskedInput(
@@ -476,7 +514,14 @@ class CreateEventScreen(Screen):
                         placeholder="Night City",
                         id="location_city",
                         type="text",
+                        max_length=50,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
             with Container(
                 id="event-contract",
@@ -544,10 +589,138 @@ class CreateEventScreen(Screen):
             "#event-location-form-input-container", Container
         ).display = False
 
+    def watch_is_form_valid(self, is_valid: bool) -> None:
+        """Disable/enable Create button based on form input validation."""
+        create_button = self.query_one("#create", Button)
+        create_button.disabled = not is_valid
+
+    def _validate_form(self) -> None:
+        """Validates every input field of the form and
+        updates `is_form_valid` reactive variable
+        """
+        widget_inputs = [
+            self.query_one("#event_name", Input),
+            self.query_one("#event_start_date", MaskedInput),
+            self.query_one("#event_end_date", MaskedInput),
+            self.query_one("#event_attendees", Input),
+        ]
+
+        widget_selects = [
+            self.query_one("#event-contract-select", Select),
+        ]
+
+        radio_set = self.query_one("#event-location-input-choice", RadioSet)
+        if radio_set.pressed_button.label == "Existing location":
+            widget_selects.append(
+                self.query_one("#event-location-select", Select)
+            )
+        else:
+            widget_inputs.extend(
+                [
+                    self.query_one("#location_name", Input),
+                    self.query_one("#location_street_number", Input),
+                    self.query_one("#location_street_name", Input),
+                    self.query_one("#location_zip_code", MaskedInput),
+                    self.query_one("#location_city", Input),
+                ]
+            )
+
+        # Check that all input fields are valid
+        all_inputs_valid = all(
+            widget_input.validate(widget_input.value).is_valid
+            for widget_input in widget_inputs
+        )
+        # Check that all select fields are valid
+        all_selects_valid = all(
+            not select.is_blank()
+            for select in widget_selects
+        )
+
+        # Update reactive variable triggering watcher
+        all_valid = all_inputs_valid and all_selects_valid
+        self.is_form_valid = all_valid
+
+    @on(Input.Changed)
+    def show_input_invalid_reasons(self, event: Input.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(MaskedInput.Changed)
+    def show_minput_invalid_reasons(
+        self, event: MaskedInput.Changed
+    ) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Input.Blurred)
+    def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(MaskedInput.Blurred)
+    def show_minput_invalid_reasons_2(
+        self, event: MaskedInput.Blurred
+    ) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Select.Changed)
+    def show_select_contract_invalid_reasons(self, event: Select.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        select_widget = event.select
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if event.select.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
     @on(RadioSet.Changed, "#event-location-input-choice")
     def on_location_input_choice_changed(
         self, event: RadioSet.Changed
     ) -> None:
+        self._validate_form()
         """Toggle containers' display based on user radiobutton input"""
         select_container = self.query_one(
             "#event-location-select-input-container", Container

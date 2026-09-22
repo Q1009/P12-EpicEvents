@@ -25,6 +25,10 @@
     height: auto;
 }
 
+SelectCurrent.-invalid {
+    border: tall $error 60%;
+}
+
 .event-location-input-container {
     row-span: 2;
     overflow: auto auto;
