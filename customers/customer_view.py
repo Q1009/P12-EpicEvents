@@ -5,6 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
+from textual.validation import Length
 from textual.widgets import (
     Button,
     DataTable,
@@ -18,6 +19,7 @@ from textual.widgets import (
     SelectionList,
     Static,
 )
+from textual.widgets._select import SelectCurrent
 from textual.widgets.selection_list import Selection
 
 from collaborators.collaborator_model import Collaborator
@@ -317,6 +319,9 @@ class CreateCustomerScreen(Screen):
     SUB_TITLE = "CREATE CUSTOMERS"
     CSS_PATH = "../styles/create_customer_screen.tcss"
 
+    # Reactive variables
+    is_form_valid: reactive[bool] = reactive(False)
+
     def __init__(self, contacts: list[Contact]):
         super().__init__()
         self.contacts = contacts
@@ -333,14 +338,28 @@ class CreateCustomerScreen(Screen):
                     placeholder="Doe",
                     id="customer_last_name",
                     type="text",
+                    max_length=50,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Customer First Name:", classes="form-label")
                 yield Input(
                     placeholder="John",
                     id="customer_first_name",
                     type="text",
+                    max_length=50,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Company Name:", classes="form-label")
                 yield Input(
@@ -348,6 +367,12 @@ class CreateCustomerScreen(Screen):
                     id="company_name",
                     type="text",
                     classes="form-input",
+                    validators=[
+                        Length(
+                            maximum=99,
+                            failure_description="Name is too long.",
+                        ),
+                    ],
                 )
             with Container(
                 id="customer-contact",
@@ -388,30 +413,58 @@ class CreateCustomerScreen(Screen):
                         placeholder="Smith",
                         id="contact_last_name",
                         type="text",
+                        max_length=50,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
                     yield Label("Contact First Name", classes="form-label")
                     yield Input(
                         placeholder="Tom",
                         id="contact_first_name",
                         type="text",
+                        max_length=50,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
                     yield Label("Contact Email", classes="form-label")
                     yield Input(
                         placeholder="tom.smith@contact.com",
                         id="contact_email",
                         type="text",
+                        max_length=100,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
                     yield Label(
                         "Contact Phone Number", classes="form-label"
                     )
                     yield Input(
-                        placeholder="00 00 00 00 00",
+                        placeholder="+33 6 00 00 00 00",
                         id="contact_phone_number",
                         type="text",
+                        max_length=20,
                         classes="form-input",
+                        validators=[
+                            Length(
+                                minimum=1,
+                                failure_description="Field cannot be empty.",
+                            ),
+                        ],
                     )
             with Container(classes="create-customer-buttons-container"):
                 yield Button(
@@ -443,11 +496,106 @@ class CreateCustomerScreen(Screen):
             "#customer-contact-select-input-container", Container
         ).display = False
 
+    def watch_is_form_valid(self, is_valid: bool) -> None:
+        """Disable/enable Create button based on form input validation."""
+        create_button = self.query_one("#create", Button)
+        create_button.disabled = not is_valid
+
+    def _validate_form(self) -> None:
+        """Validates every input field of the form and
+        updates `is_form_valid` reactive variable
+        """
+        widget_inputs = [
+            self.query_one("#customer_last_name", Input),
+            self.query_one("#customer_first_name", Input),
+            self.query_one("#company_name", Input),
+        ]
+
+        widget_selects = []
+
+        radio_set = self.query_one(
+            "#customer-contact-input-choice", RadioSet
+        )
+        if radio_set.pressed_button.label == "Existing contact":
+            widget_selects.append(
+                self.query_one("#customer-contact-select", Select)
+            )
+        else:
+            widget_inputs.extend(
+                [
+                    self.query_one("#contact_last_name", Input),
+                    self.query_one("#contact_first_name", Input),
+                    self.query_one("#contact_email", Input),
+                    self.query_one("#contact_phone_number", Input),
+                ]
+            )
+
+        # Check that all input fields are valid
+        all_inputs_valid = all(
+            widget_input.validate(widget_input.value).is_valid
+            for widget_input in widget_inputs
+        )
+        # Check that all select fields are valid
+        all_selects_valid = all(
+            not select.is_blank() for select in widget_selects
+        )
+
+        # Update reactive variable triggering watcher
+        all_valid = all_inputs_valid and all_selects_valid
+        self.is_form_valid = all_valid
+
+    @on(Input.Changed)
+    def show_input_invalid_reasons(self, event: Input.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Input.Blurred)
+    def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Select.Changed)
+    def show_select_contract_invalid_reasons(
+        self, event: Select.Changed
+    ) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        select_widget = event.select
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if event.select.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
     @on(RadioSet.Changed, "#customer-contact-input-choice")
     def on_contact_input_choice_changed(
         self, event: RadioSet.Changed
     ) -> None:
         """Toggle containers' display based on user radiobutton input"""
+        self._validate_form()
         select_container = self.query_one(
             "#customer-contact-select-input-container", Container
         )

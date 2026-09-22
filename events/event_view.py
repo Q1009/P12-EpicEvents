@@ -724,8 +724,8 @@ class CreateEventScreen(Screen):
     def on_location_input_choice_changed(
         self, event: RadioSet.Changed
     ) -> None:
-        self._validate_form()
         """Toggle containers' display based on user radiobutton input"""
+        self._validate_form()
         select_container = self.query_one(
             "#event-location-select-input-container", Container
         )
