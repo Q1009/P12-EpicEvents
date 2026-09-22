@@ -14,7 +14,6 @@ from textual.widgets import (
     Input,
     Label,
     MaskedInput,
-    Pretty,
     RadioButton,
     RadioSet,
     Select,
@@ -798,6 +797,9 @@ class UpdateEventScreen(Screen):
     SUB_TITLE = "UPDATE EVENT"
     CSS_PATH = "../styles/update_event_screen.tcss"
 
+    # Reactive variables
+    is_form_valid: reactive[bool] = reactive(False)
+
     def __init__(
         self,
         event_data: dict,
@@ -835,26 +837,43 @@ class UpdateEventScreen(Screen):
                     value=self.event_data.get("event_name", ""),
                     id="event_name",
                     type="text",
+                    max_length=100,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Event Start Date", classes="form-label")
-                yield Input(
+                yield MaskedInput(
+                    placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_start_date",
-                    type="text",
+                    template="99/99/9999 (99:99:99)",
                     classes="form-input",
                 )
                 yield Label("Event End Date", classes="form-label")
-                yield Input(
+                yield MaskedInput(
+                    placeholder="DD/MM/YYYY (HH:MM:SS)",
                     id="event_end_date",
-                    type="text",
+                    template="99/99/9999 (99:99:99)",
                     classes="form-input",
                 )
                 yield Label("Number of attendees", classes="form-label")
                 yield Input(
                     value=str(self.event_data.get("event_attendees", 0)),
+                    placeholder="100",
                     id="event_attendees",
                     type="integer",
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                        Integer(failure_description="Must be a valid number of guests.") 
+                    ],
                 )
                 yield Label("Event Notes", classes="form-label")
                 yield TextArea(
@@ -984,8 +1003,8 @@ class UpdateEventScreen(Screen):
         )
 
         # Convert dates from UTC to french format
-        event_start_date_input = self.query_one("#event_start_date", Input)
-        event_end_date_input = self.query_one("#event_end_date", Input)
+        event_start_date_input = self.query_one("#event_start_date", MaskedInput)
+        event_end_date_input = self.query_one("#event_end_date", MaskedInput)
         event_start_date = format_french_datetime(
             self.event_data["event_start_date"]
         )
@@ -996,6 +1015,119 @@ class UpdateEventScreen(Screen):
         event_start_date_input.value = event_start_date
         event_end_date_input.value = event_end_date
 
+    def watch_is_form_valid(self, is_valid: bool) -> None:
+        """Disable/enable Update button based on form input validation."""
+        update_button = self.query_one("#update", Button)
+        update_button.disabled = not is_valid
+
+    def _validate_form(self) -> None:
+        """Validates every input field of the form and
+        updates `is_form_valid` reactive variable
+        """
+        widget_inputs = [
+            self.query_one("#event_name", Input),
+            self.query_one("#event_start_date", MaskedInput),
+            self.query_one("#event_end_date", MaskedInput),
+            self.query_one("#event_attendees", Input),
+        ]
+
+        widget_selects = [
+            self.query_one("#update-event-contract-select", Select),
+            self.query_one("#update-event-location-select", Select),
+            self.query_one("#update-event-support-representative-select", Select),
+        ]
+
+        # Check that all input fields are valid
+        all_inputs_valid = all(
+            widget_input.validate(widget_input.value).is_valid
+            for widget_input in widget_inputs
+        )
+        # Check that all select fields are valid
+        all_selects_valid = all(
+            not select.is_blank()
+            for select in widget_selects
+        )
+
+        # Update reactive variable triggering watcher
+        all_valid = all_inputs_valid and all_selects_valid
+        self.is_form_valid = all_valid
+
+    @on(Input.Changed)
+    def show_input_invalid_reasons(self, event: Input.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(MaskedInput.Changed)
+    def show_minput_invalid_reasons(
+        self, event: MaskedInput.Changed
+    ) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Input.Blurred)
+    def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(MaskedInput.Blurred)
+    def show_minput_invalid_reasons_2(
+        self, event: MaskedInput.Blurred
+    ) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Select.Changed)
+    def show_select_contract_invalid_reasons(self, event: Select.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        select_widget = event.select
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if event.select.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+    
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
         self._collect_form_data()
