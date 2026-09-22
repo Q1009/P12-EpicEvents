@@ -703,7 +703,7 @@ class CreateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_contract_invalid_reasons(
+    def show_select_invalid_reasons(
         self, event: Select.Changed
     ) -> None:
         """Activates on changed input"""
@@ -1125,7 +1125,7 @@ class UpdateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_contract_invalid_reasons(
+    def show_select_invalid_reasons(
         self, event: Select.Changed
     ) -> None:
         """Activates on changed input"""

@@ -33,12 +33,6 @@
     height: auto;
 }
 
-.update-customer-contacts-selection-list {
-    overflow: auto auto;
-    border: round $accent;
-    content-align: left middle;
-}
-
 .selection-list--button-selected {
             color: $text-primary;
             background: $panel-darken-2;
@@ -61,4 +55,12 @@
     width: auto;
     height: auto;
     margin: 0 2;
+}
+
+SelectCurrent.-invalid {
+    border: tall $error 60%;
+}
+
+SelectionList.-invalid {
+    border: tall $error 60%;
 }
