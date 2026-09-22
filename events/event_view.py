@@ -414,7 +414,9 @@ class CreateEventScreen(Screen):
                             minimum=1,
                             failure_description="Field cannot be empty.",
                         ),
-                        Integer(failure_description="Must be a valid number of guests.") 
+                        Integer(
+                            failure_description="Must be a valid number of guests."
+                        ),
                     ],
                 )
                 yield Label("Event Notes", classes="form-label")
@@ -608,7 +610,9 @@ class CreateEventScreen(Screen):
             self.query_one("#event-contract-select", Select),
         ]
 
-        radio_set = self.query_one("#event-location-input-choice", RadioSet)
+        radio_set = self.query_one(
+            "#event-location-input-choice", RadioSet
+        )
         if radio_set.pressed_button.label == "Existing location":
             widget_selects.append(
                 self.query_one("#event-location-select", Select)
@@ -631,8 +635,7 @@ class CreateEventScreen(Screen):
         )
         # Check that all select fields are valid
         all_selects_valid = all(
-            not select.is_blank()
-            for select in widget_selects
+            not select.is_blank() for select in widget_selects
         )
 
         # Update reactive variable triggering watcher
@@ -700,7 +703,9 @@ class CreateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_contract_invalid_reasons(self, event: Select.Changed) -> None:
+    def show_select_contract_invalid_reasons(
+        self, event: Select.Changed
+    ) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
@@ -872,7 +877,9 @@ class UpdateEventScreen(Screen):
                             minimum=1,
                             failure_description="Field cannot be empty.",
                         ),
-                        Integer(failure_description="Must be a valid number of guests.") 
+                        Integer(
+                            failure_description="Must be a valid number of guests."
+                        ),
                     ],
                 )
                 yield Label("Event Notes", classes="form-label")
@@ -1003,8 +1010,12 @@ class UpdateEventScreen(Screen):
         )
 
         # Convert dates from UTC to french format
-        event_start_date_input = self.query_one("#event_start_date", MaskedInput)
-        event_end_date_input = self.query_one("#event_end_date", MaskedInput)
+        event_start_date_input = self.query_one(
+            "#event_start_date", MaskedInput
+        )
+        event_end_date_input = self.query_one(
+            "#event_end_date", MaskedInput
+        )
         event_start_date = format_french_datetime(
             self.event_data["event_start_date"]
         )
@@ -1034,7 +1045,9 @@ class UpdateEventScreen(Screen):
         widget_selects = [
             self.query_one("#update-event-contract-select", Select),
             self.query_one("#update-event-location-select", Select),
-            self.query_one("#update-event-support-representative-select", Select),
+            self.query_one(
+                "#update-event-support-representative-select", Select
+            ),
         ]
 
         # Check that all input fields are valid
@@ -1044,8 +1057,7 @@ class UpdateEventScreen(Screen):
         )
         # Check that all select fields are valid
         all_selects_valid = all(
-            not select.is_blank()
-            for select in widget_selects
+            not select.is_blank() for select in widget_selects
         )
 
         # Update reactive variable triggering watcher
@@ -1113,7 +1125,9 @@ class UpdateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_contract_invalid_reasons(self, event: Select.Changed) -> None:
+    def show_select_contract_invalid_reasons(
+        self, event: Select.Changed
+    ) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
@@ -1127,7 +1141,7 @@ class UpdateEventScreen(Screen):
         else:
             select_current.set_class(False, "-invalid")
             select_current.border_subtitle = None
-    
+
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
         self._collect_form_data()
