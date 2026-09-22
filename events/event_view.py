@@ -1299,12 +1299,11 @@ class UpdateLocationScreen(Screen):
                     placeholder="Location Name",
                     id="location_name",
                     type="text",
-                    max_length=100,
                     classes="form-input",
                     validators=[
                         Length(
-                            minimum=1,
-                            failure_description="Name: Field is required and cannot be empty.",
+                            maximum=99,
+                            failure_description="Name is too long.",
                         ),
                     ],
                 )
@@ -1321,7 +1320,7 @@ class UpdateLocationScreen(Screen):
                     validators=[
                         Length(
                             minimum=1,
-                            failure_description="Number: Field is required and cannot be empty.",
+                            failure_description="Field cannot be empty.",
                         ),
                     ],
                 )
@@ -1338,7 +1337,7 @@ class UpdateLocationScreen(Screen):
                     validators=[
                         Length(
                             minimum=1,
-                            failure_description="Street: Field is required and cannot be empty.",
+                            failure_description="Field cannot be empty.",
                         ),
                     ],
                 )
@@ -1349,12 +1348,6 @@ class UpdateLocationScreen(Screen):
                     id="location_zip_code",
                     template="99999",
                     classes="form-input",
-                    validators=[
-                        Length(
-                            minimum=1,
-                            failure_description="Zip Code: Field is required and cannot be empty.",
-                        ),
-                    ],
                 )
                 yield Label("City", classes="form-label")
                 yield Input(
@@ -1367,7 +1360,7 @@ class UpdateLocationScreen(Screen):
                     validators=[
                         Length(
                             minimum=1,
-                            failure_description="City: Field is required and cannot be empty.",
+                            failure_description="Field cannot be empty.",
                         ),
                     ],
                 )
@@ -1384,7 +1377,6 @@ class UpdateLocationScreen(Screen):
                     variant="default",
                     classes="update-location-button",
                 )
-            yield Pretty([], classes="update-location-pretty")
         yield Footer(show_command_palette=False)
 
     def _on_mount(self):
@@ -1428,12 +1420,14 @@ class UpdateLocationScreen(Screen):
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
-        if not event.validation_result.is_valid:
-            self.query_one(Pretty).update(
-                event.validation_result.failure_descriptions
-            )
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
         else:
-            self.query_one(Pretty).update([])
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
 
     @on(MaskedInput.Changed)
     def show_minput_invalid_reasons(
@@ -1442,24 +1436,28 @@ class UpdateLocationScreen(Screen):
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
-        if not event.validation_result.is_valid:
-            self.query_one(Pretty).update(
-                event.validation_result.failure_descriptions
-            )
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
         else:
-            self.query_one(Pretty).update([])
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
         """Activates on blurred (losing focus) input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
-        if not event.validation_result.is_valid:
-            self.query_one(Pretty).update(
-                event.validation_result.failure_descriptions
-            )
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
         else:
-            self.query_one(Pretty).update([])
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
 
     @on(MaskedInput.Blurred)
     def show_minput_invalid_reasons_2(
@@ -1468,12 +1466,14 @@ class UpdateLocationScreen(Screen):
         """Activates on blurred (losing focus) input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
-        if not event.validation_result.is_valid:
-            self.query_one(Pretty).update(
-                event.validation_result.failure_descriptions
-            )
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
         else:
-            self.query_one(Pretty).update([])
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
