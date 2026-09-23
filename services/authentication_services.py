@@ -258,14 +258,22 @@ class AuthenticationServices:
         :type token: str
         :return: Integer of the user_id
         :rtype: int
-        :raises AuthenticationError: If token verification fails
-        (expired, invalid, or type mismatch)
         """
         payload = TokenServices.verify_token(token, 'access')
         return int(payload['sub'])
 
     def get_user_info(session: Session):
         """
+        Retrieve the authenticated user's information from the database.
+
+        Fetches the user ID from the stored access token and queries the database
+        to return the corresponding collaborator. Returns ``None`` if no tokens are found
+        or if the user does not exist.
+
+        :param session: SQLAlchemy database session for querying
+        :type session: Session
+        :return: The :class:`Collaborator` object if found, otherwise ``None``
+        :rtype: Collaborator | None
         """
         tokens = load_tokens()
         if not tokens:
@@ -318,13 +326,11 @@ class AuthenticationServices:
         :return: A wrapped function that performs authentication checks before execution
         :rtype: Callable
         """
-        # Injecte user: Collaborator ??
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Check if local token file exist and if data format is valid
             if not tokens_exist():
                 # New login
-                # print("\n⚠️  Authentication required for this command.")
                 raise AuthenticationError('Authentication required')
 
             # Load existing tokens
@@ -337,7 +343,6 @@ class AuthenticationServices:
                 TokenServices.verify_token(tokens['access_token'], 'access')
 
                 # User authenticated, proceed with function
-                #INJECT user: Collaborator ?
                 return func(*args, **kwargs)
 
             except AuthenticationError as e:
@@ -358,7 +363,6 @@ class AuthenticationServices:
                         pass
 
                 # New login
-                # print("\n⚠️  Session expired or invalid. Please login again.")
                 raise AuthenticationError('Session expired or invalid. Please login again.')
 
         return wrapper
