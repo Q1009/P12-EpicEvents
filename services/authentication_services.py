@@ -35,6 +35,7 @@ class AuthenticationError(Exception):
         self.message = message
         super().__init__(self.message)
 
+
 class PasswordServices:
     """Service for password hashing and verification."""
 
@@ -46,20 +47,21 @@ class PasswordServices:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify a password against its hash."""
-        return checkpw(
-            plain_password.encode(),
-            hashed_password.encode()
-        )
+        return checkpw(plain_password.encode(), hashed_password.encode())
+
 
 class TokenServices:
     """Service for JWT token management."""
+
     # Need to configure payload data
 
     @staticmethod
     def create_access_token(user_id: int) -> str:
         """Create an access JWT token."""
         private_key = get_private_key()
-        expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta = timedelta(
+            minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        )
         expiration = datetime.now(UTC) + expires_delta
 
         payload = {
@@ -67,20 +69,20 @@ class TokenServices:
             "jti": str(uuid4()),
             "type": "access",
             "exp": expiration,
-            "iat": datetime.now(UTC)
+            "iat": datetime.now(UTC),
         }
 
         return jwt.encode(
-            payload,
-            private_key,
-            algorithm=settings.JWT_ALGORITHM
+            payload, private_key, algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
     def create_refresh_token(user_id: int) -> str:
         """Create a refresh JWT token."""
         private_key = get_private_key()
-        expires_delta = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_delta = timedelta(
+            days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        )
         expiration = datetime.now(UTC) + expires_delta
 
         payload = {
@@ -88,13 +90,11 @@ class TokenServices:
             "jti": str(uuid4()),
             "type": "refresh",
             "exp": expiration,
-            "iat": datetime.now(UTC)
+            "iat": datetime.now(UTC),
         }
 
         return jwt.encode(
-            payload,
-            private_key,
-            algorithm=settings.JWT_ALGORITHM
+            payload, private_key, algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
@@ -128,20 +128,20 @@ class TokenServices:
 
         try:
             payload = jwt.decode(
-                token,
-                public_key,
-                algorithms=[settings.JWT_ALGORITHM]
+                token, public_key, algorithms=[settings.JWT_ALGORITHM]
             )
 
             # Check token type if specified
-            if token_type and payload.get('type') != token_type:
-                raise AuthenticationError(f'Invalid token type. Expected {token_type}')
+            if token_type and payload.get("type") != token_type:
+                raise AuthenticationError(
+                    f"Invalid token type. Expected {token_type}"
+                )
             return payload
 
         except jwt.ExpiredSignatureError:
-            raise AuthenticationError('Token has expired')
+            raise AuthenticationError("Token has expired")
         except jwt.InvalidTokenError as e:
-            raise AuthenticationError(f'Invalid token: {e!s}')
+            raise AuthenticationError(f"Invalid token: {e!s}")
 
     @staticmethod
     def refresh_access_token(refresh_token: str) -> tuple[str, str]:
@@ -162,16 +162,16 @@ class TokenServices:
             - Invalid token signature or format
             - Token is not of type 'refresh'
         """
-        payload = TokenServices.verify_token(refresh_token, 'refresh')
+        payload = TokenServices.verify_token(refresh_token, "refresh")
 
         # Create a new access token
         new_access_token = TokenServices.create_access_token(
-            int(payload['sub'])
+            int(payload["sub"])
         )
 
         # Create a new refresh token (rotation)
         new_refresh_token = TokenServices.create_refresh_token(
-            int(payload['sub'])
+            int(payload["sub"])
         )
 
         # Save tokens locally
@@ -191,12 +191,16 @@ class TokenServices:
         """
         # Placeholder for token invalidation logic (e.g., add to blacklist)
 
+
 class AuthenticationServices:
     """
     Main authentication service.
     """
+
     @staticmethod
-    def login(session: Session, email: str, password: str) -> tuple[str, str]:
+    def login(
+        session: Session, email: str, password: str
+    ) -> tuple[str, str]:
         """Authenticate a user and generate authentication tokens.
 
         Validates user credentials against the database and generates JWT tokens
@@ -221,11 +225,11 @@ class AuthenticationServices:
         user = session.query(Collaborator).filter_by(email=email).first()
 
         if not user:
-            raise AuthenticationError('Invalid email or password')
+            raise AuthenticationError("Invalid email or password")
 
         # Verify password
         if not PasswordServices.verify_password(password, user.password):
-            raise AuthenticationError('Invalid email or password')
+            raise AuthenticationError("Invalid email or password")
 
         # Generate tokens
         access_token = TokenServices.create_access_token(user.id)
@@ -259,8 +263,8 @@ class AuthenticationServices:
         :return: Integer of the user_id
         :rtype: int
         """
-        payload = TokenServices.verify_token(token, 'access')
-        return int(payload['sub'])
+        payload = TokenServices.verify_token(token, "access")
+        return int(payload["sub"])
 
     def get_user_info(session: Session):
         """
@@ -280,7 +284,9 @@ class AuthenticationServices:
             return None
 
         # Get user ID from access token
-        user_id = AuthenticationServices.get_user_id_by_token(tokens['access_token'])
+        user_id = AuthenticationServices.get_user_id_by_token(
+            tokens["access_token"]
+        )
 
         # Query user from database
         user = session.query(Collaborator).filter_by(id=user_id).first()
@@ -295,12 +301,14 @@ class AuthenticationServices:
             return False
 
         try:
-            TokenServices.verify_token(tokens['access_token'], 'access')
+            TokenServices.verify_token(tokens["access_token"], "access")
             return True
         except AuthenticationError:
             try:
-                TokenServices.verify_token(tokens['refresh_token'], 'refresh')
-                TokenServices.refresh_access_token(tokens['refresh_token'])
+                TokenServices.verify_token(
+                    tokens["refresh_token"], "refresh"
+                )
+                TokenServices.refresh_access_token(tokens["refresh_token"])
                 return True
             except AuthenticationError:
                 return False
@@ -326,43 +334,43 @@ class AuthenticationServices:
         :return: A wrapped function that performs authentication checks before execution
         :rtype: Callable
         """
+
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Check if local token file exist and if data format is valid
-            if not tokens_exist():
-                # New login
-                raise AuthenticationError('Authentication required')
-
-            # Load existing tokens
-            tokens = load_tokens()
-            if not tokens:
-                raise AuthenticationError('Authentication required')
-
-            # Check access token validity
+        def wrapper(self, *args, **kwargs):
             try:
-                TokenServices.verify_token(tokens['access_token'], 'access')
+                # Check if local token file exist and if data format is valid
+                if not tokens_exist():
+                    raise AuthenticationError("Authentication required")
 
-                # User authenticated, proceed with function
-                return func(*args, **kwargs)
+                # Load existing tokens
+                tokens = load_tokens()
+                if not tokens:
+                    raise AuthenticationError("Authentication required")
+
+                # Check access token validity
+                try:
+                    TokenServices.verify_token(
+                        tokens["access_token"], "access"
+                    )
+                    return func(self, *args, **kwargs)
+                except AuthenticationError as e:
+                    error_msg = str(e).lower()
+                    if "expired" in error_msg or "invalid" in error_msg:
+                        try:
+                            TokenServices.refresh_access_token(
+                                tokens["refresh_token"]
+                            )
+                            return func(self, *args, **kwargs)
+                        except AuthenticationError:
+                            pass
+                    raise AuthenticationError(
+                        "Session expired or invalid. Please login again."
+                    )
 
             except AuthenticationError as e:
-                # Token invalid or expired
-                error_msg = str(e).lower()
-
-                if "expired" in error_msg or "invalid" in error_msg:
-                    try:
-                        # Try to refresh tokens
-                        TokenServices.refresh_access_token(
-                            tokens['refresh_token'])
-
-                        # User authenticated, proceed with function
-                        return func(*args, **kwargs)
-
-                    except AuthenticationError:
-                        # Refresh failed, new login required
-                        pass
-
-                # New login
-                raise AuthenticationError('Session expired or invalid. Please login again.')
+                if hasattr(self, "_handle_auth_failure"):
+                    self._handle_auth_failure(e)
+                    return
+                raise
 
         return wrapper

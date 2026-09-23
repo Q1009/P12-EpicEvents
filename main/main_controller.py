@@ -42,64 +42,50 @@ class MainController:
     def start(self):
         """ """
         if self.authentication_controller.is_authenticated():
-            self._safe_display_authenticated_main_menu()
+            self.display_authenticated_main_menu()
         else:
             self.display_unauthenticated_main_menu()
 
     def handle_user_choice(self, user_choice: str):
         """Callback when user choses from main menu"""
-        try:
-            match user_choice:
-                case "login":
-                    self.authentication_controller.login(
-                        on_success=self._safe_display_authenticated_main_menu,
-                        on_cancel=self.display_unauthenticated_main_menu,
-                    )
-                case "events":
-                    self.push_event_screen()
-                case "contracts":
-                    self.push_contract_screen()
-                case "customers":
-                    self.push_customer_screen()
-                case "collaborators":
-                    self.push_collaborator_screen()
-                case "profile":
-                    # self.profile_controller.start()
-                    pass
-                case "logout":
-                    self.authentication_controller.logout()
-                    self.display_unauthenticated_main_menu()
-                case "quit":
-                    self.epic_events_app.exit()
-        except AuthenticationError as e:
-            self.display_unauthenticated_main_menu()
-            self.epic_events_app.notify(
-                f"[bold red]⚠️  {e!s}[/bold red]",
-                severity="error",
-            )
+        match user_choice:
+            case "login":
+                self.authentication_controller.login(
+                    on_success=self.display_authenticated_main_menu,
+                    on_cancel=self.display_unauthenticated_main_menu,
+                )
+            case "events":
+                self.push_event_screen()
+            case "contracts":
+                self.push_contract_screen()
+            case "customers":
+                self.push_customer_screen()
+            case "collaborators":
+                self.push_collaborator_screen()
+            case "profile":
+                # self.profile_controller.start()
+                pass
+            case "logout":
+                self.authentication_controller.logout()
+                self.display_unauthenticated_main_menu()
+            case "quit":
+                self.epic_events_app.exit()
 
     @AuthenticationServices.check_authentication
     def display_authenticated_main_menu(self):
         """ """
-        try:
-            # Get user_name
-            user: Collaborator = self.authentication_controller.get_user_info()
+        # Get user_name
+        user: Collaborator = self.authentication_controller.get_user_info()
 
-            if user is None:
-                self.display_unauthenticated_main_menu()
-                return
-            
-            user_name = user.first_name
-            authenticated_main_screen = AuthenticatedMainScreen(user_name)
-            self.epic_events_app.push_screen(
-                authenticated_main_screen, callback=self.handle_user_choice
-            )
-        except AuthenticationError as e:
-            self.display_unauthenticated_main_menu()
-            self.epic_events_app.notify(
-                f"[bold red]⚠️  {e!s}[/bold red]",
-                severity="error",
-            )
+        if user is None:
+            self._handle_auth_failure(None)
+            return
+
+        user_name = user.first_name
+        authenticated_main_screen = AuthenticatedMainScreen(user_name)
+        self.epic_events_app.push_screen(
+            authenticated_main_screen, callback=self.handle_user_choice
+        )
 
     def display_unauthenticated_main_menu(self):
         """ """
@@ -118,7 +104,7 @@ class MainController:
         self.event_controller.start(
             event_id=event_id,
             contract_id=contract_id,
-            on_back=self._safe_display_authenticated_main_menu,
+            on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
             on_consult_contract=self.push_contract_screen,
         )
@@ -130,7 +116,7 @@ class MainController:
         """
         self.contract_controller.start(
             contract_id=contract_id,
-            on_back=self._safe_display_authenticated_main_menu,
+            on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
             on_consult_event=self.push_event_screen,
             on_create_event=self.push_event_screen,
@@ -143,7 +129,7 @@ class MainController:
         """
         self.customer_controller.start(
             customer_id=customer_id,
-            on_back=self._safe_display_authenticated_main_menu,
+            on_back=self.display_authenticated_main_menu,
         )
 
     def push_collaborator_screen(self):
@@ -151,17 +137,15 @@ class MainController:
         with mandatory callback methods arguments.
         """
         self.collaborator_controller.start(
-            on_back=self._safe_display_authenticated_main_menu,
+            on_back=self.display_authenticated_main_menu,
             on_consult_customer=self.push_customer_screen,
             on_consult_event=self.push_event_screen,
         )
 
-    def _safe_display_authenticated_main_menu(self):
-        try:
-            self.display_authenticated_main_menu()
-        except AuthenticationError as e:
-            self.display_unauthenticated_main_menu()
+    def _handle_auth_failure(self, error: AuthenticationError | None):
+        """Handles authentication failure"""
+        if error:
             self.epic_events_app.notify(
-                f"[bold red]⚠️  {e!s}[/bold red]",
-                severity="error",
+                f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
             )
+        self.display_unauthenticated_main_menu()
