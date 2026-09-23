@@ -1,0 +1,131 @@
+Educational License Agreement (OpenClassrooms Project 12 - EpicEvents CRM)
+
+Copyright (c) 2026 Quentin Tellier
+All rights reserved.
+
+---
+
+## 1. Project Context
+
+This software, EpicEvents CRM, is developed as part of **Project 12** of the **Python Application Developer** training path at OpenClassrooms. It represents a portfolio piece demonstrating skills in:
+
+- Python development
+- CLI application development with Textual
+- MVC architecture implementation
+- JWT authentication with RSA keys
+- RBAC permission systems
+- MySQL database integration with SQLAlchemy
+- Alembic migrations
+
+---
+
+## 2. Permissions
+
+You are hereby granted the following rights:
+
+### 2.1 Educational Use
+- Use this software for **personal learning and study**
+- **Study, analyze, and understand** the codebase and architecture
+- **Modify the code** for educational purposes and personal experimentation
+- **Run the application** in development and testing environments
+
+### 2.2 Portfolio Use
+- **Reference this project** in your portfolio or resume
+- **Demonstrate the application** during job interviews or professional presentations
+- **Use code snippets** (with proper attribution) in your own educational materials
+
+### 2.3 Professional Demonstration
+- **Showcase the project** to potential employers or clients as proof of competence
+- **Present the architecture** and technical solutions implemented
+- **Discuss the code** during technical interviews
+
+---
+
+## 3. Restrictions
+
+The following actions are **explicitly prohibited** without prior written permission from the author:
+
+### 3.1 Commercial Use
+- Selling this software or any derivative work
+- Using this software in commercial products or services
+- Incorporating substantial portions of this code into commercial applications
+- Offering this software as a SaaS (Software as a Service) or similar service
+
+### 3.2 Misrepresentation
+- **Removing or altering** any copyright notices, author attributions, or license files
+- **Claiming authorship** or ownership of this software or any part thereof
+- **Presenting this work** as your own original creation without proper attribution
+
+### 3.3 Redistribution
+- **Distributing modified versions** without maintaining the original license
+- **Using this code** in projects with incompatible licenses
+- **Creating derivatives** that violate the spirit of this educational license
+
+---
+
+## 4. Attribution Requirements
+
+When referencing or using this project, you **must**:
+
+### 4.1 In Portfolio or Presentations
+- Clearly state that this is **Project 12 from OpenClassrooms Python Application Developer path**
+- Include the author's name: **Quentin Tellier**
+- Link to the original repository when possible
+- Maintain all existing copyright notices
+
+### 4.2 In Code References
+- Include a comment or documentation credit when using code snippets
+- Example: `// Adapted from EpicEvents CRM - Project 12 OpenClassrooms - Quentin Tellier`
+
+### 4.3 In Documentation
+- Attribute the original source when describing concepts or architectures from this project
+- Maintain the educational context of the project
+
+---
+
+## 5. Disclaimer
+
+### 5.1 No Warranty
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### 5.2 Educational Purpose Only
+This software is **not** designed, tested, or intended for production use. It is created for **educational demonstration purposes only** and may contain bugs, security vulnerabilities, or incomplete features.
+
+### 5.3 Dependencies
+This project uses third-party libraries with their own licenses:
+- Textual (MIT License)
+- SQLAlchemy (MIT License)
+- PyJWT (MIT License)
+- Cryptography (Apache 2.0 or BSD)
+- bcrypt (Apache 2.0)
+- And others as specified in pyproject.toml
+
+The Educational License for EpicEvents CRM applies only to the code written by Quentin Tellier, not to the dependencies which retain their original licenses.
+
+---
+
+## 6. Termination
+
+This license and the rights granted herein will automatically terminate if you violate any of these terms and conditions. Upon termination, you must cease all use of the software.
+
+---
+
+## 7. Contact Information
+
+For questions about this license, commercial use inquiries, or any other permissions requests, please contact:
+
+**Quentin Tellier**
+Email: quentin.tellier@outlook.com
+GitHub: https://github.com/Q1009
+
+---
+
+## 8. Governing Law
+
+This license agreement shall be governed by and construed in accordance with the laws of France, without regard to its conflict of law provisions.
+
+---
+
+*This license is specific to Project 12 - EpicEvents CRM and may not be used for other projects without explicit permission.*
+
+*Last updated: September 23, 2026*
