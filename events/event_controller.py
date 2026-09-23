@@ -14,6 +14,10 @@ from events.event_view import (
     UpdateEventScreen,
     UpdateLocationScreen,
 )
+from services.authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+)
 from services.date_services import (
     format_utc_datetime,
 )
@@ -51,6 +55,7 @@ class EventController:
             events_screen, callback=self.handle_user_choice
         )
 
+    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from event menu"""
         match user_choice:
@@ -195,6 +200,7 @@ class EventController:
             "location_city": location.city,
         }
 
+    @AuthenticationServices.check_authentication
     def create_event(self, new_event_data):
         """ """
         # If creation is cancelled
@@ -254,6 +260,7 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def update_event(self, updated_event_data):
         """ """
         if not updated_event_data:
@@ -302,6 +309,7 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def create_location(self, new_location_data):
         """ """
         # If creation is cancelled
@@ -338,6 +346,7 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def update_location(self, updated_location_data):
         if not updated_location_data:
             self.epic_events_app.notify(
@@ -375,3 +384,11 @@ class EventController:
             on_consult_customer=self.on_consult_customer_callback,
             on_consult_contract=self.on_consult_contract_callback,
         )
+
+    def _handle_auth_failure(self, error: AuthenticationError | None):
+        """Handles authentication failure"""
+        if error:
+            self.epic_events_app.notify(
+                f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+            )
+        self.on_back_callback()

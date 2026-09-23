@@ -318,21 +318,45 @@ class AuthenticationServices:
         """
         Decorator to ensure user authentication before executing a command.
 
-        Validates authentication tokens and automatically handles token refresh
-        when access tokens are expired. Returns None if authentication fails.
+        This decorator validates JWT authentication tokens and automatically handles
+        token refresh when access tokens are expired. If authentication fails, it
+        calls the instance's ``_handle_auth_failure`` method (if available) to manage
+        the error response (e.g., redirect to login screen with error notification).
 
-        Workflow:
-            1. Checks if local tokens exist and are valid
-            2. If no tokens: prints authentication message and returns None
-            3. If valid access token: executes the decorated function
-            4. If access token expired/invalid: attempts refresh with refresh token
-            - On success: executes the decorated function
-            - On failure: prints session error message and returns None
-
-        :param func: The function to be decorated and protected with authentication
+        :param func: The instance method to be decorated. Must accept ``self`` as
+            first parameter.
         :type func: Callable
-        :return: A wrapped function that performs authentication checks before execution
+        :return: A wrapped method that performs authentication checks before
+            executing the original method.
         :rtype: Callable
+
+        :raises AuthenticationError: If authentication fails and the instance does
+            not implement ``_handle_auth_failure`` method.
+
+        .. Behavior
+
+        **Token Validation:**
+            - Checks for existing local tokens
+            - Validates access token signature and expiration
+            - Automatically refreshes expired access tokens using refresh token
+
+        **Error Handling:**
+            - On authentication failure, calls ``self._handle_auth_failure(error)`` if available
+            - Falls back to raising :exc:`AuthenticationError` if no handler exists
+
+        .. Workflow
+
+        1. Verify local tokens exist
+        2. Validate access token
+        3. If expired: attempt refresh with refresh token
+        4. If refresh succeeds: execute decorated method
+        5. If refresh fails: trigger error handler or raise exception
+
+        .. note::
+            The class using this decorator **must** implement ``_handle_auth_failure``
+            to properly handle authentication failures. This method should typically:
+            - Display an error notification to the user
+            - Redirect to the unauthenticated menu
         """
 
         @wraps(func)
