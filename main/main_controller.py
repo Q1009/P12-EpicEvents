@@ -94,6 +94,7 @@ class MainController:
             unauthenticated_main_screen, callback=self.handle_user_choice
         )
 
+    @AuthenticationServices.check_authentication
     def push_event_screen(
         self, event_id: int | None = None, contract_id: int | None = None
     ):
@@ -109,6 +110,7 @@ class MainController:
             on_consult_contract=self.push_contract_screen,
         )
 
+    @AuthenticationServices.check_authentication
     def push_contract_screen(self, contract_id: int | None = None):
         """Call the start method of contract_controller,
         with optional contract_id argument
@@ -122,6 +124,7 @@ class MainController:
             on_create_event=self.push_event_screen,
         )
 
+    @AuthenticationServices.check_authentication
     def push_customer_screen(self, customer_id: int | None = None):
         """Call the start method of customer_controller,
         with optional customer_id argument
@@ -132,6 +135,7 @@ class MainController:
             on_back=self.display_authenticated_main_menu,
         )
 
+    @AuthenticationServices.check_authentication
     def push_collaborator_screen(self):
         """Call the start method of collaborator_controller,
         with mandatory callback methods arguments.
