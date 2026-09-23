@@ -39,3 +39,7 @@
     height: auto;
     margin: 0 2;
 }
+
+SelectCurrent.-invalid {
+    border: tall $error 60%;
+}
