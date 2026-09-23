@@ -985,6 +985,9 @@ class CreateContactScreen(Screen):
     SUB_TITLE = "CREATE CONTACT"
     CSS_PATH = "../styles/create_contact_screen.tcss"
 
+    # Reactive variables
+    is_form_valid: reactive[bool] = reactive(False)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.contact_data = {}
@@ -1001,21 +1004,42 @@ class CreateContactScreen(Screen):
                     placeholder="Smith",
                     id="contact_last_name",
                     type="text",
+                    max_length=50,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Contact First Name:", classes="form-label")
                 yield Input(
                     placeholder="Tom",
                     id="contact_first_name",
                     type="text",
+                    max_length=50,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 yield Label("Email:", classes="form-label")
                 yield Input(
-                    placeholder="tom.smith@example.com",
-                    id="email",
+                    placeholder="tom.smith@contact.com",
+                    id="contact_email",
                     type="text",
+                    max_length=100,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
             with Container(
                 id="phone-number", classes="phone-number-input-container"
@@ -1026,10 +1050,17 @@ class CreateContactScreen(Screen):
                     classes="form-label",
                 )
                 yield Input(
-                    placeholder="00 12 34 56 78",
+                    placeholder="+33 6 00 00 00 00",
                     id="phone_number_1",
-                    type="number",
+                    type="text",
+                    max_length=20,
                     classes="form-input",
+                    validators=[
+                        Length(
+                            minimum=1,
+                            failure_description="Field cannot be empty.",
+                        ),
+                    ],
                 )
                 with Container(
                     id="phone-number-buttons-container",
@@ -1075,10 +1106,17 @@ class CreateContactScreen(Screen):
         )
         # New input
         input_field = Input(
-            placeholder="00 12 34 56 78",
             id=f"phone_number_{self.phone_number_counter}",
-            type="number",
+            placeholder="+33 6 00 00 00 00",
+            type="text",
+            max_length=20,
             classes="form-input",
+            validators=[
+                Length(
+                    minimum=1,
+                    failure_description="Field cannot be empty.",
+                ),
+            ],
         )
 
         # Add widgets to container
@@ -1089,6 +1127,67 @@ class CreateContactScreen(Screen):
 
         # Increment phone counter
         self.phone_number_counter += 1
+
+        # Update form validation
+        self._validate_form()
+
+    def watch_is_form_valid(self, is_valid: bool) -> None:
+        """Disable/enable Create button based on form input validation."""
+        create_button = self.query_one("#create", Button)
+        create_button.disabled = not is_valid
+
+    def _validate_form(self) -> None:
+        """Validates every input field of the form and
+        updates `is_form_valid` reactive variable
+        """
+        widget_inputs = [
+            self.query_one("#contact_last_name", Input),
+            self.query_one("#contact_first_name", Input),
+            self.query_one("#contact_email", Input),
+        ]
+
+        # Add all phone number input fields
+        for input_widget in self.query(Input):
+            if input_widget.id and input_widget.id.startswith("phone_number_"):
+                widget_inputs.append(input_widget)
+
+        # Check that all input fields are valid
+        all_inputs_valid = all(
+            widget_input.validate(widget_input.value).is_valid
+            for widget_input in widget_inputs
+        )
+
+        # Update reactive variable triggering watcher
+        all_valid = all_inputs_valid
+        self.is_form_valid = all_valid
+
+    @on(Input.Changed)
+    def show_input_invalid_reasons(self, event: Input.Changed) -> None:
+        """Activates on changed input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
+
+    @on(Input.Blurred)
+    def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
+        """Activates on blurred (losing focus) input"""
+        # Updating the UI to show the reasons why validation failed
+        self._validate_form()
+        input_widget = event.input
+
+        if event.validation_result.is_valid:
+            input_widget.border_subtitle = None
+        else:
+            # Get first error message from list and display it
+            error_message = event.validation_result.failure_descriptions[0]
+            input_widget.border_subtitle = error_message
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
@@ -1119,7 +1218,7 @@ class CreateContactScreen(Screen):
             "contact_first_name": self.query_one(
                 "#contact_first_name", Input
             ).value,
-            "email": self.query_one("#email", Input).value,
+            "email": self.query_one("#contact_email", Input).value,
             "phone_numbers": phone_numbers,
         }
 
