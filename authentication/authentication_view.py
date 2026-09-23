@@ -30,7 +30,7 @@ class AuthenticationScreen(Screen):
         """Gère la validation du formulaire"""
         email = self.query_one("#email", Input).value
         password = self.query_one("#password", Input).value
-        self.dismiss((email, password))  # Retourne le tuple au caller
+        self.dismiss((email, password))
 
     @on(Button.Pressed, "#back")
     def on_back(self, event: Button.Pressed) -> None:
