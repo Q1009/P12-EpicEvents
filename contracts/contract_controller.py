@@ -10,6 +10,10 @@ from contracts.contract_view import (
     UpdateContractScreen,
 )
 from customers.customer_model import Customer
+from services.authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+)
 
 
 class ContractController:
@@ -41,6 +45,7 @@ class ContractController:
             contracts_screen, callback=self.handle_user_choice
         )
 
+    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from contract menu"""
         match user_choice:
@@ -113,6 +118,7 @@ class ContractController:
             "contract_customer": contract.customer,
         }
 
+    @AuthenticationServices.check_authentication
     def create_contract(self, new_contract_data):
         """ """
         # If creation is cancelled
@@ -151,6 +157,7 @@ class ContractController:
             on_create_event=self.on_create_event_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def update_contract(self, updated_contract_data):
         """ """
         if not updated_contract_data:
@@ -191,5 +198,10 @@ class ContractController:
             on_create_event=self.on_create_event_callback,
         )
 
-    def create_event(self, contract_data_for_event):
-        pass
+    def _handle_auth_failure(self, error: AuthenticationError | None):
+        """Handles authentication failure"""
+        # if error:
+        #     self.epic_events_app.notify(
+        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+        #     )
+        self.on_back_callback()

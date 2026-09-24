@@ -9,7 +9,11 @@ from collaborators.collaborator_view import (
     CreateCollaboratorScreen,
     UpdateCollaboratorScreen,
 )
-from services.authentication_services import PasswordServices
+from services.authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+    PasswordServices,
+)
 
 
 class CollaboratorController:
@@ -34,6 +38,7 @@ class CollaboratorController:
             collaborators_screen, callback=self.handle_user_choice
         )
 
+    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from collaborator menu"""
         match user_choice:
@@ -106,6 +111,7 @@ class CollaboratorController:
             "department": collaborator.department,
         }
 
+    @AuthenticationServices.check_authentication
     def create_collaborator(self, new_collaborator_data):
         """ """
         # If creation is cancelled
@@ -152,6 +158,7 @@ class CollaboratorController:
             on_consult_event=self.on_consult_event_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def update_collaborator(self, updated_collaborator_data):
         """ """
         if not updated_collaborator_data:
@@ -196,6 +203,7 @@ class CollaboratorController:
             on_consult_event=self.on_consult_event_callback,
         )
 
+    @AuthenticationServices.check_authentication
     def delete_collaborator(self, collaborator_id):
         if not collaborator_id:
             self.epic_events_app.notify(
@@ -221,3 +229,11 @@ class CollaboratorController:
             on_consult_customer=self.on_consult_customer_callback,
             on_consult_event=self.on_consult_event_callback,
         )
+
+    def _handle_auth_failure(self, error: AuthenticationError | None):
+        """Handles authentication failure"""
+        # if error:
+        #     self.epic_events_app.notify(
+        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+        #     )
+        self.on_back_callback()

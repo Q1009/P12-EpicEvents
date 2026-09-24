@@ -22,6 +22,10 @@ from customers.customer_view import (
     UpdateContactScreen,
     UpdateCustomerScreen,
 )
+from services.authentication_services import (
+    AuthenticationError,
+    AuthenticationServices,
+)
 
 
 class CustomerController:
@@ -41,6 +45,7 @@ class CustomerController:
             customers_screen, callback=self.handle_user_choice
         )
 
+    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from customer menu"""
         match user_choice:
@@ -175,6 +180,7 @@ class CustomerController:
             .all()
         )
 
+    @AuthenticationServices.check_authentication
     def create_customer(self, new_customer_data):
         """ """
         # If creation was cancelled
@@ -222,6 +228,7 @@ class CustomerController:
         )
         self.start(on_back=self.on_back_callback)
 
+    @AuthenticationServices.check_authentication
     def update_customer(self, updated_customer_data):
         """ """
         if not updated_customer_data:
@@ -231,9 +238,8 @@ class CustomerController:
             self.start(on_back=self.on_back_callback)
             return
 
-        customer = (
-            self.session.query(Customer)
-            .filter(Customer.id == updated_customer_data["id"])
+        customer = self.session.query(Customer).filter(
+            Customer.id == updated_customer_data["id"]
         )
 
         customer.update(
@@ -241,12 +247,16 @@ class CustomerController:
                 "first_name": updated_customer_data["customer_first_name"],
                 "last_name": updated_customer_data["customer_last_name"],
                 "company_name": updated_customer_data["company_name"],
-                "sales_representative_id": updated_customer_data["customer_sales_representative"].id,
+                "sales_representative_id": updated_customer_data[
+                    "customer_sales_representative"
+                ].id,
                 "updated_at": datetime.now(UTC),
             }
         )
 
-        customer.first().contacts = updated_customer_data["customer_contacts"]
+        customer.first().contacts = updated_customer_data[
+            "customer_contacts"
+        ]
 
         self.session.commit()
         self.epic_events_app.notify(
@@ -254,6 +264,7 @@ class CustomerController:
         )
         self.start(on_back=self.on_back_callback)
 
+    @AuthenticationServices.check_authentication
     def create_contact(self, new_contact_data):
         """ """
         # If creation was cancelled
@@ -285,6 +296,7 @@ class CustomerController:
         )
         self.start(on_back=self.on_back_callback)
 
+    @AuthenticationServices.check_authentication
     def update_contact(self, updated_contact_data):
         """
         Update contact and its phone numbers.
@@ -330,3 +342,11 @@ class CustomerController:
             "Contact successfully updated", severity="information"
         )
         self.start(on_back=self.on_back_callback)
+
+    def _handle_auth_failure(self, error: AuthenticationError | None):
+        """Handles authentication failure"""
+        # if error:
+        #     self.epic_events_app.notify(
+        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+        #     )
+        self.on_back_callback()

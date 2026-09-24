@@ -387,8 +387,8 @@ class EventController:
 
     def _handle_auth_failure(self, error: AuthenticationError | None):
         """Handles authentication failure"""
-        if error:
-            self.epic_events_app.notify(
-                f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
-            )
+        # if error:
+        #     self.epic_events_app.notify(
+        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+        #     )
         self.on_back_callback()
