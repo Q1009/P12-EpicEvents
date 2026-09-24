@@ -46,79 +46,25 @@ class EventController:
         self.on_consult_contract_callback = on_consult_contract
 
         if contract_id is not None:
-            self.handle_user_choice(("create_event", contract_id))
+            self.push_create_event_screen(contract_id)
             return
 
         events = self.get_all_events()
-        events_screen = EventScreen(events, event_id)
-        self.epic_events_app.push_screen(
-            events_screen, callback=self.handle_user_choice
-        )
+        self.push_event_screen(events, event_id)
 
-    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from event menu"""
         match user_choice:
             case "create_event":
-                all_locations = self.get_all_locations()
-                signed_contracts = (
-                    self.get_signed_contracts_without_event()
-                )
-                create_event_screen = CreateEventScreen(
-                    all_locations, signed_contracts
-                )
-                self.epic_events_app.push_screen(
-                    create_event_screen,
-                    callback=self.create_event,
-                )
+                self.push_create_event_screen()
             case ("create_event", contract_id):
-                all_locations = self.get_all_locations()
-                signed_contracts = (
-                    self.get_signed_contracts_without_event()
-                )
-                create_event_screen = CreateEventScreen(
-                    all_locations, signed_contracts, contract_id
-                )
-                self.epic_events_app.push_screen(
-                    create_event_screen,
-                    callback=self.create_event,
-                )
+                self.push_create_event_screen(contract_id)
             case ("update_event", event_id):
-                all_locations = self.get_all_locations()
-                signed_contracts = (
-                    self.get_signed_contracts_without_event()
-                )
-                support_representatives = (
-                    self.get_support_representatives()
-                )
-                event_to_update = self.load_event_data_for_update(event_id)
-                update_event_screen = UpdateEventScreen(
-                    event_to_update,
-                    all_locations,
-                    support_representatives,
-                    signed_contracts,
-                )
-                self.epic_events_app.push_screen(
-                    update_event_screen,
-                    callback=self.update_event,
-                )
+                self.push_update_event_screen(event_id)
             case "create_location":
-                create_location_screen = CreateLocationScreen()
-                self.epic_events_app.push_screen(
-                    create_location_screen,
-                    callback=self.create_location,
-                )
+                self.push_create_location_screen()
             case ("update_location", location_id):
-                location_to_update = self.load_location_data_for_update(
-                    location_id
-                )
-                update_location_screen = UpdateLocationScreen(
-                    location_to_update
-                )
-                self.epic_events_app.push_screen(
-                    update_location_screen,
-                    callback=self.update_location,
-                )
+                self.push_update_location_screen(location_id)
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
                 return
@@ -127,31 +73,22 @@ class EventController:
                 return
             case ("filter_unsupported_events", filtered_table):
                 events = self.get_unsupported_events()
-                events_screen = EventScreen(
+                self.push_event_screen(
                     events, filtered_table_supported=filtered_table
-                )
-                self.epic_events_app.push_screen(
-                    events_screen, callback=self.handle_user_choice
                 )
             case ("filter_user_events_as_support", filtered_table):
                 events = (
                     self.get_events_by_support_representative_as_user()
                 )
-                events_screen = EventScreen(
+                self.push_event_screen(
                     events, filtered_table_ownership=filtered_table
-                )
-                self.epic_events_app.push_screen(
-                    events_screen, callback=self.handle_user_choice
                 )
             case ("filter_reset", filtered_table):
                 events = self.get_all_events()
-                events_screen = EventScreen(
+                self.push_event_screen(
                     events,
                     filtered_table_supported=filtered_table,
                     filtered_table_ownership=filtered_table,
-                )
-                self.epic_events_app.push_screen(
-                    events_screen, callback=self.handle_user_choice
                 )
             case "back":
                 if self.on_back_callback:
@@ -254,6 +191,142 @@ class EventController:
             "location_zip_code": location.zip_code,
             "location_city": location.city,
         }
+
+    @AuthenticationServices.check_authentication
+    def push_event_screen(
+        self,
+        events: list[Event],
+        event_id: int | None = None,
+        filtered_table_supported: bool = False,
+        filtered_table_ownership: bool = False,
+    ):
+        """
+        Push the event list screen onto the application screen stack.
+
+        Instantiates an :class:`EventScreen` with the provided events, optional
+        pre-selected event ID, and filter states, then pushes it onto the
+        application's screen stack with a callback to :meth:`handle_user_choice`.
+
+        :param events: List of :class:`Event` objects to display in the screen table.
+        :type events: list[Event]
+        :param event_id: Optional ID of an event to pre-select in the table.
+            If provided, the corresponding event will be highlighted. Defaults to None.
+        :type event_id: int | None
+        :param filtered_table_supported: Flag indicating whether the table is filtered
+            to show only unsupported events. Defaults to False.
+        :type filtered_table_supported: bool
+        :param filtered_table_ownership: Flag indicating whether the table is filtered
+            to show only events assigned to the current user. Defaults to False.
+        :type filtered_table_ownership: bool
+        :return: None
+        :rtype: None
+        """
+        events_screen = EventScreen(
+            events=events,
+            event_id=event_id,
+            filtered_table_supported=filtered_table_supported,
+            filtered_table_ownership=filtered_table_ownership,
+        )
+        self.epic_events_app.push_screen(
+            events_screen, callback=self.handle_user_choice
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_event_screen(self, contract_id: int | None = None):
+        """
+        Push the create event screen onto the application screen stack.
+
+        Instantiates a :class:`CreateEventScreen` with all available locations
+        and signed contracts without an associated event, then pushes it onto
+        the application's screen stack with a callback to :meth:`create_event`.
+
+        :param contract_id: Optional contract ID to pre-select in the creation form.
+            If provided, the corresponding contract will be pre-selected. Defaults to None.
+        :type contract_id: int | None
+        :return: None
+        :rtype: None
+        """
+        all_locations = self.get_all_locations()
+        signed_contracts = self.get_signed_contracts_without_event()
+        create_event_screen = CreateEventScreen(
+            all_locations, signed_contracts, contract_id
+        )
+        self.epic_events_app.push_screen(
+            create_event_screen,
+            callback=self.create_event,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_event_screen(self, event_id: int):
+        """
+        Push the update event screen onto the application screen stack.
+
+        Instantiates an :class:`UpdateEventScreen` with the event data to update,
+        all available locations, support representatives, and signed contracts without
+        an associated event, then pushes it onto the application's screen stack
+        with a callback to :meth:`update_event`.
+
+        :param event_id: The ID of the event to update. The corresponding event data
+            will be loaded and pre-filled in the update form.
+        :type event_id: int
+        :return: None
+        :rtype: None
+        """
+        all_locations = self.get_all_locations()
+        signed_contracts = self.get_signed_contracts_without_event()
+        support_representatives = self.get_support_representatives()
+        event_to_update = self.load_event_data_for_update(event_id)
+        update_event_screen = UpdateEventScreen(
+            event_to_update,
+            all_locations,
+            support_representatives,
+            signed_contracts,
+        )
+        self.epic_events_app.push_screen(
+            update_event_screen,
+            callback=self.update_event,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_location_screen(self):
+        """
+        Push the create location screen onto the application screen stack.
+
+        Instantiates a :class:`CreateLocationScreen` and pushes it onto
+        the application's screen stack with a callback to :meth:`create_location`.
+
+        :return: None
+        :rtype: None
+        """
+        create_location_screen = CreateLocationScreen()
+        self.epic_events_app.push_screen(
+            create_location_screen,
+            callback=self.create_location,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_location_screen(self, location_id: int):
+        """
+        Push the update location screen onto the application screen stack.
+
+        Loads the data for the location to update, instantiates an
+        :class:`UpdateLocationScreen` with this data, and pushes it onto
+        the application's screen stack with a callback to :meth:`update_location`.
+
+        :param location_id: The ID of the location to update. The corresponding
+            location data will be loaded and pre-filled in the update form.
+        :type location_id: int
+        :return: None
+        :rtype: None
+        """
+        location_to_update = self.load_location_data_for_update(
+            location_id
+        )
+        update_location_screen = UpdateLocationScreen(location_to_update)
+        self.epic_events_app.push_screen(
+            update_location_screen,
+            callback=self.update_location,
+        )
 
     @AuthenticationServices.check_authentication
     def create_event(self, new_event_data):
