@@ -316,9 +316,11 @@ class EventScreen(Screen):
             self.selected_location_id = selected_event.location.id
 
     def check_action(self, action: str, parameters) -> bool | None:
-        # Returns False if table is filtered and action is filter_unsup
-        # or if table is not filtered and action is filter_reset
-        # and returns True in other cases
+        # Returns False if
+        # table is filtered and action is filter_unsup
+        # or
+        # if table is not filtered and action is filter_reset.
+        # Returns True in other cases
         return not (
             action == "filter_unsupported_events"
             and self.filtered_table
@@ -728,9 +730,7 @@ class CreateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_invalid_reasons(
-        self, event: Select.Changed
-    ) -> None:
+    def show_select_invalid_reasons(self, event: Select.Changed) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
@@ -1150,9 +1150,7 @@ class UpdateEventScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_invalid_reasons(
-        self, event: Select.Changed
-    ) -> None:
+    def show_select_invalid_reasons(self, event: Select.Changed) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()

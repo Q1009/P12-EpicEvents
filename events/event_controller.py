@@ -127,15 +127,19 @@ class EventController:
                 return
             case ("filter_unsupported_events", filtered_table):
                 events = self.get_unsupported_events()
-                events_screen = EventScreen(events, filtered_table=filtered_table)
+                events_screen = EventScreen(
+                    events, filtered_table=filtered_table
+                )
                 self.epic_events_app.push_screen(
-                events_screen, callback=self.handle_user_choice
+                    events_screen, callback=self.handle_user_choice
                 )
             case ("filter_reset", filtered_table):
                 events = self.get_all_events()
-                events_screen = EventScreen(events, filtered_table=filtered_table)
+                events_screen = EventScreen(
+                    events, filtered_table=filtered_table
+                )
                 self.epic_events_app.push_screen(
-                events_screen, callback=self.handle_user_choice
+                    events_screen, callback=self.handle_user_choice
                 )
             case "back":
                 if self.on_back_callback:

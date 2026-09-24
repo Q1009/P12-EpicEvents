@@ -79,6 +79,32 @@ class ContractController:
             case ("consult_event", event_id):
                 self.on_consult_event_callback(event_id=event_id)
                 return
+            case ("filter_unsigned_contracts", filtered_table):
+                contracts = self.get_unsigned_contracts()
+                contracts_screen = ContractScreen(
+                    contracts, filtered_table_signature=filtered_table
+                )
+                self.epic_events_app.push_screen(
+                    contracts_screen, callback=self.handle_user_choice
+                )
+            case ("filter_unpaid_contracts", filtered_table):
+                contracts = self.get_unpaid_contracts()
+                contracts_screen = ContractScreen(
+                    contracts, filtered_table_payment=filtered_table
+                )
+                self.epic_events_app.push_screen(
+                    contracts_screen, callback=self.handle_user_choice
+                )
+            case ("filter_reset", filtered_table):
+                contracts = self.get_all_contracts()
+                contracts_screen = ContractScreen(
+                    contracts,
+                    filtered_table_signature=filtered_table,
+                    filtered_table_payment=filtered_table,
+                )
+                self.epic_events_app.push_screen(
+                    contracts_screen, callback=self.handle_user_choice
+                )
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -96,6 +122,34 @@ class ContractController:
                 joinedload(Contract.customer),
                 joinedload(Contract.event),
             )
+            .all()
+        )
+
+    def get_unsigned_contracts(self) -> list[Contract]:
+        """
+        Returns all unsigned contracts from the database.
+        """
+        return (
+            self.session.query(Contract)
+            .options(
+                joinedload(Contract.customer),
+                joinedload(Contract.event),
+            )
+            .filter(Contract.status != ContractStatus.SIGNED)
+            .all()
+        )
+
+    def get_unpaid_contracts(self) -> list[Contract]:
+        """
+        Returns all unpaid contracts from the database.
+        """
+        return (
+            self.session.query(Contract)
+            .options(
+                joinedload(Contract.customer),
+                joinedload(Contract.event),
+            )
+            .filter(Contract.amount_due != 0)
             .all()
         )
 

@@ -30,6 +30,9 @@ class ContractScreen(Screen):
     SUB_TITLE = "CONTRACTS"
     CSS_PATH = "../styles/contract_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ("s", "filter_unsigned_contracts", "Show Unsigned Contracts"),
+        ("p", "filter_unpaid_contracts", "Show Unpaid Contracts"),
+        ("r", "filter_reset", "Show All Contracts"),
         ("b", "go_back", "Back"),
     ]
 
@@ -37,13 +40,19 @@ class ContractScreen(Screen):
     selected_contract_id: reactive[int | None] = reactive(None)
 
     def __init__(
-        self, contracts: list[Contract], contract_id: int | None = None
+        self,
+        contracts: list[Contract],
+        contract_id: int | None = None,
+        filtered_table_signature: bool = False,
+        filtered_table_payment: bool = False,
     ) -> None:
         super().__init__()
         self.contracts = contracts
         self.pre_selected_contract_id = contract_id
         self.selected_customer_id = None
         self.selected_event_id = None
+        self.filtered_table_signature = filtered_table_signature
+        self.filtered_table_payment = filtered_table_payment
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -284,6 +293,44 @@ class ContractScreen(Screen):
             or self.selected_event_id is not None
         )
 
+    def check_action(self, action: str, parameters) -> bool | None:
+        # Returns False if
+        # table is filtered by signature and action is filter_unsigned
+        # or
+        # if table is filtered by payment and action is filter_unpaid
+        # or
+        # if table is not filtered and action is filter_reset
+        # Returns True in other cases
+        return not (
+            (
+                action == "filter_unsigned_contracts"
+                and self.filtered_table_signature
+            )
+            or (
+                action == "filter_unpaid_contracts"
+                and self.filtered_table_payment
+            )
+            or (
+                action == "filter_reset"
+                and not (
+                    self.filtered_table_signature
+                    or self.filtered_table_payment
+                )
+            )
+        )
+
+    def action_filter_unsigned_contracts(self) -> None:
+        """Filter DataTable to show unsigned contracts"""
+        self.dismiss(("filter_unsigned_contracts", True))
+
+    def action_filter_unpaid_contracts(self) -> None:
+        """Filter DataTable to show unpaid contracts"""
+        self.dismiss(("filter_unpaid_contracts", True))
+
+    def action_filter_reset(self) -> None:
+        """Filter DataTable to show all contracts"""
+        self.dismiss(("filter_reset", False))
+
     def action_go_back(self) -> None:
         """Return to previous screen."""
         self.dismiss("back")
@@ -481,9 +528,7 @@ class CreateContractScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_invalid_reasons(
-        self, event: Select.Changed
-    ) -> None:
+    def show_select_invalid_reasons(self, event: Select.Changed) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
@@ -721,9 +766,7 @@ class UpdateContractScreen(Screen):
             input_widget.border_subtitle = error_message
 
     @on(Select.Changed)
-    def show_select_invalid_reasons(
-        self, event: Select.Changed
-    ) -> None:
+    def show_select_invalid_reasons(self, event: Select.Changed) -> None:
         """Activates on changed input"""
         # Updating the UI to show the reasons why validation failed
         self._validate_form()
