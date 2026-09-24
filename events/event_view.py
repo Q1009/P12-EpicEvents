@@ -35,6 +35,7 @@ class EventScreen(Screen):
     CSS_PATH = "../styles/event_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("s", "filter_unsupported_events", "Show Unsupported Events"),
+        ("e", "filter_user_events_as_support", "Show Affected Events"),
         ("r", "filter_reset", "Show All Events"),
         ("b", "go_back", "Back"),
     ]
@@ -46,7 +47,8 @@ class EventScreen(Screen):
         self,
         events: list[Event],
         event_id: int | None = None,
-        filtered_table: bool = False,
+        filtered_table_supported: bool = False,
+        filtered_table_ownership: bool = False,
     ) -> None:
         super().__init__()
         self.events = events
@@ -54,7 +56,8 @@ class EventScreen(Screen):
         self.selected_contract_id = None
         self.selected_location_id = None
         self.selected_customer_id = None
-        self.filtered_table = filtered_table
+        self.filtered_table_supported = filtered_table_supported
+        self.filtered_table_ownership = filtered_table_ownership
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -322,15 +325,31 @@ class EventScreen(Screen):
         # if table is not filtered and action is filter_reset.
         # Returns True in other cases
         return not (
-            action == "filter_unsupported_events"
-            and self.filtered_table
-            or action == "filter_reset"
-            and not self.filtered_table
+            (
+                action == "filter_unsupported_events"
+                and self.filtered_table_supported
+            )
+            or (
+                action == "filter_user_events_as_support"
+                and self.filtered_table_ownership
+            )
+            or (
+                action == "filter_reset"
+                and not (
+                    self.filtered_table_supported
+                    or self.filtered_table_ownership
+                )
+            )
         )
 
     def action_filter_unsupported_events(self) -> None:
         """Filter DataTable to show unsupported events"""
         self.dismiss(("filter_unsupported_events", True))
+
+    def action_filter_user_events_as_support(self) -> None:
+        """Filter DataTable to show user events
+        if user is a support representative"""
+        self.dismiss(("filter_user_events_as_support", True))
 
     def action_filter_reset(self) -> None:
         """Filter DataTable to show all events"""

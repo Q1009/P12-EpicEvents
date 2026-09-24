@@ -128,7 +128,17 @@ class EventController:
             case ("filter_unsupported_events", filtered_table):
                 events = self.get_unsupported_events()
                 events_screen = EventScreen(
-                    events, filtered_table=filtered_table
+                    events, filtered_table_supported=filtered_table
+                )
+                self.epic_events_app.push_screen(
+                    events_screen, callback=self.handle_user_choice
+                )
+            case ("filter_user_events_as_support", filtered_table):
+                events = (
+                    self.get_events_by_support_representative_as_user()
+                )
+                events_screen = EventScreen(
+                    events, filtered_table_ownership=filtered_table
                 )
                 self.epic_events_app.push_screen(
                     events_screen, callback=self.handle_user_choice
@@ -136,7 +146,9 @@ class EventController:
             case ("filter_reset", filtered_table):
                 events = self.get_all_events()
                 events_screen = EventScreen(
-                    events, filtered_table=filtered_table
+                    events,
+                    filtered_table_supported=filtered_table,
+                    filtered_table_ownership=filtered_table,
                 )
                 self.epic_events_app.push_screen(
                     events_screen, callback=self.handle_user_choice
@@ -176,6 +188,16 @@ class EventController:
             .filter(
                 Event.support_representative == None,
             )
+            .all()
+        )
+
+    def get_events_by_support_representative_as_user(self) -> list[Event]:
+        user = AuthenticationServices.get_user_info(self.session)
+        if user is None:
+            return []
+        return (
+            self.session.query(Event)
+            .filter(Event.support_representative_id == user.id)
             .all()
         )
 
