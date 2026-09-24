@@ -125,6 +125,18 @@ class EventController:
             case ("consult_contract", contract_id):
                 self.on_consult_contract_callback(contract_id)
                 return
+            case ("filter_unsupported_events", filtered_table):
+                events = self.get_unsupported_events()
+                events_screen = EventScreen(events, filtered_table=filtered_table)
+                self.epic_events_app.push_screen(
+                events_screen, callback=self.handle_user_choice
+                )
+            case ("filter_reset", filtered_table):
+                events = self.get_all_events()
+                events_screen = EventScreen(events, filtered_table=filtered_table)
+                self.epic_events_app.push_screen(
+                events_screen, callback=self.handle_user_choice
+                )
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -142,6 +154,23 @@ class EventController:
                 joinedload(Event.contract),
                 joinedload(Event.location),
                 joinedload(Event.support_representative),
+            )
+            .all()
+        )
+
+    def get_unsupported_events(self) -> list[Event]:
+        """
+        Returns all unsupported events from the database.
+        """
+        return (
+            self.session.query(Event)
+            .options(
+                joinedload(Event.contract),
+                joinedload(Event.location),
+                joinedload(Event.support_representative),
+            )
+            .filter(
+                Event.support_representative == None,
             )
             .all()
         )

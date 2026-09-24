@@ -34,6 +34,8 @@ class EventScreen(Screen):
     SUB_TITLE = "EVENTS"
     CSS_PATH = "../styles/event_screen.tcss"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ("s", "filter_unsupported_events", "Show Unsupported Events"),
+        ("r", "filter_reset", "Show All Events"),
         ("b", "go_back", "Back"),
     ]
 
@@ -41,7 +43,10 @@ class EventScreen(Screen):
     selected_event_id: reactive[int | None] = reactive(None)
 
     def __init__(
-        self, events: list[Event], event_id: int | None = None
+        self,
+        events: list[Event],
+        event_id: int | None = None,
+        filtered_table: bool = False,
     ) -> None:
         super().__init__()
         self.events = events
@@ -49,6 +54,7 @@ class EventScreen(Screen):
         self.selected_contract_id = None
         self.selected_location_id = None
         self.selected_customer_id = None
+        self.filtered_table = filtered_table
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -308,6 +314,25 @@ class EventScreen(Screen):
             self.selected_contract_id = selected_event.contract.id
             self.selected_customer_id = selected_event.contract.customer.id
             self.selected_location_id = selected_event.location.id
+
+    def check_action(self, action: str, parameters) -> bool | None:
+        # Returns False if table is filtered and action is filter_unsup
+        # or if table is not filtered and action is filter_reset
+        # and returns True in other cases
+        return not (
+            action == "filter_unsupported_events"
+            and self.filtered_table
+            or action == "filter_reset"
+            and not self.filtered_table
+        )
+
+    def action_filter_unsupported_events(self) -> None:
+        """Filter DataTable to show unsupported events"""
+        self.dismiss(("filter_unsupported_events", True))
+
+    def action_filter_reset(self) -> None:
+        """Filter DataTable to show all events"""
+        self.dismiss(("filter_reset", False))
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
