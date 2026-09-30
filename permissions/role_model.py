@@ -29,11 +29,11 @@ ROLE_PERMISSIONS = {
         # === Contracts ===
         Permission.READ_ALL_CONTRACTS,
         Permission.CREATE_CONTRACT,
-        Permission.UPDATE_CONTRACT,
+        Permission.UPDATE_ALL_CONTRACTS,
 
         # === Events ===
         Permission.READ_ALL_EVENTS,
-        Permission.UPDATE_EVENT,  # Custom permission to add support to an event
+        Permission.UPDATE_ALL_EVENTS,  # Custom permission to add support to an event
 
         # === Collaborators ===
         Permission.READ_ALL_COLLABORATORS,

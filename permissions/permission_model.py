@@ -21,14 +21,12 @@ class Permission(Enum):
     # ===== Contracts Permissions =====
     READ_ALL_CONTRACTS = auto()
     CREATE_CONTRACT = auto()
-    # UPDATE_CONTRACT = auto()
     UPDATE_OWN_CONTRACTS = auto()
     UPDATE_ALL_CONTRACTS = auto()
 
     # ===== Events Permissions =====
     READ_ALL_EVENTS = auto()
     CREATE_EVENT = auto()
-    # UPDATE_EVENT = auto()
     UPDATE_OWN_EVENTS = auto()
     UPDATE_ALL_EVENTS = auto()
 

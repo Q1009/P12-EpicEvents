@@ -19,9 +19,12 @@ from textual.widgets import (
 )
 from textual.widgets._select import SelectCurrent
 
+from collaborators.collaborator_model import Collaborator
 from contracts.contract_model import Contract, ContractStatus
 from customers.customer_model import Customer
+from permissions.permission_model import Permission
 from services.date_services import format_french_datetime
+from services.permission_services import PermissionServices
 
 
 class ContractScreen(Screen):
@@ -39,9 +42,21 @@ class ContractScreen(Screen):
     # Reactive variables
     selected_contract_id: reactive[int | None] = reactive(None)
 
+    BUTTON_PERMISSIONS: ClassVar[dict[str, set[Permission]]] = {
+        "create-contract": {Permission.CREATE_CONTRACT},
+        "update-contract": {
+            Permission.UPDATE_ALL_CONTRACTS,
+            Permission.UPDATE_OWN_CONTRACTS,
+        },
+        "create-event": {Permission.CREATE_EVENT},
+        "consult-customer": {Permission.READ_ALL_CUSTOMERS},
+        "consult-event": {Permission.READ_ALL_EVENTS},
+    }
+
     def __init__(
         self,
         contracts: list[Contract],
+        user: Collaborator,
         contract_id: int | None = None,
         filtered_table_signature: bool = False,
         filtered_table_payment: bool = False,
@@ -49,6 +64,7 @@ class ContractScreen(Screen):
         super().__init__()
         self.contracts = contracts
         self.pre_selected_contract_id = contract_id
+        self.current_user = user
         self.selected_customer_id = None
         self.selected_event_id = None
         self.filtered_table_signature = filtered_table_signature
@@ -98,6 +114,11 @@ class ContractScreen(Screen):
         self.build_contract_customer_table()
         self.build_contract_payment_progressbar()
         self.build_contract_event_table()
+        self.set_button_state("create-contract")
+        self.set_button_state("update-contract")
+        self.set_button_state("create-event")
+        self.set_button_state("consult-customer")
+        self.set_button_state("consult-event")
 
         # Setting initial selected_contract_id: triggering the watcher
         # If a contract id was given to constructor
@@ -228,6 +249,29 @@ class ContractScreen(Screen):
         paid_amount = total_amount - amount_due
         progressbar.update(total=total_amount, progress=paid_amount)
 
+    def set_button_state(self, button_id: str) -> None:
+        if self.current_user is None:
+            return
+
+        required_permissions = self.BUTTON_PERMISSIONS.get(
+            button_id, set()
+        )
+        missing_permissions = [
+            permission
+            for permission in required_permissions
+            if not PermissionServices.has_permission(
+                user=self.current_user, permission=permission
+            )
+        ]
+        if missing_permissions:
+            self.query_one(f"#{button_id}", Button).disabled = True
+            # raise PermissionError(
+            #     f"User {user.email} lacks permissions: "
+            #     f"{', '.join(p.name for p in missing_permissions)}"
+            # )
+        else:
+            self.query_one(f"#{button_id}", Button).disabled = False
+
     def watch_selected_contract_id(self, new_id: int | None) -> None:
         """
         Watcher that loads customers and events based on the contract
@@ -242,11 +286,6 @@ class ContractScreen(Screen):
         contract_payment_progressbar = self.query_one(
             "#contract-payment-progressbar", ProgressBar
         )
-        consult_customer_button = self.query_one(
-            "#consult-customer", Button
-        )
-        consult_event_button = self.query_one("#consult-event", Button)
-        create_event_button = self.query_one("#create-event", Button)
 
         if new_id is None:
             contract_customer_table.clear()
@@ -282,16 +321,73 @@ class ContractScreen(Screen):
             self.selected_customer_id = None
             self.selected_event_id = None
 
-        # Enable or disable consult buttons
-        consult_customer_button.disabled = (
-            self.selected_customer_id is None
+        # Enable or disable buttons
+        self.update_consult_customer_button_state()
+        self.update_consult_event_button_state()
+        self.update_create_event_button_state(selected_contract)
+        self.update_update_contract_button_state(selected_contract)
+
+    def update_consult_customer_button_state(self):
+        consult_customer_button = self.query_one(
+            "#consult-customer", Button
         )
-        consult_event_button.disabled = self.selected_event_id is None
-        # Enable or disable create event button
+        consult_customer_button.disabled = (
+            (
+                self.selected_customer_id is None
+                or not PermissionServices.has_permission(
+                    self.current_user, Permission.READ_ALL_CUSTOMERS
+                )
+            )
+            if self.current_user
+            else True
+        )
+
+    def update_consult_event_button_state(self):
+        consult_event_button = self.query_one("#consult-event", Button)
+        consult_event_button.disabled = (
+            (
+                self.selected_event_id is None
+                or not PermissionServices.has_permission(
+                    self.current_user, Permission.READ_ALL_EVENTS
+                )
+            )
+            if self.current_user
+            else True
+        )
+
+    def update_create_event_button_state(
+        self, selected_contract: Contract
+    ):
+        create_event_button = self.query_one("#create-event", Button)
         create_event_button.disabled = (
             selected_contract.status != ContractStatus.SIGNED
             or self.selected_event_id is not None
+            or not PermissionServices.has_permission(
+                self.current_user, Permission.CREATE_EVENT
+            )
         )
+
+    def update_update_contract_button_state(
+        self, selected_contract: Contract
+    ):
+        update_contract_button = self.query_one("#update-contract", Button)
+
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_ALL_CONTRACTS
+        ):
+            update_contract_button.disabled = False
+            return
+
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_OWN_CONTRACTS
+        ):
+            update_contract_button.disabled = (
+                selected_contract.customer.sales_representative_id
+                != self.current_user.id
+            )
+            return
+
+        update_contract_button.disabled = True
 
     def check_action(self, action: str, parameters) -> bool | None:
         # Returns False if

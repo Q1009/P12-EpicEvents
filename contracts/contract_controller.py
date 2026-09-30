@@ -175,8 +175,10 @@ class ContractController:
         :return: None
         :rtype: None
         """
+        current_user = AuthenticationServices.get_user_info(self.session)
         contracts_screen = ContractScreen(
             contracts=contracts,
+            user=current_user,
             contract_id=contract_id,
             filtered_table_signature=filtered_table_signature,
             filtered_table_payment=filtered_table_payment,
