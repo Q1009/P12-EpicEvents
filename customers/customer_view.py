@@ -988,8 +988,8 @@ class CreateContactScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
         self.contact_data = {}
         self.phone_number_counter = 2
 
@@ -1236,8 +1236,8 @@ class UpdateContactScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, contact_data: dict, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, contact_data: dict):
+        super().__init__()
         self.contact_data = contact_data
         self.updated_contact_data = {}
         # Counter for additional phone numbers (starts after the existing ones)

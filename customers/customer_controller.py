@@ -40,50 +40,21 @@ class CustomerController:
     def start(self, customer_id=None, on_back=None):
         self.on_back_callback = on_back
         customers = self.get_all_customers()
-        customers_screen = CustomerScreen(customers, customer_id)
-        self.epic_events_app.push_screen(
-            customers_screen, callback=self.handle_user_choice
+        self.push_customer_screen(
+            customers=customers, customer_id=customer_id
         )
 
-    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from customer menu"""
         match user_choice:
             case "create_customer":
-                all_contacts = self.get_all_contacts()
-                create_customer_screen = CreateCustomerScreen(all_contacts)
-                self.epic_events_app.push_screen(
-                    create_customer_screen, callback=self.create_customer
-                )
+                self.push_create_customer_screen()
             case ("update_customer", customer_id):
-                all_contacts = self.get_all_contacts()
-                sales_representatives = self.get_sales_representatives()
-                customer_to_update = self.load_customer_data_for_update(
-                    customer_id
-                )
-                update_customer_screen = UpdateCustomerScreen(
-                    customer_to_update,
-                    all_contacts,
-                    sales_representatives,
-                )
-                self.epic_events_app.push_screen(
-                    update_customer_screen, callback=self.update_customer
-                )
+                self.push_update_customer_screen(customer_id=customer_id)
             case "create_contact":
-                create_contact_screen = CreateContactScreen()
-                self.epic_events_app.push_screen(
-                    create_contact_screen, callback=self.create_contact
-                )
+                self.push_create_contact_screen()
             case ("update_contact", contact_id):
-                contact_to_update = self.load_contact_data_for_update(
-                    contact_id
-                )
-                update_contact_screen = UpdateContactScreen(
-                    contact_to_update
-                )
-                self.epic_events_app.push_screen(
-                    update_contact_screen, callback=self.update_contact
-                )
+                self.push_update_contact_screen(contact_id=contact_id)
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
@@ -115,7 +86,6 @@ class CustomerController:
         )
 
     def load_customer_data_for_update(self, customer_id: int):
-        """ """
         customer = (
             self.session.query(Customer)
             .filter(Customer.id == customer_id)
@@ -178,6 +148,125 @@ class CustomerController:
             self.session.query(Customer)
             .filter(Customer.sales_representative_id.is_(None))
             .all()
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_customer_screen(
+        self,
+        customers: list[Customer],
+        customer_id: int | None = None,
+    ) -> None:
+        """
+        Push the customer list screen onto the application screen stack.
+
+        Instantiates a :class:`CustomerScreen` with the provided customers and an optional
+        pre-selected customer ID, then pushes it onto the application's screen stack
+        with a callback to :meth:`handle_user_choice`.
+
+        :param customers: List of :class:`Customer` objects to display in the screen table.
+        :type customers: list[Customer]
+        :param customer_id: Optional ID of a customer to pre-select in the table.
+            If provided, the corresponding customer will be highlighted. Defaults to None.
+        :type customer_id: int | None
+        :return: None
+        :rtype: None
+        """
+        customers_screen = CustomerScreen(
+            customers=customers,
+            customer_id=customer_id,
+        )
+        self.epic_events_app.push_screen(
+            customers_screen, callback=self.handle_user_choice
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_customer_screen(self) -> None:
+        """
+        Push the create customer screen onto the application screen stack.
+
+        Retrieves all contacts and instantiates a :class:`CreateCustomerScreen`
+        with them, then pushes it onto the application's screen stack with a callback
+        to :meth:`create_customer`.
+
+        :return: None
+        :rtype: None
+        """
+        all_contacts = self.get_all_contacts()
+        create_customer_screen = CreateCustomerScreen(
+            contacts=all_contacts
+        )
+        self.epic_events_app.push_screen(
+            create_customer_screen,
+            callback=self.create_customer,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_customer_screen(self, customer_id: int) -> None:
+        """
+        Push the update customer screen onto the application screen stack.
+
+        Retrieves all contacts and sales representatives, loads the data for the
+        customer to update, instantiates an :class:`UpdateCustomerScreen` with this
+        data, and pushes it onto the application's screen stack with a callback
+        to :meth:`update_customer`.
+
+        :param customer_id: The ID of the customer to update. The corresponding
+            customer data will be loaded and pre-filled in the update form.
+        :type customer_id: int
+        :return: None
+        :rtype: None
+        """
+        all_contacts = self.get_all_contacts()
+        sales_representatives = self.get_sales_representatives()
+        customer_to_update = self.load_customer_data_for_update(
+            customer_id
+        )
+        update_customer_screen = UpdateCustomerScreen(
+            customer_data=customer_to_update,
+            contacts=all_contacts,
+            sales_representatives=sales_representatives,
+        )
+        self.epic_events_app.push_screen(
+            update_customer_screen, callback=self.update_customer
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_contact_screen(self) -> None:
+        """
+        Push the create contact screen onto the application screen stack.
+
+        Instantiates a :class:`CreateContactScreen` and pushes it onto the
+        application's screen stack with a callback to :meth:`create_contact`.
+
+        :return: None
+        :rtype: None
+        """
+        create_contact_screen = CreateContactScreen()
+        self.epic_events_app.push_screen(
+            create_contact_screen, callback=self.create_contact
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_contact_screen(self, contact_id: int) -> None:
+        """
+        Push the update contact screen onto the application screen stack.
+
+        Loads the data for the contact to update, instantiates an
+        :class:`UpdateContactScreen` with this data, and pushes it onto the
+        application's screen stack with a callback to :meth:`update_contact`.
+
+        :param contact_id: The ID of the contact to update. The corresponding
+            contact data will be loaded and pre-filled in the update form.
+        :type contact_id: int
+        :return: None
+        :rtype: None
+        """
+        contact_to_update = self.load_contact_data_for_update(contact_id)
+        update_contact_screen = UpdateContactScreen(
+            contact_data=contact_to_update
+        )
+        self.epic_events_app.push_screen(
+            update_contact_screen, callback=self.update_contact
         )
 
     @AuthenticationServices.check_authentication
