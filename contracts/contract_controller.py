@@ -40,36 +40,17 @@ class ContractController:
         self.on_consult_event_callback = on_consult_event
         self.on_create_event_callback = on_create_event
         contracts = self.get_all_contracts()
-        contracts_screen = ContractScreen(contracts, contract_id)
-        self.epic_events_app.push_screen(
-            contracts_screen, callback=self.handle_user_choice
+        self.push_contract_screen(
+            contracts=contracts, contract_id=contract_id
         )
 
-    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from contract menu"""
         match user_choice:
             case "create_contract":
-                all_customers = self.get_all_customers()
-                create_contract_screen = CreateContractScreen(
-                    all_customers
-                )
-                self.epic_events_app.push_screen(
-                    create_contract_screen,
-                    callback=self.create_contract,
-                )
+                self.push_create_contract_screen()
             case ("update_contract", contract_id):
-                all_customers = self.get_all_customers()
-                contract_to_update = self.load_contract_data_for_update(
-                    contract_id
-                )
-                update_contract_screen = UpdateContractScreen(
-                    contract_to_update, all_customers
-                )
-                self.epic_events_app.push_screen(
-                    update_contract_screen,
-                    callback=self.update_contract,
-                )
+                self.push_update_contract_screen(contract_id=contract_id)
             case ("create_event", contract_id):
                 self.on_create_event_callback(contract_id=contract_id)
                 return
@@ -81,29 +62,22 @@ class ContractController:
                 return
             case ("filter_unsigned_contracts", filtered_table):
                 contracts = self.get_unsigned_contracts()
-                contracts_screen = ContractScreen(
-                    contracts, filtered_table_signature=filtered_table
-                )
-                self.epic_events_app.push_screen(
-                    contracts_screen, callback=self.handle_user_choice
+                self.push_contract_screen(
+                    contracts=contracts,
+                    filtered_table_signature=filtered_table,
                 )
             case ("filter_unpaid_contracts", filtered_table):
                 contracts = self.get_unpaid_contracts()
-                contracts_screen = ContractScreen(
-                    contracts, filtered_table_payment=filtered_table
-                )
-                self.epic_events_app.push_screen(
-                    contracts_screen, callback=self.handle_user_choice
+                self.push_contract_screen(
+                    contracts=contracts,
+                    filtered_table_payment=filtered_table,
                 )
             case ("filter_reset", filtered_table):
                 contracts = self.get_all_contracts()
-                contracts_screen = ContractScreen(
-                    contracts,
+                self.push_contract_screen(
+                    contracts=contracts,
                     filtered_table_signature=filtered_table,
                     filtered_table_payment=filtered_table,
-                )
-                self.epic_events_app.push_screen(
-                    contracts_screen, callback=self.handle_user_choice
                 )
             case "back":
                 if self.on_back_callback:
@@ -171,6 +145,91 @@ class ContractController:
             "contract_status": contract.status,
             "contract_customer": contract.customer,
         }
+
+    @AuthenticationServices.check_authentication
+    def push_contract_screen(
+        self,
+        contracts: list[Contract],
+        contract_id: int | None = None,
+        filtered_table_signature: bool = False,
+        filtered_table_payment: bool = False,
+    ) -> None:
+        """
+        Push the contract list screen onto the application screen stack.
+
+        Instantiates a :class:`ContractScreen` with the provided contracts, optional
+        pre-selected contract ID, and filter states, then pushes it onto the
+        application's screen stack with a callback to :meth:`handle_user_choice`.
+
+        :param contracts: List of :class:`Contract` objects to display in the screen table.
+        :type contracts: list[Contract]
+        :param contract_id: Optional ID of a contract to pre-select in the table.
+            If provided, the corresponding contract will be highlighted. Defaults to None.
+        :type contract_id: int | None
+        :param filtered_table_signature: Flag indicating whether the table is filtered
+            to show only unsigned contracts. Defaults to False.
+        :type filtered_table_signature: bool
+        :param filtered_table_payment: Flag indicating whether the table is filtered
+            to show only unpaid contracts. Defaults to False.
+        :type filtered_table_payment: bool
+        :return: None
+        :rtype: None
+        """
+        contracts_screen = ContractScreen(
+            contracts=contracts,
+            contract_id=contract_id,
+            filtered_table_signature=filtered_table_signature,
+            filtered_table_payment=filtered_table_payment,
+        )
+        self.epic_events_app.push_screen(
+            contracts_screen, callback=self.handle_user_choice
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_contract_screen(self) -> None:
+        """
+        Push the create contract screen onto the application screen stack.
+
+        Retrieves all customers and instantiates a :class:`CreateContractScreen`
+        with them, then pushes it onto the application's screen stack with a callback
+        to :meth:`create_contract`.
+
+        :return: None
+        :rtype: None
+        """
+        all_customers = self.get_all_customers()
+        create_contract_screen = CreateContractScreen(all_customers)
+        self.epic_events_app.push_screen(
+            create_contract_screen,
+            callback=self.create_contract,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_contract_screen(self, contract_id: int) -> None:
+        """
+        Push the update contract screen onto the application screen stack.
+
+        Retrieves all customers and loads the data for the contract to update,
+        instantiates an :class:`UpdateContractScreen` with this data, and pushes
+        it onto the application's screen stack with a callback to :meth:`update_contract`.
+
+        :param contract_id: The ID of the contract to update. The corresponding
+            contract data will be loaded and pre-filled in the update form.
+        :type contract_id: int
+        :return: None
+        :rtype: None
+        """
+        all_customers = self.get_all_customers()
+        contract_to_update = self.load_contract_data_for_update(
+            contract_id
+        )
+        update_contract_screen = UpdateContractScreen(
+            contract_to_update, all_customers
+        )
+        self.epic_events_app.push_screen(
+            update_contract_screen,
+            callback=self.update_contract,
+        )
 
     @AuthenticationServices.check_authentication
     def create_contract(self, new_contract_data):
