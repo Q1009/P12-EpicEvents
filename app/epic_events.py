@@ -37,6 +37,6 @@ class EpicEventsCRM(App):
         self.theme = "nord"
         self.main_controller.start()
 
-    def on_exit(self):
+    def on_exit_app(self):
         self.session.close()
         self.engine.dispose()

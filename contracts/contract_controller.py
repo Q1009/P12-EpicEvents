@@ -53,13 +53,13 @@ class ContractController:
                 self.push_update_contract_screen(contract_id=contract_id)
             case ("create_event", contract_id):
                 self.on_create_event_callback(contract_id=contract_id)
-                return
+                # return
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
-                return
+                # return
             case ("consult_event", event_id):
                 self.on_consult_event_callback(event_id=event_id)
-                return
+                # return
             case ("filter_unsigned_contracts", filtered_table):
                 contracts = self.get_unsigned_contracts()
                 self.push_contract_screen(
@@ -82,7 +82,7 @@ class ContractController:
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                return
+                # return
             case "quit":
                 self.epic_events_app.exit()
 

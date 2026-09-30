@@ -48,14 +48,14 @@ class CollaboratorController:
                 self.delete_collaborator(collaborator_id)
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
-                return
+                # return
             case ("consult_event", event_id):
                 self.on_consult_event_callback(event_id)
-                return
+                # return
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                return
+                # return
             case "quit":
                 self.epic_events_app.exit()
 

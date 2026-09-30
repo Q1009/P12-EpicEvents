@@ -58,7 +58,7 @@ class CustomerController:
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                return
+                # return
             case "quit":
                 self.epic_events_app.exit()
 

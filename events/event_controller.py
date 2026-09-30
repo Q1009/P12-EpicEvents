@@ -67,10 +67,10 @@ class EventController:
                 self.push_update_location_screen(location_id)
             case ("consult_customer", customer_id):
                 self.on_consult_customer_callback(customer_id)
-                return
+                # return
             case ("consult_contract", contract_id):
                 self.on_consult_contract_callback(contract_id)
-                return
+                # return
             case ("filter_unsupported_events", filtered_table):
                 events = self.get_unsupported_events()
                 self.push_event_screen(
@@ -93,7 +93,7 @@ class EventController:
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                return
+                # return
             case "quit":
                 self.epic_events_app.exit()
 
