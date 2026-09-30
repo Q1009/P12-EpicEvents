@@ -33,35 +33,16 @@ class CollaboratorController:
         self.on_consult_customer_callback = on_consult_customer
         self.on_consult_event_callback = on_consult_event
         collaborators = self.get_all_collaborators()
-        collaborators_screen = CollaboratorScreen(collaborators)
-        self.epic_events_app.push_screen(
-            collaborators_screen, callback=self.handle_user_choice
-        )
+        self.push_collaborator_screen(collaborators=collaborators)
 
-    @AuthenticationServices.check_authentication
     def handle_user_choice(self, user_choice):
         """Callback when user chooses from collaborator menu"""
         match user_choice:
             case "create_collaborator":
-                all_departments = self.get_all_departments()
-                create_collaborator_screen = CreateCollaboratorScreen(
-                    all_departments
-                )
-                self.epic_events_app.push_screen(
-                    create_collaborator_screen,
-                    callback=self.create_collaborator,
-                )
+                self.push_create_collaborator_screen()
             case ("update_collaborator", collaborator_id):
-                all_departments = self.get_all_departments()
-                collaborator_to_update = (
-                    self.load_collaborator_data_for_update(collaborator_id)
-                )
-                update_collaborator_screen = UpdateCollaboratorScreen(
-                    collaborator_to_update, all_departments
-                )
-                self.epic_events_app.push_screen(
-                    update_collaborator_screen,
-                    callback=self.update_collaborator,
+                self.push_update_collaborator_screen(
+                    collaborator_id=collaborator_id
                 )
             case ("delete_collaborator", collaborator_id):
                 self.delete_collaborator(collaborator_id)
@@ -97,7 +78,6 @@ class CollaboratorController:
         return self.session.query(Department).all()
 
     def load_collaborator_data_for_update(self, collaborator_id: int):
-        """ """
         collaborator = (
             self.session.query(Collaborator)
             .filter(Collaborator.id == collaborator_id)
@@ -110,6 +90,86 @@ class CollaboratorController:
             "collaborator_last_name": collaborator.last_name,
             "department": collaborator.department,
         }
+
+    @AuthenticationServices.check_authentication
+    def push_collaborator_screen(
+        self,
+        collaborators: list[Collaborator],
+        collaborator_id: int | None = None,
+    ) -> None:
+        """
+        Push the collaborator list screen onto the application screen stack.
+
+        Instantiates a :class:`CollaboratorScreen` with the provided collaborators,
+        then pushes it onto the application's screen stack with a callback
+        to :meth:`handle_user_choice`.
+
+        :param collaborators: List of :class:`Collaborator` objects to display in the screen table.
+        :type collaborators: list[Collaborator]
+        :param collaborator_id: Optional ID of a collaborator to pre-select in the table.
+            Currently not used in screen instantiation but available for future use.
+            Defaults to None.
+        :type collaborator_id: int | None
+        :return: None
+        :rtype: None
+        """
+        collaborators_screen = CollaboratorScreen(
+            collaborators=collaborators
+        )
+        self.epic_events_app.push_screen(
+            collaborators_screen, callback=self.handle_user_choice
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_create_collaborator_screen(self) -> None:
+        """
+        Push the create collaborator screen onto the application screen stack.
+
+        Retrieves all departments and instantiates a :class:`CreateCollaboratorScreen`
+        with them, then pushes it onto the application's screen stack with a callback
+        to :meth:`create_collaborator`.
+
+        :return: None
+        :rtype: None
+        """
+        all_departments = self.get_all_departments()
+        create_collaborator_screen = CreateCollaboratorScreen(
+            departments=all_departments
+        )
+        self.epic_events_app.push_screen(
+            create_collaborator_screen,
+            callback=self.create_collaborator,
+        )
+
+    @AuthenticationServices.check_authentication
+    def push_update_collaborator_screen(
+        self, collaborator_id: int
+    ) -> None:
+        """
+        Push the update collaborator screen onto the application screen stack.
+
+        Retrieves all departments, loads the data for the collaborator to update,
+        instantiates an :class:`UpdateCollaboratorScreen` with this data, and
+        pushes it onto the application's screen stack with a callback
+        to :meth:`update_collaborator`.
+
+        :param collaborator_id: The ID of the collaborator to update. The corresponding
+            collaborator data will be loaded and pre-filled in the update form.
+        :type collaborator_id: int
+        :return: None
+        :rtype: None
+        """
+        all_departments = self.get_all_departments()
+        collaborator_to_update = self.load_collaborator_data_for_update(
+            collaborator_id
+        )
+        update_collaborator_screen = UpdateCollaboratorScreen(
+            collaborator_to_update, all_departments
+        )
+        self.epic_events_app.push_screen(
+            update_collaborator_screen,
+            callback=self.update_collaborator,
+        )
 
     @AuthenticationServices.check_authentication
     def create_collaborator(self, new_collaborator_data):
