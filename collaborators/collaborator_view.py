@@ -19,6 +19,8 @@ from textual.widgets import (
 from textual.widgets._select import SelectCurrent
 
 from collaborators.collaborator_model import Collaborator, Department
+from permissions.permission_model import Permission
+from services.permission_services import PermissionServices
 
 
 class CollaboratorScreen(Screen):
@@ -35,9 +37,18 @@ class CollaboratorScreen(Screen):
     selected_customer_id: reactive[int | None] = reactive(None)
     selected_event_id: reactive[int | None] = reactive(None)
 
-    def __init__(self, collaborators: list[Collaborator]) -> None:
+    BUTTON_PERMISSIONS: ClassVar[dict[str, set[Permission]]] = {
+        "create-collaborator": {Permission.CREATE_COLLABORATOR},
+        "update-collaborator": {Permission.UPDATE_COLLABORATOR},
+        "delete-collaborator": {Permission.DELETE_COLLABORATOR},
+        "consult-customer": {Permission.READ_ALL_CUSTOMERS},
+        "consult-event": {Permission.READ_ALL_EVENTS},
+    }
+
+    def __init__(self, collaborators: list[Collaborator], user: Collaborator) -> None:
         super().__init__()
         self.collaborators = collaborators
+        self.current_user = user
         self.selected_collaborator_first_name: str = None
         self.selected_collaborator_last_name: str = None
 
@@ -81,6 +92,11 @@ class CollaboratorScreen(Screen):
         self.build_collaborators_table()
         self.build_collaborator_customers_table()
         self.build_collaborator_events_table()
+        self.set_button_state("create-collaborator")
+        self.set_button_state("update-collaborator")
+        self.set_button_state("delete-collaborator")
+        self.set_button_state("consult-customer")
+        self.set_button_state("consult-event")
 
         # Setting initial selected_collaborator_id: triggering the watcher
         if self.collaborators:
@@ -178,6 +194,25 @@ class CollaboratorScreen(Screen):
 
         table.loading = False
 
+    def set_button_state(self, button_id: str) -> None:
+        if self.current_user is None:
+            return
+
+        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        missing_permissions = [
+            permission for permission in required_permissions
+            if not PermissionServices.has_permission(user=self.current_user, permission=permission)
+        ]
+
+        if missing_permissions:
+            self.query_one(f"#{button_id}", Button).disabled = True
+            # raise PermissionError(
+            #     f"User {user.email} lacks permissions: "
+            #     f"{', '.join(p.name for p in missing_permissions)}"
+            # )
+        else:
+            self.query_one(f"#{button_id}", Button).disabled = False
+
     def watch_selected_collaborator_id(self, new_id: int | None) -> None:
         """
         Watcher that loads customers and events based on the collaborator
@@ -239,8 +274,17 @@ class CollaboratorScreen(Screen):
         # Enable or disable consult buttons
         consult_customer_button.disabled = (
             self.selected_customer_id is None
-        )
-        consult_event_button.disabled = self.selected_event_id is None
+            or not PermissionServices.has_permission(
+                self.current_user, Permission.READ_ALL_CUSTOMERS
+            )
+        ) if self.current_user else True
+
+        consult_event_button.disabled = (
+            self.selected_event_id is None
+            or not PermissionServices.has_permission(
+                self.current_user, Permission.READ_ALL_EVENTS
+            )
+        ) if self.current_user else True
 
     def action_go_back(self) -> None:
         """Return to previous screen."""

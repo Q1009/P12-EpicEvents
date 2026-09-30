@@ -113,8 +113,9 @@ class CollaboratorController:
         :return: None
         :rtype: None
         """
+        current_user = AuthenticationServices.get_user_info(self.session)
         collaborators_screen = CollaboratorScreen(
-            collaborators=collaborators
+            collaborators=collaborators, user=current_user,
         )
         self.epic_events_app.push_screen(
             collaborators_screen, callback=self.handle_user_choice
