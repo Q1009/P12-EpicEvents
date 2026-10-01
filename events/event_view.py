@@ -25,7 +25,9 @@ from textual.widgets._select import SelectCurrent
 from collaborators.collaborator_model import Collaborator
 from contracts.contract_model import Contract
 from events.event_model import Event, Location
+from permissions.permission_model import Permission
 from services.date_services import format_french_datetime
+from services.permission_services import PermissionServices
 
 
 class EventScreen(Screen):
@@ -43,15 +45,29 @@ class EventScreen(Screen):
     # Reactive variables
     selected_event_id: reactive[int | None] = reactive(None)
 
+    BUTTON_PERMISSIONS: ClassVar[dict[str, set[Permission]]] = {
+        "create-event": {Permission.CREATE_EVENT},
+        "update-event": {
+            Permission.UPDATE_ALL_EVENTS,
+            Permission.UPDATE_OWN_EVENTS,
+        },
+        "create-location": {Permission.CREATE_LOCATION},
+        "update-location": {Permission.UPDATE_LOCATION},
+        "consult-customer": {Permission.READ_ALL_CUSTOMERS},
+        "consult-contract": {Permission.READ_ALL_CONTRACTS},
+    }
+
     def __init__(
         self,
         events: list[Event],
+        user: Collaborator,
         event_id: int | None = None,
         filtered_table_supported: bool = False,
         filtered_table_ownership: bool = False,
     ) -> None:
         super().__init__()
         self.events = events
+        self.current_user = user
         self.pre_selected_event_id = event_id
         self.selected_contract_id = None
         self.selected_location_id = None
@@ -108,6 +124,12 @@ class EventScreen(Screen):
         self.build_event_notes_text_area()
         self.build_event_location_table()
         self.build_event_customer_table()
+        self.set_button_state("create-event")
+        self.set_button_state("update-event")
+        self.set_button_state("create-location")
+        self.set_button_state("update-location")
+        self.set_button_state("consult-customer")
+        self.set_button_state("consult-contract")
 
         # Setting initial selected_event_id: triggering the watcher
         # If a event id was given to constructor
@@ -275,6 +297,27 @@ class EventScreen(Screen):
 
         text_area.loading = False
 
+    def set_button_state(self, button_id: str) -> None:
+        if self.current_user is None:
+            return
+
+        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        missing_permissions = [
+            permission
+            for permission in required_permissions
+            if not PermissionServices.has_permission(
+                user=self.current_user, permission=permission
+            )
+        ]
+        if missing_permissions:
+            self.query_one(f"#{button_id}", Button).disabled = True
+            # raise PermissionError(
+            #     f"User {user.email} lacks permissions: "
+            #     f"{', '.join(p.name for p in missing_permissions)}"
+            # )
+        else:
+            self.query_one(f"#{button_id}", Button).disabled = False
+
     def watch_selected_event_id(self, new_id: int | None) -> None:
         """
         Watcher that loads associated tables based on the event
@@ -317,6 +360,36 @@ class EventScreen(Screen):
             self.selected_contract_id = selected_event.contract.id
             self.selected_customer_id = selected_event.contract.customer.id
             self.selected_location_id = selected_event.location.id
+
+        # Enable or disable button
+        self.update_update_event_button_state(selected_event)
+        self.update_update_location_button_state(selected_event)
+
+    def update_update_event_button_state(self, selected_event: Event) -> None:
+        update_event_button = self.query_one("#update-event", Button)
+
+        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_ALL_EVENTS):
+            update_event_button.disabled = False
+            return
+
+        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_OWN_EVENTS):
+            update_event_button.disabled = (
+                selected_event.support_representative_id != self.current_user.id
+            )
+            return
+
+        update_event_button.disabled = True
+
+    def update_update_location_button_state(self, selected_event: Event) -> None:
+        update_location_button = self.query_one("#update-location", Button)
+
+        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_LOCATION):
+            update_location_button.disabled = (
+                selected_event.support_representative_id != self.current_user.id
+            )
+            return
+
+        update_location_button.disabled = True
 
     def check_action(self, action: str, parameters) -> bool | None:
         # Returns False if

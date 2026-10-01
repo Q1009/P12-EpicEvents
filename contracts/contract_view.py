@@ -359,6 +359,16 @@ class ContractScreen(Screen):
         self, selected_contract: Contract
     ):
         create_event_button = self.query_one("#create-event", Button)
+        # Reprendre pour restreindre la création de contrats aux clients affectés
+        # if PermissionServices.has_permission(
+        #     self.current_user, Permission.CREATE_EVENT
+        # ):
+        #     create_event_button.disabled = (
+        #         selected_contract.customer.sales_representative_id != self.current_user.id
+        #         or selected_contract.status != ContractStatus.SIGNED
+        #         or self.selected_event_id is not None
+        #     )
+        #     return
         create_event_button.disabled = (
             selected_contract.status != ContractStatus.SIGNED
             or self.selected_event_id is not None

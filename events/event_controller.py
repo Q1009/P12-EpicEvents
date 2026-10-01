@@ -221,8 +221,10 @@ class EventController:
         :return: None
         :rtype: None
         """
+        current_user = AuthenticationServices.get_user_info(self.session)
         events_screen = EventScreen(
             events=events,
+            user=current_user,
             event_id=event_id,
             filtered_table_supported=filtered_table_supported,
             filtered_table_ownership=filtered_table_ownership,
@@ -249,7 +251,9 @@ class EventController:
         all_locations = self.get_all_locations()
         signed_contracts = self.get_signed_contracts_without_event()
         create_event_screen = CreateEventScreen(
-            all_locations, signed_contracts, contract_id
+            locations=all_locations,
+            signed_contracts=signed_contracts,
+            contract_id=contract_id,
         )
         self.epic_events_app.push_screen(
             create_event_screen,
@@ -277,10 +281,10 @@ class EventController:
         support_representatives = self.get_support_representatives()
         event_to_update = self.load_event_data_for_update(event_id)
         update_event_screen = UpdateEventScreen(
-            event_to_update,
-            all_locations,
-            support_representatives,
-            signed_contracts,
+            event_data=event_to_update,
+            locations=all_locations,
+            support_representatives=support_representatives,
+            signed_contracts=signed_contracts,
         )
         self.epic_events_app.push_screen(
             update_event_screen,
@@ -322,7 +326,9 @@ class EventController:
         location_to_update = self.load_location_data_for_update(
             location_id
         )
-        update_location_screen = UpdateLocationScreen(location_to_update)
+        update_location_screen = UpdateLocationScreen(
+            location_data=location_to_update
+        )
         self.epic_events_app.push_screen(
             update_location_screen,
             callback=self.update_location,

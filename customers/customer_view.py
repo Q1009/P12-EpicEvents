@@ -52,7 +52,10 @@ class CustomerScreen(Screen):
     }
 
     def __init__(
-        self, customers: list[Customer], user: Collaborator, customer_id: int | None = None
+        self,
+        customers: list[Customer],
+        user: Collaborator,
+        customer_id: int | None = None,
     ) -> None:
         super().__init__()
         self.customers = customers
@@ -264,6 +267,7 @@ class CustomerScreen(Screen):
 
         # Enable or disable button
         self.update_update_customer_button_state(selected_customer)
+        self.update_update_contact_button_state(selected_customer)
 
     def watch_selected_contact_id(self, new_id: int | None) -> None:
         """
@@ -301,9 +305,6 @@ class CustomerScreen(Screen):
                     self.load_phone_numbers(
                         phone_numbers_table, selected_contact
                     )
-
-        # Enable or disable button
-        self.update_update_contact_button_state(selected_customer)
 
     def update_update_customer_button_state(self, selected_customer: Customer) -> None:
         update_customer_button = self.query_one("#update-customer", Button)

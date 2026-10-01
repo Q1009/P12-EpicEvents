@@ -78,5 +78,7 @@ ROLE_PERMISSIONS = {
         # === Events ===
         Permission.READ_ALL_EVENTS,
         Permission.UPDATE_OWN_EVENTS,      # Can only update events assigned to them
+        Permission.CREATE_LOCATION,
+        Permission.UPDATE_LOCATION,
     }
 }

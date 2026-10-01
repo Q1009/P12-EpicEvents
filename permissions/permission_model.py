@@ -31,6 +31,8 @@ class Permission(Enum):
     CREATE_EVENT = auto()
     UPDATE_OWN_EVENTS = auto()
     UPDATE_ALL_EVENTS = auto()
+    CREATE_LOCATION = auto()
+    UPDATE_LOCATION = auto()
 
     # ===== Collaborators Permissions =====
     READ_ALL_COLLABORATORS = auto()
