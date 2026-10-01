@@ -2,6 +2,7 @@
     layout: vertical;
     border: round $primary;
     overflow: auto auto;
+    align: center middle;
 }
 
 .credentials-container {

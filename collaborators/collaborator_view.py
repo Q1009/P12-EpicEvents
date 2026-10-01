@@ -3,6 +3,7 @@ from typing import ClassVar
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.events import DescendantBlur
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.validation import Length
@@ -573,6 +574,21 @@ class CreateCollaboratorScreen(Screen):
             select_current.set_class(False, "-invalid")
             select_current.border_subtitle = None
 
+    @on(DescendantBlur, "Select")
+    def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
+        """Activates on blurred select"""
+        self._validate_form()
+        select_widget = event.widget
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if select_widget.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
         self._collect_form_data()
@@ -787,6 +803,21 @@ class UpdateCollaboratorScreen(Screen):
         select_current = select_widget.query_one(SelectCurrent)
 
         if event.select.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
+    @on(DescendantBlur, "Select")
+    def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
+        """Activates on blurred select"""
+        self._validate_form()
+        select_widget = event.widget
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if select_widget.is_blank():
             error_message = "An option must be selected."
             select_current.set_class(True, "-invalid")
             select_current.border_subtitle = error_message

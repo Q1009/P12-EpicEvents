@@ -3,6 +3,7 @@ from typing import ClassVar
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.events import DescendantBlur
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.validation import Integer, Length
@@ -851,6 +852,21 @@ class CreateEventScreen(Screen):
             select_current.set_class(False, "-invalid")
             select_current.border_subtitle = None
 
+    @on(DescendantBlur, "Select")
+    def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
+        """Activates on blurred select"""
+        self._validate_form()
+        select_widget = event.widget
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if select_widget.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
     @on(RadioSet.Changed, "#event-location-input-choice")
     def on_location_input_choice_changed(
         self, event: RadioSet.Changed
@@ -1157,6 +1173,14 @@ class UpdateEventScreen(Screen):
         event_start_date_input.value = event_start_date
         event_end_date_input.value = event_end_date
 
+        # Highlight invalid select fields
+        for select_widget in self.query(Select):
+            select_current = select_widget.query_one(SelectCurrent)
+            if select_widget.is_blank():
+                error_message = "An option must be selected."
+                select_current.set_class(True, "-invalid")
+                select_current.border_subtitle = error_message
+
     def watch_is_form_valid(self, is_valid: bool) -> None:
         """Disable/enable Update button based on form input validation."""
         update_button = self.query_one("#update", Button)
@@ -1264,6 +1288,21 @@ class UpdateEventScreen(Screen):
         select_current = select_widget.query_one(SelectCurrent)
 
         if event.select.is_blank():
+            error_message = "An option must be selected."
+            select_current.set_class(True, "-invalid")
+            select_current.border_subtitle = error_message
+        else:
+            select_current.set_class(False, "-invalid")
+            select_current.border_subtitle = None
+
+    @on(DescendantBlur, "Select")
+    def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
+        """Activates on blurred select"""
+        self._validate_form()
+        select_widget = event.widget
+        select_current = select_widget.query_one(SelectCurrent)
+
+        if select_widget.is_blank():
             error_message = "An option must be selected."
             select_current.set_class(True, "-invalid")
             select_current.border_subtitle = error_message
