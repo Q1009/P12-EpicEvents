@@ -24,7 +24,9 @@ from textual.widgets.selection_list import Selection
 
 from collaborators.collaborator_model import Collaborator
 from customers.customer_model import Contact, Customer
+from permissions.permission_model import Permission
 from services.date_services import format_french_datetime
+from services.permission_services import PermissionServices
 
 
 class CustomerScreen(Screen):
@@ -40,11 +42,21 @@ class CustomerScreen(Screen):
     selected_customer_id: reactive[int | None] = reactive(None)
     selected_contact_id: reactive[int | None] = reactive(None)
 
+    BUTTON_PERMISSIONS: ClassVar[dict[str, set[Permission]]] = {
+        "create-customer": {Permission.CREATE_CUSTOMER},
+        "update-customer": {
+            Permission.UPDATE_OWN_CUSTOMERS,
+        },
+        "create-contact": {Permission.CREATE_CONTACT},
+        "update-contact": {Permission.UPDATE_CONTACT},
+    }
+
     def __init__(
-        self, customers: list[Customer], customer_id: int | None = None
+        self, customers: list[Customer], user: Collaborator, customer_id: int | None = None
     ) -> None:
         super().__init__()
         self.customers = customers
+        self.current_user = user
         self.pre_selected_customer_id = customer_id
 
     def compose(self) -> ComposeResult:
@@ -83,6 +95,10 @@ class CustomerScreen(Screen):
         self.build_customers_table()
         self.build_contacts_table()
         self.build_phone_numbers_table()
+        self.set_button_state("create-customer")
+        self.set_button_state("update-customer")
+        self.set_button_state("create-contact")
+        self.set_button_state("update-contact")
 
         # Setting initial selected_customer_id: triggering the watcher
         # If a customer id was given to constructor
@@ -201,6 +217,27 @@ class CustomerScreen(Screen):
 
         table.loading = False
 
+    def set_button_state(self, button_id: str) -> None:
+        if self.current_user is None:
+            return
+
+        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        missing_permissions = [
+            permission
+            for permission in required_permissions
+            if not PermissionServices.has_permission(
+                user=self.current_user, permission=permission
+            )
+        ]
+        if missing_permissions:
+            self.query_one(f"#{button_id}", Button).disabled = True
+            # raise PermissionError(
+            #     f"User {user.email} lacks permissions: "
+            #     f"{', '.join(p.name for p in missing_permissions)}"
+            # )
+        else:
+            self.query_one(f"#{button_id}", Button).disabled = False
+
     def watch_selected_customer_id(self, new_id: int | None) -> None:
         """
         Watcher that loads customer-contacts-table and updated
@@ -224,6 +261,9 @@ class CustomerScreen(Screen):
         if selected_customer:
             self.load_contacts(contacts_table, selected_customer)
             self.selected_contact_id = selected_customer.contacts[0].id
+
+        # Enable or disable button
+        self.update_update_customer_button_state(selected_customer)
 
     def watch_selected_contact_id(self, new_id: int | None) -> None:
         """
@@ -261,6 +301,31 @@ class CustomerScreen(Screen):
                     self.load_phone_numbers(
                         phone_numbers_table, selected_contact
                     )
+
+        # Enable or disable button
+        self.update_update_contact_button_state(selected_customer)
+
+    def update_update_customer_button_state(self, selected_customer: Customer) -> None:
+        update_customer_button = self.query_one("#update-customer", Button)
+
+        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_OWN_CUSTOMERS):
+            update_customer_button.disabled = (
+                selected_customer.sales_representative_id != self.current_user.id
+            )
+            return
+
+        update_customer_button.disabled = True
+
+    def update_update_contact_button_state(self, selected_customer: Customer) -> None:
+        update_contact_button = self.query_one("#update-contact", Button)
+
+        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_CONTACT):
+            update_contact_button.disabled = (
+                selected_customer.sales_representative_id != self.current_user.id
+            )
+            return
+
+        update_contact_button.disabled = True
 
     def action_go_back(self) -> None:
         """Return to previous screen."""

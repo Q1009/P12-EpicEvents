@@ -52,6 +52,8 @@ ROLE_PERMISSIONS = {
         Permission.READ_ALL_CUSTOMERS,    # Can view all customers for sales purposes
         Permission.CREATE_CUSTOMER,
         Permission.UPDATE_OWN_CUSTOMERS,  # Can only update their own customers
+        Permission.CREATE_CONTACT,
+        Permission.UPDATE_CONTACT,
 
         # === Contracts ===
         Permission.READ_ALL_CONTRACTS,     # Can view all contracts for context

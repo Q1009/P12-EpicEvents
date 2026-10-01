@@ -171,8 +171,10 @@ class CustomerController:
         :return: None
         :rtype: None
         """
+        current_user = AuthenticationServices.get_user_info(self.session)
         customers_screen = CustomerScreen(
             customers=customers,
+            user=current_user,
             customer_id=customer_id,
         )
         self.epic_events_app.push_screen(

@@ -17,6 +17,8 @@ class Permission(Enum):
     READ_ALL_CUSTOMERS = auto()
     CREATE_CUSTOMER = auto()
     UPDATE_OWN_CUSTOMERS = auto()
+    CREATE_CONTACT = auto()
+    UPDATE_CONTACT = auto()
 
     # ===== Contracts Permissions =====
     READ_ALL_CONTRACTS = auto()
