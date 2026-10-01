@@ -224,7 +224,9 @@ class CustomerScreen(Screen):
         if self.current_user is None:
             return
 
-        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        required_permissions = self.BUTTON_PERMISSIONS.get(
+            button_id, set()
+        )
         missing_permissions = [
             permission
             for permission in required_permissions
@@ -306,23 +308,33 @@ class CustomerScreen(Screen):
                         phone_numbers_table, selected_contact
                     )
 
-    def update_update_customer_button_state(self, selected_customer: Customer) -> None:
+    def update_update_customer_button_state(
+        self, selected_customer: Customer
+    ) -> None:
         update_customer_button = self.query_one("#update-customer", Button)
 
-        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_OWN_CUSTOMERS):
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_OWN_CUSTOMERS
+        ):
             update_customer_button.disabled = (
-                selected_customer.sales_representative_id != self.current_user.id
+                selected_customer.sales_representative_id
+                != self.current_user.id
             )
             return
 
         update_customer_button.disabled = True
 
-    def update_update_contact_button_state(self, selected_customer: Customer) -> None:
+    def update_update_contact_button_state(
+        self, selected_customer: Customer
+    ) -> None:
         update_contact_button = self.query_one("#update-contact", Button)
 
-        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_CONTACT):
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_CONTACT
+        ):
             update_contact_button.disabled = (
-                selected_customer.sales_representative_id != self.current_user.id
+                selected_customer.sales_representative_id
+                != self.current_user.id
             )
             return
 

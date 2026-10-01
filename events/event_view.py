@@ -301,7 +301,9 @@ class EventScreen(Screen):
         if self.current_user is None:
             return
 
-        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        required_permissions = self.BUTTON_PERMISSIONS.get(
+            button_id, set()
+        )
         missing_permissions = [
             permission
             for permission in required_permissions
@@ -365,27 +367,39 @@ class EventScreen(Screen):
         self.update_update_event_button_state(selected_event)
         self.update_update_location_button_state(selected_event)
 
-    def update_update_event_button_state(self, selected_event: Event) -> None:
+    def update_update_event_button_state(
+        self, selected_event: Event
+    ) -> None:
         update_event_button = self.query_one("#update-event", Button)
 
-        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_ALL_EVENTS):
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_ALL_EVENTS
+        ):
             update_event_button.disabled = False
             return
 
-        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_OWN_EVENTS):
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_OWN_EVENTS
+        ):
             update_event_button.disabled = (
-                selected_event.support_representative_id != self.current_user.id
+                selected_event.support_representative_id
+                != self.current_user.id
             )
             return
 
         update_event_button.disabled = True
 
-    def update_update_location_button_state(self, selected_event: Event) -> None:
+    def update_update_location_button_state(
+        self, selected_event: Event
+    ) -> None:
         update_location_button = self.query_one("#update-location", Button)
 
-        if PermissionServices.has_permission(self.current_user, Permission.UPDATE_LOCATION):
+        if PermissionServices.has_permission(
+            self.current_user, Permission.UPDATE_LOCATION
+        ):
             update_location_button.disabled = (
-                selected_event.support_representative_id != self.current_user.id
+                selected_event.support_representative_id
+                != self.current_user.id
             )
             return
 

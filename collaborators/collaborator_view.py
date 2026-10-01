@@ -45,7 +45,9 @@ class CollaboratorScreen(Screen):
         "consult-event": {Permission.READ_ALL_EVENTS},
     }
 
-    def __init__(self, collaborators: list[Collaborator], user: Collaborator) -> None:
+    def __init__(
+        self, collaborators: list[Collaborator], user: Collaborator
+    ) -> None:
         super().__init__()
         self.collaborators = collaborators
         self.current_user = user
@@ -198,10 +200,15 @@ class CollaboratorScreen(Screen):
         if self.current_user is None:
             return
 
-        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        required_permissions = self.BUTTON_PERMISSIONS.get(
+            button_id, set()
+        )
         missing_permissions = [
-            permission for permission in required_permissions
-            if not PermissionServices.has_permission(user=self.current_user, permission=permission)
+            permission
+            for permission in required_permissions
+            if not PermissionServices.has_permission(
+                user=self.current_user, permission=permission
+            )
         ]
 
         if missing_permissions:
@@ -224,10 +231,6 @@ class CollaboratorScreen(Screen):
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
-        consult_customer_button = self.query_one(
-            "#consult-customer", Button
-        )
-        consult_event_button = self.query_one("#consult-event", Button)
 
         if new_id is None:
             collaborator_customers_table.clear()
@@ -272,19 +275,33 @@ class CollaboratorScreen(Screen):
                 self.selected_event_id = None
 
         # Enable or disable consult buttons
-        consult_customer_button.disabled = (
-            self.selected_customer_id is None
-            or not PermissionServices.has_permission(
-                self.current_user, Permission.READ_ALL_CUSTOMERS
-            )
-        ) if self.current_user else True
+        self.update_consult_customer_button_state()
+        self.update_consult_event_button_state()
 
-        consult_event_button.disabled = (
-            self.selected_event_id is None
-            or not PermissionServices.has_permission(
-                self.current_user, Permission.READ_ALL_EVENTS
+    def update_consult_customer_button_state(self):
+        consult_customer_button = self.query_one(
+            "#consult-customer", Button
+        )
+        if PermissionServices.has_permission(
+            self.current_user, Permission.READ_ALL_CUSTOMERS
+        ):
+            consult_customer_button.disabled = (
+                self.selected_customer_id is None
             )
-        ) if self.current_user else True
+            return
+
+        consult_customer_button.disabled = True
+
+    def update_consult_event_button_state(self):
+        consult_event_button = self.query_one("#consult-event", Button)
+
+        if PermissionServices.has_permission(
+            self.current_user, Permission.READ_ALL_EVENTS
+        ):
+            consult_event_button.disabled = self.selected_event_id is None
+            return
+
+        consult_event_button.disabled = True
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
