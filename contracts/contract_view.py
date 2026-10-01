@@ -331,51 +331,44 @@ class ContractScreen(Screen):
         consult_customer_button = self.query_one(
             "#consult-customer", Button
         )
-        consult_customer_button.disabled = (
-            (
+        if PermissionServices.has_permission(
+            self.current_user, Permission.READ_ALL_CUSTOMERS
+        ):
+            consult_customer_button.disabled = (
                 self.selected_customer_id is None
-                or not PermissionServices.has_permission(
-                    self.current_user, Permission.READ_ALL_CUSTOMERS
-                )
             )
-            if self.current_user
-            else True
-        )
+            return
+
+        consult_customer_button.disabled = True
 
     def update_consult_event_button_state(self):
         consult_event_button = self.query_one("#consult-event", Button)
-        consult_event_button.disabled = (
-            (
-                self.selected_event_id is None
-                or not PermissionServices.has_permission(
-                    self.current_user, Permission.READ_ALL_EVENTS
-                )
-            )
-            if self.current_user
-            else True
-        )
+
+        if PermissionServices.has_permission(
+            self.current_user, Permission.READ_ALL_EVENTS
+        ):
+            consult_event_button.disabled = self.selected_event_id is None
+            return
+
+        consult_event_button.disabled = True
 
     def update_create_event_button_state(
         self, selected_contract: Contract
     ):
         create_event_button = self.query_one("#create-event", Button)
-        # Reprendre pour restreindre la création de contrats aux clients affectés
-        # if PermissionServices.has_permission(
-        #     self.current_user, Permission.CREATE_EVENT
-        # ):
-        #     create_event_button.disabled = (
-        #         selected_contract.customer.sales_representative_id != self.current_user.id
-        #         or selected_contract.status != ContractStatus.SIGNED
-        #         or self.selected_event_id is not None
-        #     )
-        #     return
-        create_event_button.disabled = (
-            selected_contract.status != ContractStatus.SIGNED
-            or self.selected_event_id is not None
-            or not PermissionServices.has_permission(
-                self.current_user, Permission.CREATE_EVENT
+
+        if PermissionServices.has_permission(
+            self.current_user, Permission.CREATE_EVENT
+        ):
+            create_event_button.disabled = (
+                selected_contract.customer.sales_representative_id
+                != self.current_user.id
+                or selected_contract.status != ContractStatus.SIGNED
+                or self.selected_event_id is not None
             )
-        )
+            return
+
+        create_event_button.disabled = True
 
     def update_update_contract_button_state(
         self, selected_contract: Contract
