@@ -46,7 +46,9 @@ class CollaboratorScreen(Screen):
         "consult-event": {Permission.READ_ALL_EVENTS},
     }
 
-    def __init__(self, collaborators: list[Collaborator], user: Collaborator) -> None:
+    def __init__(
+        self, collaborators: list[Collaborator], user: Collaborator
+    ) -> None:
         super().__init__()
         self.collaborators = collaborators
         self.current_user = user
@@ -199,7 +201,9 @@ class CollaboratorScreen(Screen):
         if self.current_user is None:
             return
 
-        required_permissions = self.BUTTON_PERMISSIONS.get(button_id, set())
+        required_permissions = self.BUTTON_PERMISSIONS.get(
+            button_id, set()
+        )
         missing_permissions = [
             permission
             for permission in required_permissions
@@ -209,13 +213,13 @@ class CollaboratorScreen(Screen):
         ]
 
         if missing_permissions:
-            self.query_one(f"#{button_id}", Button).disabled = True
+            self.query_one(f"#{button_id}", Button).display = False
             # raise PermissionError(
             #     f"User {user.email} lacks permissions: "
             #     f"{', '.join(p.name for p in missing_permissions)}"
             # )
         else:
-            self.query_one(f"#{button_id}", Button).disabled = False
+            self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_collaborator_id(self, new_id: int | None) -> None:
         """
@@ -248,14 +252,22 @@ class CollaboratorScreen(Screen):
                     collaborator_events_table, selected_collaborator
                 )
                 # Update other selected_attributes_id
-                self.selected_collaborator_first_name = selected_collaborator.first_name
-                self.selected_collaborator_last_name = selected_collaborator.last_name
+                self.selected_collaborator_first_name = (
+                    selected_collaborator.first_name
+                )
+                self.selected_collaborator_last_name = (
+                    selected_collaborator.last_name
+                )
                 if selected_collaborator.customers:
-                    self.selected_customer_id = selected_collaborator.customers[0].id
+                    self.selected_customer_id = (
+                        selected_collaborator.customers[0].id
+                    )
                 else:
                     self.selected_customer_id = None
                 if selected_collaborator.events:
-                    self.selected_event_id = selected_collaborator.events[0].id
+                    self.selected_event_id = selected_collaborator.events[
+                        0
+                    ].id
                 else:
                     self.selected_event_id = None
             else:
@@ -268,14 +280,18 @@ class CollaboratorScreen(Screen):
         self.update_consult_event_button_state()
 
     def update_consult_customer_button_state(self):
-        consult_customer_button = self.query_one("#consult-customer", Button)
+        consult_customer_button = self.query_one(
+            "#consult-customer", Button
+        )
         if PermissionServices.has_permission(
             self.current_user, Permission.READ_ALL_CUSTOMERS
         ):
-            consult_customer_button.disabled = self.selected_customer_id is None
+            consult_customer_button.display = (
+                self.selected_customer_id is not None
+            )
             return
 
-        consult_customer_button.disabled = True
+        consult_customer_button.display = False
 
     def update_consult_event_button_state(self):
         consult_event_button = self.query_one("#consult-event", Button)
@@ -283,10 +299,12 @@ class CollaboratorScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.READ_ALL_EVENTS
         ):
-            consult_event_button.disabled = self.selected_event_id is None
+            consult_event_button.display = (
+                self.selected_event_id is not None
+            )
             return
 
-        consult_event_button.disabled = True
+        consult_event_button.display = False
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
@@ -298,14 +316,20 @@ class CollaboratorScreen(Screen):
     @on(DataTable.RowHighlighted, "#collaborators-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Saves highlighted collaborator id"""
-        collaborators_table = self.query_one("#collaborators-table", DataTable)
+        collaborators_table = self.query_one(
+            "#collaborators-table", DataTable
+        )
         # Get value from the cell
-        collaborator_id = collaborators_table.get_cell(event.row_key, "collaborator_id")
+        collaborator_id = collaborators_table.get_cell(
+            event.row_key, "collaborator_id"
+        )
         # Update selected_attribute_id
         self.selected_collaborator_id = collaborator_id
 
     @on(DataTable.RowHighlighted, "#collaborator-customers-table")
-    def on_customer_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+    def on_customer_row_highlighted(
+        self, event: DataTable.RowHighlighted
+    ) -> None:
         """Saves highlighted customer id"""
         collaborator_customers_table = self.query_one(
             "#collaborator-customers-table", DataTable
@@ -318,13 +342,17 @@ class CollaboratorScreen(Screen):
         self.selected_customer_id = customer_id
 
     @on(DataTable.RowHighlighted, "#collaborator-events-table")
-    def on_event_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+    def on_event_row_highlighted(
+        self, event: DataTable.RowHighlighted
+    ) -> None:
         """Saves highlighted event id"""
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
         # Get value from the cell
-        event_id = collaborator_events_table.get_cell(event.row_key, "event_id")
+        event_id = collaborator_events_table.get_cell(
+            event.row_key, "event_id"
+        )
         # Update selected_attribute_id
         self.selected_event_id = event_id
 
@@ -334,7 +362,9 @@ class CollaboratorScreen(Screen):
 
     @on(Button.Pressed, "#update-collaborator")
     def go_update_collaborator(self) -> None:
-        self.dismiss(("update_collaborator", self.selected_collaborator_id))
+        self.dismiss(
+            ("update_collaborator", self.selected_collaborator_id)
+        )
 
     @on(Button.Pressed, "#delete-collaborator")
     def go_delete_collaborator(self) -> None:
@@ -377,7 +407,9 @@ class CreateCollaboratorScreen(Screen):
                 id="collaborator-data",
                 classes="collaborator-data-input-container",
             ):
-                yield Label("Collaborator Last Name:", classes="form-label")
+                yield Label(
+                    "Collaborator Last Name:", classes="form-label"
+                )
                 yield Input(
                     placeholder="Doe",
                     id="collaborator_last_name",
@@ -391,7 +423,9 @@ class CreateCollaboratorScreen(Screen):
                         ),
                     ],
                 )
-                yield Label("Collaborator First Name:", classes="form-label")
+                yield Label(
+                    "Collaborator First Name:", classes="form-label"
+                )
                 yield Input(
                     placeholder="John",
                     id="collaborator_first_name",
@@ -436,7 +470,9 @@ class CreateCollaboratorScreen(Screen):
                     id="collaborator-department-select",
                     prompt="Select a department",
                 )
-            with Container(classes="create-collaborator-buttons-container"):
+            with Container(
+                classes="create-collaborator-buttons-container"
+            ):
                 yield Button(
                     "Create",
                     id="create",
@@ -452,12 +488,16 @@ class CreateCollaboratorScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        collaborator_data_container = self.query_one("#collaborator-data", Container)
+        collaborator_data_container = self.query_one(
+            "#collaborator-data", Container
+        )
         collaborator_department_container = self.query_one(
             "#collaborator-department", Container
         )
         collaborator_data_container.border_title = "Personal Data"
-        collaborator_department_container.border_title = "Department Selection"
+        collaborator_department_container.border_title = (
+            "Department Selection"
+        )
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
         """Disable/enable Create button based on form input validation."""
@@ -484,7 +524,9 @@ class CreateCollaboratorScreen(Screen):
             for widget_input in widget_inputs
         )
         # Check that all select fields are valid
-        all_selects_valid = all(not select.is_blank() for select in widget_selects)
+        all_selects_valid = all(
+            not select.is_blank() for select in widget_selects
+        )
 
         # Update reactive variable triggering watcher
         all_valid = all_inputs_valid and all_selects_valid
@@ -583,7 +625,9 @@ class UpdateCollaboratorScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, collaborator_data: dict, departments: list[Department]):
+    def __init__(
+        self, collaborator_data: dict, departments: list[Department]
+    ):
         super().__init__()
         self.collaborator_data = collaborator_data
         self.updated_collaborator_data = {}
@@ -607,7 +651,9 @@ class UpdateCollaboratorScreen(Screen):
             ):
                 yield Label("Collaborator Last Name:")
                 yield Input(
-                    value=self.collaborator_data.get("collaborator_last_name", ""),
+                    value=self.collaborator_data.get(
+                        "collaborator_last_name", ""
+                    ),
                     placeholder="Doe",
                     id="collaborator_last_name",
                     type="text",
@@ -622,7 +668,9 @@ class UpdateCollaboratorScreen(Screen):
                 )
                 yield Label("Collaborator First Name:")
                 yield Input(
-                    value=self.collaborator_data.get("collaborator_first_name", ""),
+                    value=self.collaborator_data.get(
+                        "collaborator_first_name", ""
+                    ),
                     placeholder="John",
                     id="collaborator_first_name",
                     type="text",
@@ -652,7 +700,9 @@ class UpdateCollaboratorScreen(Screen):
                     prompt="Select a department",
                     value=self.collaborator_data.get("department"),
                 )
-            with Container(classes="update-collaborator-buttons-container"):
+            with Container(
+                classes="update-collaborator-buttons-container"
+            ):
                 yield Button(
                     "Update",
                     id="update",
@@ -677,8 +727,12 @@ class UpdateCollaboratorScreen(Screen):
             "#update-collaborator-department", Container
         )
         collaborator_data_container.border_title = "Personal Data"
-        collaborator_data_container.border_subtitle = "Edit relevant fields"
-        collaborator_department_container.border_title = "Department Selection"
+        collaborator_data_container.border_subtitle = (
+            "Edit relevant fields"
+        )
+        collaborator_department_container.border_title = (
+            "Department Selection"
+        )
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
         """Disable/enable Update button based on form input validation."""
@@ -695,7 +749,9 @@ class UpdateCollaboratorScreen(Screen):
         ]
 
         widget_selects = [
-            self.query_one("#update-collaborator-department-select", Select),
+            self.query_one(
+                "#update-collaborator-department-select", Select
+            ),
         ]
 
         # Check that all input fields are valid
@@ -704,7 +760,9 @@ class UpdateCollaboratorScreen(Screen):
             for widget_input in widget_inputs
         )
         # Check that all select fields are valid
-        all_selects_valid = all(not select.is_blank() for select in widget_selects)
+        all_selects_valid = all(
+            not select.is_blank() for select in widget_selects
+        )
 
         # Update reactive variable triggering watcher
         all_valid = all_inputs_valid and all_selects_valid
@@ -786,8 +844,12 @@ class UpdateCollaboratorScreen(Screen):
 
         self.updated_collaborator_data = {
             "id": self.collaborator_data["collaborator_id"],
-            "first_name": self.query_one("#collaborator_first_name", Input).value,
-            "last_name": self.query_one("#collaborator_last_name", Input).value,
+            "first_name": self.query_one(
+                "#collaborator_first_name", Input
+            ).value,
+            "last_name": self.query_one(
+                "#collaborator_last_name", Input
+            ).value,
             "department": selected_department,
         }
 
@@ -825,7 +887,9 @@ class DeleteCollaboratorScreen(ModalScreen):
                 "from the system ?",
                 classes="updating-collaborator-message-end-label",
             )
-            with Container(classes="delete-collaborator-buttons-container"):
+            with Container(
+                classes="delete-collaborator-buttons-container"
+            ):
                 yield Button(
                     "Delete",
                     id="delete",
