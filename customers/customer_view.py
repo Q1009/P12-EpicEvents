@@ -69,7 +69,7 @@ class CustomerScreen(Screen):
             yield DataTable(id="customers-table")
             yield DataTable(id="customer-contacts-table")
             yield DataTable(id="contact-phone-numbers-table")
-            with Container(classes="customer-contact-buttons-container"):
+            with Container(classes="customer-buttons-container"):
                 yield Button(
                     "Create Customer",
                     id="create-customer",
@@ -80,6 +80,7 @@ class CustomerScreen(Screen):
                     id="update-customer",
                     variant="warning",
                 )
+            with Container(classes="contact-buttons-container"):
                 yield Button(
                     "Create Contact",
                     id="create-contact",
@@ -90,8 +91,6 @@ class CustomerScreen(Screen):
                     id="update-contact",
                     variant="warning",
                 )
-            with Container(classes="contact-buttons-container"):
-                pass
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
