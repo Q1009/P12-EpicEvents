@@ -110,7 +110,7 @@ class ContractScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """ """
+        """."""
         self.build_contracts_table()
         self.build_contract_customer_table()
         self.build_contract_payment_progressbar()
@@ -265,13 +265,13 @@ class ContractScreen(Screen):
             )
         ]
         if missing_permissions:
-            self.query_one(f"#{button_id}", Button).disabled = True
+            self.query_one(f"#{button_id}", Button).display = False
             # raise PermissionError(
             #     f"User {user.email} lacks permissions: "
             #     f"{', '.join(p.name for p in missing_permissions)}"
             # )
         else:
-            self.query_one(f"#{button_id}", Button).disabled = False
+            self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_contract_id(self, new_id: int | None) -> None:
         """
@@ -335,12 +335,12 @@ class ContractScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.READ_ALL_CUSTOMERS
         ):
-            consult_customer_button.disabled = (
-                self.selected_customer_id is None
+            consult_customer_button.display = (
+                self.selected_customer_id is not None
             )
             return
 
-        consult_customer_button.disabled = True
+        consult_customer_button.display = False
 
     def update_consult_event_button_state(self):
         consult_event_button = self.query_one("#consult-event", Button)
@@ -348,10 +348,12 @@ class ContractScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.READ_ALL_EVENTS
         ):
-            consult_event_button.disabled = self.selected_event_id is None
+            consult_event_button.display = (
+                self.selected_event_id is not None
+            )
             return
 
-        consult_event_button.disabled = True
+        consult_event_button.display = False
 
     def update_create_event_button_state(
         self, selected_contract: Contract
@@ -361,15 +363,15 @@ class ContractScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.CREATE_EVENT
         ):
-            create_event_button.disabled = (
+            create_event_button.display = (
                 selected_contract.customer.sales_representative_id
-                != self.current_user.id
-                or selected_contract.status != ContractStatus.SIGNED
-                or self.selected_event_id is not None
+                == self.current_user.id
+                and selected_contract.status == ContractStatus.SIGNED
+                and self.selected_event_id is None
             )
             return
 
-        create_event_button.disabled = True
+        create_event_button.display = False
 
     def update_update_contract_button_state(
         self, selected_contract: Contract
@@ -379,19 +381,19 @@ class ContractScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_ALL_CONTRACTS
         ):
-            update_contract_button.disabled = False
+            update_contract_button.display = True
             return
 
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_CONTRACTS
         ):
-            update_contract_button.disabled = (
+            update_contract_button.display = (
                 selected_contract.customer.sales_representative_id
-                != self.current_user.id
+                == self.current_user.id
             )
             return
 
-        update_contract_button.disabled = True
+        update_contract_button.display = False
 
     def check_action(self, action: str, parameters) -> bool | None:
         # Returns False if
@@ -683,7 +685,7 @@ class CreateContractScreen(Screen):
 
 
 class UpdateContractScreen(Screen):
-    """ """
+    """."""
 
     SUB_TITLE = "UPDATE CONTRACT"
     CSS_PATH = "../styles/update_contract_screen.tcss"
