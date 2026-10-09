@@ -1,3 +1,4 @@
+import sentry_sdk
 from sqlalchemy.orm import Session, joinedload
 
 from collaborators.collaborator_model import (
@@ -17,7 +18,7 @@ from services.authentication_services import (
 
 
 class CollaboratorController:
-    """ """
+    """."""
 
     def __init__(self, epic_events_app, session):
         self.session: Session = session
@@ -115,7 +116,8 @@ class CollaboratorController:
         """
         current_user = AuthenticationServices.get_user_info(self.session)
         collaborators_screen = CollaboratorScreen(
-            collaborators=collaborators, user=current_user,
+            collaborators=collaborators,
+            user=current_user,
         )
         self.epic_events_app.push_screen(
             collaborators_screen, callback=self.handle_user_choice
@@ -174,7 +176,10 @@ class CollaboratorController:
 
     @AuthenticationServices.check_authentication
     def create_collaborator(self, new_collaborator_data):
-        """ """
+        """."""
+        current_user: Collaborator = AuthenticationServices.get_user_info(
+            self.session
+        )
         # If creation is cancelled
         if not new_collaborator_data:
             self.epic_events_app.notify(
@@ -210,6 +215,27 @@ class CollaboratorController:
 
         self.session.add(collaborator)
         self.session.commit()
+        # Sentry log
+        sentry_sdk.capture_event(
+            {
+                "level": "info",
+                "message": f"Collaborator created: {collaborator.first_name} {collaborator.last_name}",
+                "extra": {
+                    "action": "create",
+                    "collaborator_id": collaborator.id,
+                    "first_name": collaborator.first_name,
+                    "last_name": collaborator.last_name,
+                    "email": collaborator.email,
+                    "department": collaborator.department.name.value,
+                    "created_by": current_user.id,
+                },
+                "tags": {
+                    "module": "collaborators",
+                    "action": "create",
+                },
+            }
+        )
+        # App notification
         self.epic_events_app.notify(
             "Collaborator successfully created", severity="information"
         )
@@ -221,7 +247,7 @@ class CollaboratorController:
 
     @AuthenticationServices.check_authentication
     def update_collaborator(self, updated_collaborator_data):
-        """ """
+        """."""
         if not updated_collaborator_data:
             self.epic_events_app.notify(
                 "Collaborator update cancelled", severity="warning"
@@ -232,6 +258,15 @@ class CollaboratorController:
                 on_consult_event=self.on_consult_event_callback,
             )
             return
+
+        current_user: Collaborator = AuthenticationServices.get_user_info(
+            self.session
+        )
+        updated_collaborator = (
+            self.session.query(Collaborator)
+            .filter(Collaborator.id == updated_collaborator_data["id"])
+            .first()
+        )
 
         # Update email
         updated_collaborator_email = (
@@ -255,6 +290,23 @@ class CollaboratorController:
         )
 
         self.session.commit()
+        # Sentry log
+        sentry_sdk.capture_event(
+            {
+                "level": "info",
+                "message": f"Collaborator updated: ID {updated_collaborator.id}",
+                "extra": {
+                    "action": "update",
+                    "collaborator_id": updated_collaborator.id,
+                    "updated_by": current_user.id,
+                },
+                "tags": {
+                    "module": "collaborators",
+                    "action": "update",
+                },
+            }
+        )
+        # App notification
         self.epic_events_app.notify(
             "Collaborator successfully updated", severity="information"
         )
