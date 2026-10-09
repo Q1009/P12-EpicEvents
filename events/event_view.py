@@ -313,13 +313,13 @@ class EventScreen(Screen):
             )
         ]
         if missing_permissions:
-            self.query_one(f"#{button_id}", Button).disabled = True
+            self.query_one(f"#{button_id}", Button).display = False
             # raise PermissionError(
             #     f"User {user.email} lacks permissions: "
             #     f"{', '.join(p.name for p in missing_permissions)}"
             # )
         else:
-            self.query_one(f"#{button_id}", Button).disabled = False
+            self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_event_id(self, new_id: int | None) -> None:
         """
@@ -376,19 +376,19 @@ class EventScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_ALL_EVENTS
         ):
-            update_event_button.disabled = False
+            update_event_button.display = True
             return
 
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_EVENTS
         ):
-            update_event_button.disabled = (
+            update_event_button.display = (
                 selected_event.support_representative_id
-                != self.current_user.id
+                == self.current_user.id
             )
             return
 
-        update_event_button.disabled = True
+        update_event_button.display = False
 
     def update_update_location_button_state(
         self, selected_event: Event
@@ -398,13 +398,13 @@ class EventScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_LOCATION
         ):
-            update_location_button.disabled = (
+            update_location_button.display = (
                 selected_event.support_representative_id
-                != self.current_user.id
+                == self.current_user.id
             )
             return
 
-        update_location_button.disabled = True
+        update_location_button.display = False
 
     def check_action(self, action: str, parameters) -> bool | None:
         # Returns False if
