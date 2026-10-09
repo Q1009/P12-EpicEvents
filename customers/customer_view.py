@@ -95,7 +95,7 @@ class CustomerScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """ """
+        """."""
         self.build_customers_table()
         self.build_contacts_table()
         self.build_phone_numbers_table()
@@ -236,13 +236,13 @@ class CustomerScreen(Screen):
             )
         ]
         if missing_permissions:
-            self.query_one(f"#{button_id}", Button).disabled = True
+            self.query_one(f"#{button_id}", Button).display = False
             # raise PermissionError(
             #     f"User {user.email} lacks permissions: "
             #     f"{', '.join(p.name for p in missing_permissions)}"
             # )
         else:
-            self.query_one(f"#{button_id}", Button).disabled = False
+            self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_customer_id(self, new_id: int | None) -> None:
         """
@@ -317,13 +317,13 @@ class CustomerScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_CUSTOMERS
         ):
-            update_customer_button.disabled = (
+            update_customer_button.display = (
                 selected_customer.sales_representative_id
-                != self.current_user.id
+                == self.current_user.id
             )
             return
 
-        update_customer_button.disabled = True
+        update_customer_button.display = False
 
     def update_update_contact_button_state(
         self, selected_customer: Customer
@@ -333,13 +333,13 @@ class CustomerScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_CONTACT
         ):
-            update_contact_button.disabled = (
+            update_contact_button.display = (
                 selected_customer.sales_representative_id
-                != self.current_user.id
+                == self.current_user.id
             )
             return
 
-        update_contact_button.disabled = True
+        update_contact_button.display = False
 
     def action_go_back(self) -> None:
         """Return to previous screen."""
@@ -751,7 +751,7 @@ class CreateCustomerScreen(Screen):
 
 
 class UpdateCustomerScreen(Screen):
-    """ """
+    """."""
 
     SUB_TITLE = "UPDATE CUSTOMERS"
     CSS_PATH = "../styles/update_customer_screen.tcss"
@@ -1065,7 +1065,7 @@ class UpdateCustomerScreen(Screen):
         self.dismiss(None)
 
     def _collect_form_data(self):
-        """ """
+        """."""
         selected_sales_representative = self.query_one(
             "#update-customer-sales-representative-select", Select
         ).value
@@ -1089,7 +1089,7 @@ class UpdateCustomerScreen(Screen):
 
 
 class CreateContactScreen(Screen):
-    """ """
+    """."""
 
     SUB_TITLE = "CREATE CONTACT"
     CSS_PATH = "../styles/create_contact_screen.tcss"
