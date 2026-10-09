@@ -227,7 +227,8 @@ class CollaboratorController:
                     "last_name": collaborator.last_name,
                     "email": collaborator.email,
                     "department": collaborator.department.name.value,
-                    "created_by": current_user.id,
+                    "created_by_id": current_user.id,
+                    "created_by_name": f"{current_user.first_name} {current_user.last_name}",
                 },
                 "tags": {
                     "module": "collaborators",
@@ -298,7 +299,8 @@ class CollaboratorController:
                 "extra": {
                     "action": "update",
                     "collaborator_id": updated_collaborator.id,
-                    "updated_by": current_user.id,
+                    "updated_by_id": current_user.id,
+                    "updated_by_name": f"{current_user.first_name} {current_user.last_name}",
                 },
                 "tags": {
                     "module": "collaborators",

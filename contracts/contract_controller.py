@@ -1,3 +1,4 @@
+import sentry_sdk
 from sqlalchemy.orm import Session, joinedload
 
 from contracts.contract_model import (
@@ -17,7 +18,7 @@ from services.authentication_services import (
 
 
 class ContractController:
-    """ """
+    """."""
 
     def __init__(self, epic_events_app, session):
         self.session: Session = session
@@ -131,7 +132,7 @@ class ContractController:
         return self.session.query(Customer).all()
 
     def load_contract_data_for_update(self, contract_id: int):
-        """ """
+        """."""
         contract = (
             self.session.query(Contract)
             .filter(Contract.id == contract_id)
@@ -235,7 +236,7 @@ class ContractController:
 
     @AuthenticationServices.check_authentication
     def create_contract(self, new_contract_data):
-        """ """
+        """."""
         # If creation is cancelled
         if not new_contract_data:
             self.epic_events_app.notify(
@@ -274,7 +275,8 @@ class ContractController:
 
     @AuthenticationServices.check_authentication
     def update_contract(self, updated_contract_data):
-        """ """
+        """."""
+        current_user = AuthenticationServices.get_user_info(self.session)
         if not updated_contract_data:
             self.epic_events_app.notify(
                 "Contract update cancelled", severity="warning"
@@ -286,6 +288,12 @@ class ContractController:
                 on_create_event=self.on_create_event_callback,
             )
             return
+
+        updated_contract = (
+            self.session.query(Contract)
+            .filter(Contract.id == updated_contract_data["contract_id"])
+            .first()
+        )
 
         self.session.query(Contract).filter(
             Contract.id == updated_contract_data["contract_id"]
@@ -303,6 +311,29 @@ class ContractController:
         )
 
         self.session.commit()
+        # Sentry log
+        if (
+            updated_contract_data["contract_status"]
+            == ContractStatus.SIGNED
+        ):
+            sentry_sdk.capture_event(
+                {
+                    "level": "info",
+                    "message": f"Contract signed: ID {updated_contract.id} (Customer: {updated_contract.customer.first_name} {updated_contract.customer.last_name})",
+                    "extra": {
+                        "action": "sign",
+                        "contract_id": updated_contract.id,
+                        "signed_by_id": current_user.id,
+                        "signed_by_name": f"{current_user.first_name} {current_user.last_name}",
+                    },
+                    "tags": {
+                        "module": "contracts",
+                        "action": "sign",
+                        "status": "signed",
+                    },
+                }
+            )
+        # App notification
         self.epic_events_app.notify(
             "Contract successfully updated", severity="information"
         )
