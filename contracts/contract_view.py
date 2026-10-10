@@ -804,7 +804,7 @@ class UpdateContractScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def _on_mount(self):
+    def on_mount(self):
         """Set container border title and subtitle"""
 
         contract_data_container = self.query_one(
@@ -820,6 +820,11 @@ class UpdateContractScreen(Screen):
         contract_data_container.border_subtitle = "Edit relevant fields"
         contract_customer_container.border_title = "Customer Selection"
         contract_status_container.border_title = "Status Selection"
+
+        # Update widget state based on contract status
+        self.update_total_amount_input_state()
+        self.update_amount_due_input_state()
+        self.update_customer_select_state()
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
         """Disable/enable Update button based on form input validation."""
@@ -853,6 +858,34 @@ class UpdateContractScreen(Screen):
         # Update reactive variable triggering watcher
         all_valid = all_inputs_valid and all_selects_valid
         self.is_form_valid = all_valid
+
+    def update_total_amount_input_state(self):
+        total_amount_input = self.query_one(
+            "#contract_total_amount", Input
+        )
+        contract_status = self.contract_data.get("contract_status")
+
+        total_amount_input.disabled = (
+            contract_status == ContractStatus.SIGNED
+        )
+
+    def update_amount_due_input_state(self):
+        amount_due_input = self.query_one("#contract_amount_due", Input)
+        contract_status = self.contract_data.get("contract_status")
+
+        amount_due_input.disabled = (
+            contract_status == ContractStatus.SIGNED
+        )
+
+    def update_customer_select_state(self):
+        amount_due_input = self.query_one(
+            "#update-contract-customer-select", Select
+        )
+        contract_status = self.contract_data.get("contract_status")
+
+        amount_due_input.disabled = (
+            contract_status == ContractStatus.SIGNED
+        )
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
