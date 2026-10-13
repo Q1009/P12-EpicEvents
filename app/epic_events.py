@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+import sentry_sdk
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from textual.app import App, ComposeResult
@@ -36,6 +37,18 @@ class EpicEventsCRM(App):
     def on_ready(self):
         self.theme = "nord"
         self.main_controller.start()
+
+    def _handle_exception(self, error: Exception) -> None:
+        """Capture all unhandled exceptions with Sentry.
+
+        This method is called by Textual when an unhandled exception occurs.
+        We capture it with Sentry and then let Textual handle it normally.
+        """
+        sentry_sdk.capture_exception(error)
+        # Optionnal : locally log the exception
+        self.log.error(f"Unhandled exception: {error}")
+        # Then let Textual display error
+        super()._handle_exception(error)
 
     def on_exit_app(self):
         self.session.close()
