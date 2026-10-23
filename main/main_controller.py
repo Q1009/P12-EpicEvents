@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from authentication.authentication_controller import (
     AuthenticationController,
 )
@@ -14,6 +16,10 @@ from services.authentication_services import (
     AuthenticationError,
     AuthenticationServices,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+    from textual.app import App
 
 
 class MainController:
@@ -35,7 +41,7 @@ class MainController:
         application state and navigation flow.
     """
 
-    def __init__(self, epic_events_app, session):
+    def __init__(self, epic_events_app: "App", session: "Session") -> None:
         """Initialize the MainController with application and database session.
 
         Creates instances of all feature controllers (authentication, customers,
@@ -47,25 +53,25 @@ class MainController:
         :param session: SQLAlchemy database session for database operations.
         :type session: sqlalchemy.orm.Session
         """
-        self.epic_events_app = epic_events_app
-        self.session = session
-        self.authentication_controller = AuthenticationController(
+        self.epic_events_app: App = epic_events_app
+        self.session: Session = session
+        self.authentication_controller: AuthenticationController = (
+            AuthenticationController(self.epic_events_app, self.session)
+        )
+        self.customer_controller: CustomerController = CustomerController(
             self.epic_events_app, self.session
         )
-        self.customer_controller = CustomerController(
+        self.event_controller: EventController = EventController(
             self.epic_events_app, self.session
         )
-        self.event_controller = EventController(
-            self.epic_events_app, self.session
+        self.collaborator_controller: CollaboratorController = (
+            CollaboratorController(self.epic_events_app, self.session)
         )
-        self.collaborator_controller = CollaboratorController(
-            self.epic_events_app, self.session
-        )
-        self.contract_controller = ContractController(
+        self.contract_controller: ContractController = ContractController(
             self.epic_events_app, self.session
         )
 
-    def start(self):
+    def start(self) -> None:
         """Start the main application flow.
 
         Determines which main menu to display based on the current
@@ -77,7 +83,7 @@ class MainController:
         else:
             self.display_unauthenticated_main_menu()
 
-    def handle_user_choice(self, user_choice: str):
+    def handle_user_choice(self, user_choice: str) -> None:
         """Process user selection from the main menu.
 
         Routes the user's menu choice to the appropriate controller method
@@ -115,7 +121,7 @@ class MainController:
                 self.epic_events_app.exit()
 
     @AuthenticationServices.check_authentication
-    def display_authenticated_main_menu(self):
+    def display_authenticated_main_menu(self) -> None:
         """Display the main menu for authenticated users.
 
         Retrieves the current user's information and pushes the authenticated
@@ -124,7 +130,9 @@ class MainController:
 
         :raises AuthenticationError: If the user's authentication token is invalid.
         """
-        user: Collaborator = self.authentication_controller.get_user_info()
+        user: Collaborator | None = (
+            self.authentication_controller.get_user_info()
+        )
 
         if user is None:
             self._handle_auth_failure(None)
@@ -136,7 +144,7 @@ class MainController:
             authenticated_main_screen, callback=self.handle_user_choice
         )
 
-    def display_unauthenticated_main_menu(self):
+    def display_unauthenticated_main_menu(self) -> None:
         """Display the main menu for unauthenticated users.
 
         Pushes the unauthenticated main screen onto the application stack
@@ -151,7 +159,7 @@ class MainController:
     @AuthenticationServices.check_authentication
     def push_event_screen(
         self, event_id: int | None = None, contract_id: int | None = None
-    ):
+    ) -> None:
         """Display the event management screen.
 
         Delegates to the event controller to start the event management
@@ -172,7 +180,7 @@ class MainController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_contract_screen(self, contract_id: int | None = None):
+    def push_contract_screen(self, contract_id: int | None = None) -> None:
         """Display the contract management screen.
 
         Delegates to the contract controller to start the contract management
@@ -191,7 +199,7 @@ class MainController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_customer_screen(self, customer_id: int | None = None):
+    def push_customer_screen(self, customer_id: int | None = None) -> None:
         """Display the customer management screen.
 
         Delegates to the customer controller to start the customer management
@@ -207,7 +215,7 @@ class MainController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_collaborator_screen(self):
+    def push_collaborator_screen(self) -> None:
         """Display the collaborator management screen.
 
         Delegates to the collaborator controller to start the collaborator
@@ -221,7 +229,9 @@ class MainController:
             on_consult_event=self.push_event_screen,
         )
 
-    def _handle_auth_failure(self, error: AuthenticationError | None):
+    def _handle_auth_failure(
+        self, error: AuthenticationError | None
+    ) -> None:
         """Handle authentication failure scenarios.
 
         Displays an error notification if an authentication error occurred
