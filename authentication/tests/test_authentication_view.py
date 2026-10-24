@@ -15,6 +15,7 @@ Execution:
 """
 
 import pytest
+from textual.app import App
 from textual.widgets import Button, Footer, Header, Input
 
 from app.epic_events import EpicEventsCRM
@@ -44,7 +45,7 @@ class TestAuthenticationScreenWidgets:
     @pytest.mark.asyncio
     async def test_email_input_has_correct_properties(self):
         """Email Input should have id, placeholder, and CSS classes."""
-        app = EpicEventsCRM()
+        app = App()
         async with app.run_test() as pilot:
             await app.push_screen(AuthenticationScreen())
             await pilot.pause()
@@ -56,7 +57,7 @@ class TestAuthenticationScreenWidgets:
     @pytest.mark.asyncio
     async def test_password_input_has_correct_properties(self):
         """Password Input should have id, placeholder, password=True, and CSS classes."""
-        app = EpicEventsCRM()
+        app = App()
         async with app.run_test() as pilot:
             await app.push_screen(AuthenticationScreen())
             await pilot.pause()
@@ -69,7 +70,7 @@ class TestAuthenticationScreenWidgets:
     @pytest.mark.asyncio
     async def test_submit_button_has_correct_properties(self):
         """Submit Button should have id, label, variant, and CSS classes."""
-        app = EpicEventsCRM()
+        app = App()
         async with app.run_test() as pilot:
             await app.push_screen(AuthenticationScreen())
             await pilot.pause()
@@ -82,7 +83,7 @@ class TestAuthenticationScreenWidgets:
     @pytest.mark.asyncio
     async def test_back_button_has_correct_properties(self):
         """Back Button should have id, label, variant, and CSS classes."""
-        app = EpicEventsCRM()
+        app = App()
         async with app.run_test() as pilot:
             await app.push_screen(AuthenticationScreen())
             await pilot.pause()
@@ -115,7 +116,7 @@ class TestAuthenticationScreenHandlers:
     @pytest.mark.asyncio
     async def test_submit_dismisses_with_credentials(self):
         """Submit button should call dismiss() with (email, password) tuple."""
-        app = EpicEventsCRM()
+        app = App()
         dismissed_result = None
 
         def capture_dismiss(result):
@@ -130,7 +131,7 @@ class TestAuthenticationScreenHandlers:
             await pilot.pause()
 
             # Verify that screen was pushed
-            assert len(app.screen_stack) == 3
+            assert len(app.screen_stack) == 2
 
             # Simulate user input
             await pilot.click("#email")
@@ -146,12 +147,12 @@ class TestAuthenticationScreenHandlers:
             assert dismissed_result == ("test", "secret")
 
             # Verify that screen was popped
-            assert len(app.screen_stack) == 2
+            assert len(app.screen_stack) == 1
 
     @pytest.mark.asyncio
     async def test_back_dismisses_with_none(self):
         """Back button should call dismiss() with None."""
-        app = EpicEventsCRM()
+        app = App()
         dismissed_result = ("test", "secret")
 
         def capture_dismiss(result):
@@ -165,7 +166,7 @@ class TestAuthenticationScreenHandlers:
             await pilot.pause()
 
             # Verify that screen was pushed
-            assert len(app.screen_stack) == 3
+            assert len(app.screen_stack) == 2
 
             # Click back button
             await pilot.click("#back")
@@ -175,4 +176,4 @@ class TestAuthenticationScreenHandlers:
             assert dismissed_result is None
 
             # Verify that screen was popped
-            assert len(app.screen_stack) == 2
+            assert len(app.screen_stack) == 1
