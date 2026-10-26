@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -32,7 +32,23 @@ from services.permission_services import PermissionServices
 
 
 class EventScreen(Screen):
-    """Screen that displays a table of events."""
+    """Screen for displaying and managing events in the EpicEvents CRM.
+
+    Provides a comprehensive view of all events with filtering capabilities,
+    detailed information display for selected events, and navigation options
+    for creating, updating, and consulting related entities.
+
+    :param events: List of Event objects to display in the table.
+    :type events: list[Event]
+    :param user: The currently authenticated collaborator.
+    :type user: Collaborator
+    :param event_id: Optional ID of an event to pre-select in the table.
+    :type event_id: int | None
+    :param filtered_table_supported: Flag indicating if table shows only unsupported events.
+    :type filtered_table_supported: bool
+    :param filtered_table_ownership: Flag indicating if table shows only user's events.
+    :type filtered_table_ownership: bool
+    """
 
     SUB_TITLE = "EVENTS"
     CSS_PATH = "../styles/event_screen.tcss"
@@ -66,17 +82,39 @@ class EventScreen(Screen):
         filtered_table_supported: bool = False,
         filtered_table_ownership: bool = False,
     ) -> None:
+        """Initialize the EventScreen with events and user data.
+
+        :param events: List of Event objects to display in the table.
+        :type events: list[Event]
+        :param user: The currently authenticated collaborator.
+        :type user: Collaborator
+        :param event_id: Optional ID of an event to pre-select in the table.
+        :type event_id: int | None
+        :param filtered_table_supported: Flag for unsupported events filter.
+        :type filtered_table_supported: bool
+        :param filtered_table_ownership: Flag for user ownership filter.
+        :type filtered_table_ownership: bool
+        """
         super().__init__()
-        self.events = events
-        self.current_user = user
-        self.pre_selected_event_id = event_id
-        self.selected_contract_id = None
-        self.selected_location_id = None
-        self.selected_customer_id = None
-        self.filtered_table_supported = filtered_table_supported
-        self.filtered_table_ownership = filtered_table_ownership
+        self.events: list[Event] = events
+        self.current_user: Collaborator = user
+        self.pre_selected_event_id: int | None = event_id
+        self.selected_contract_id: int | None = None
+        self.selected_location_id: int | None = None
+        self.selected_customer_id: int | None = None
+        self.filtered_table_supported: bool = filtered_table_supported
+        self.filtered_table_ownership: bool = filtered_table_ownership
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with data tables and buttons,
+        and footer. Includes tables for events, location, customer, contract,
+        and notes, along with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="event-main-container"):
             yield DataTable(id="events-table")
@@ -119,7 +157,11 @@ class EventScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
 
+        Builds all data tables, sets button states based on permissions,
+        and handles pre-selected event if provided.
+        """
         self.build_events_table()
         self.build_event_contract_table()
         self.build_event_notes_text_area()
@@ -154,6 +196,10 @@ class EventScreen(Screen):
             self.selected_event_id = self.events[0].id
 
     def build_events_table(self) -> None:
+        """Build and configure the events data table.
+
+        Sets up column headers and loads event data into the table.
+        """
         table = self.query_one("#events-table", DataTable)
         table.border_title = "Events"
         table.cursor_type = "row"
@@ -174,7 +220,14 @@ class EventScreen(Screen):
         self.load_events(table)
 
     def load_events(self, table: DataTable) -> None:
-        """Load event data into the table."""
+        """Load event data into the events table.
+
+        Populates the table with event data including customer names,
+        support representative names, and formatted dates.
+
+        :param table: The DataTable widget to populate with event data.
+        :type table: DataTable
+        """
         table.clear()
 
         for event in self.events:
@@ -210,6 +263,10 @@ class EventScreen(Screen):
         table.loading = False
 
     def build_event_customer_table(self) -> None:
+        """Build and configure the customer data table.
+
+        Sets up column headers for displaying associated customer information.
+        """
         table = self.query_one("#event-customer-table", DataTable)
         table.border_title = "Associated Customer"
         table.cursor_type = "row"
@@ -222,6 +279,13 @@ class EventScreen(Screen):
         table.loading = True
 
     def load_event_customer(self, table: DataTable, event: Event) -> None:
+        """Load customer data for the selected event.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param event: The Event object containing customer data.
+        :type event: Event
+        """
         table.clear()
 
         table.add_row(
@@ -233,6 +297,10 @@ class EventScreen(Screen):
         table.loading = False
 
     def build_event_location_table(self) -> None:
+        """Build and configure the location data table.
+
+        Sets up column headers for displaying associated location information.
+        """
         table = self.query_one("#event-location-table", DataTable)
         table.border_title = "Associated Location"
         table.cursor_type = "row"
@@ -248,6 +316,13 @@ class EventScreen(Screen):
         table.loading = True
 
     def load_event_location(self, table: DataTable, event: Event) -> None:
+        """Load location data for the selected event.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param event: The Event object containing location data.
+        :type event: Event
+        """
         table.clear()
 
         if event.location:
@@ -263,6 +338,10 @@ class EventScreen(Screen):
         table.loading = False
 
     def build_event_contract_table(self) -> None:
+        """Build and configure the contract data table.
+
+        Sets up column headers for displaying associated contract information.
+        """
         table = self.query_one("#event-contract-table", DataTable)
         table.border_title = "Associated Contract"
         table.cursor_type = "row"
@@ -275,6 +354,13 @@ class EventScreen(Screen):
         table.loading = True
 
     def load_event_contract(self, table: DataTable, event: Event) -> None:
+        """Load contract data for the selected event.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param event: The Event object containing contract data.
+        :type event: Event
+        """
         table.clear()
 
         table.add_row(
@@ -286,12 +372,23 @@ class EventScreen(Screen):
         table.loading = False
 
     def build_event_notes_text_area(self) -> None:
+        """Build and configure the notes text area.
+
+        Sets up the text area for displaying event notes/description.
+        """
         text_area = self.query_one("#event-notes-text-area", TextArea)
         text_area.border_title = "Associated Notes"
 
         text_area.loading = True
 
     def load_event_notes(self, text_area: TextArea, event: Event) -> None:
+        """Load notes/description for the selected event.
+
+        :param text_area: The TextArea widget to populate.
+        :type text_area: TextArea
+        :param event: The Event object containing description.
+        :type event: Event
+        """
         text_area.clear()
 
         text_area.load_text(text=event.description)
@@ -299,6 +396,14 @@ class EventScreen(Screen):
         text_area.loading = False
 
     def set_button_state(self, button_id: str) -> None:
+        """Set button visibility based on user permissions.
+
+        Checks if the current user has the required permissions for the button
+        and shows/hides it accordingly.
+
+        :param button_id: The ID of the button to check.
+        :type button_id: str
+        """
         if self.current_user is None:
             return
 
@@ -314,17 +419,17 @@ class EventScreen(Screen):
         ]
         if missing_permissions:
             self.query_one(f"#{button_id}", Button).display = False
-            # raise PermissionError(
-            #     f"User {user.email} lacks permissions: "
-            #     f"{', '.join(p.name for p in missing_permissions)}"
-            # )
         else:
             self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_event_id(self, new_id: int | None) -> None:
-        """
-        Watcher that loads associated tables based on the event
-        highlighted in events-table
+        """Watcher that loads associated tables based on the selected event.
+
+        Updates all related tables (customer, location, contract, notes) when
+        a new event is selected in the events table. Also updates button states.
+
+        :param new_id: The ID of the newly selected event.
+        :type new_id: int | None
         """
         event_customer_table = self.query_one(
             "#event-customer-table", DataTable
@@ -369,8 +474,16 @@ class EventScreen(Screen):
         self.update_update_location_button_state(selected_event)
 
     def update_update_event_button_state(
-        self, selected_event: Event
+        self, selected_event: Event | None
     ) -> None:
+        """Update the state of the update event button based on permissions.
+
+        Checks if the current user has permission to update all events or
+        only their own events, and updates button visibility accordingly.
+
+        :param selected_event: The currently selected event.
+        :type selected_event: Event | None
+        """
         update_event_button = self.query_one("#update-event", Button)
 
         if PermissionServices.has_permission(
@@ -382,31 +495,52 @@ class EventScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_EVENTS
         ):
-            update_event_button.display = (
-                selected_event.support_representative_id
-                == self.current_user.id
-            )
+            if selected_event is not None:
+                update_event_button.display = (
+                    selected_event.support_representative_id
+                    == self.current_user.id
+                )
             return
 
         update_event_button.display = False
 
     def update_update_location_button_state(
-        self, selected_event: Event
+        self, selected_event: Event | None
     ) -> None:
+        """Update the state of the update location button based on permissions.
+
+        Checks if the current user has permission to update locations and
+        if they are the support representative for the selected event.
+
+        :param selected_event: The currently selected event.
+        :type selected_event: Event | None
+        """
         update_location_button = self.query_one("#update-location", Button)
 
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_LOCATION
         ):
-            update_location_button.display = (
-                selected_event.support_representative_id
-                == self.current_user.id
-            )
+            if selected_event is not None:
+                update_location_button.display = (
+                    selected_event.support_representative_id
+                    == self.current_user.id
+                )
             return
 
         update_location_button.display = False
 
-    def check_action(self, action: str, parameters) -> bool | None:
+    def check_action(self, action: str, parameters: Any) -> bool | None:
+        """Check if an action should be allowed based on current filter state.
+
+        Prevents toggling filters that are already active.
+
+        :param action: The action to check.
+        :type action: str
+        :param parameters: Additional parameters for the action.
+        :type parameters: Any
+        :return: True if action should proceed, False if it should be blocked.
+        :rtype: bool | None
+        """
         # Returns False if
         # table is filtered and action is filter_unsup
         # or
@@ -431,25 +565,43 @@ class EventScreen(Screen):
         )
 
     def action_filter_unsupported_events(self) -> None:
-        """Filter DataTable to show unsupported events"""
+        """Filter DataTable to show unsupported events.
+
+        Dismisses the screen with a tuple indicating to show only unsupported events.
+        """
         self.dismiss(("filter_unsupported_events", True))
 
     def action_filter_user_events_as_support(self) -> None:
-        """Filter DataTable to show user events
-        if user is a support representative"""
+        """Filter DataTable to show user events if user is a support representative.
+
+        Dismisses the screen with a tuple indicating to show only user's events.
+        """
         self.dismiss(("filter_user_events_as_support", True))
 
     def action_filter_reset(self) -> None:
-        """Filter DataTable to show all events"""
+        """Filter DataTable to show all events.
+
+        Dismisses the screen with a tuple indicating to reset all filters.
+        """
         self.dismiss(("filter_reset", False))
 
     def action_go_back(self) -> None:
-        """Return to previous screen."""
+        """Return to previous screen.
+
+        Dismisses the screen with "back" action.
+        """
         self.dismiss("back")
 
     @on(DataTable.RowHighlighted, "#events-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-        """Saves highlighted event id"""
+        """Save highlighted event id.
+
+        Updates the selected_event_id reactive variable when a row is highlighted
+        in the events table, which triggers the watcher to update related tables.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         events_table = self.query_one("#events-table", DataTable)
         # Get value from the cell
         event_id = events_table.get_cell(event.row_key, "event_id")
@@ -458,31 +610,66 @@ class EventScreen(Screen):
 
     @on(Button.Pressed, "#create-event")
     def go_create_event(self) -> None:
+        """Navigate to create event screen.
+
+        Dismisses the screen with "create_event" action.
+        """
         self.dismiss("create_event")
 
     @on(Button.Pressed, "#update-event")
     def go_update_event(self) -> None:
+        """Navigate to update event screen for selected event.
+
+        Dismisses the screen with a tuple containing action and event ID.
+        """
         self.dismiss(("update_event", self.selected_event_id))
 
     @on(Button.Pressed, "#create-location")
     def go_create_location(self) -> None:
+        """Navigate to create location screen.
+
+        Dismisses the screen with "create_location" action.
+        """
         self.dismiss("create_location")
 
     @on(Button.Pressed, "#update-location")
     def go_update_location(self) -> None:
+        """Navigate to update location screen for selected location.
+
+        Dismisses the screen with a tuple containing action and location ID.
+        """
         self.dismiss(("update_location", self.selected_location_id))
 
     @on(Button.Pressed, "#consult-customer")
     def go_consult_customer(self) -> None:
+        """Navigate to consult customer screen.
+
+        Dismisses the screen with a tuple containing action and customer ID.
+        """
         self.dismiss(("consult_customer", self.selected_customer_id))
 
     @on(Button.Pressed, "#consult-contract")
     def go_consult_contract(self) -> None:
+        """Navigate to consult contract screen.
+
+        Dismisses the screen with a tuple containing action and contract ID.
+        """
         self.dismiss(("consult_contract", self.selected_contract_id))
 
 
 class CreateEventScreen(Screen):
-    """Screen that displays a form to create a new event."""
+    """Screen for creating a new event in the EpicEvents CRM.
+
+    Provides a comprehensive form for entering all event details including
+    basic information, location (existing or new), and associated contract.
+
+    :param locations: List of existing locations to choose from.
+    :type locations: list[Location]
+    :param signed_contracts: List of signed contracts without associated events.
+    :type signed_contracts: list[Contract]
+    :param contract_id: Optional ID of a contract to pre-select.
+    :type contract_id: int | None
+    """
 
     SUB_TITLE = "CREATE EVENT"
     CSS_PATH = "../styles/create_event_screen.tcss"
@@ -495,14 +682,31 @@ class CreateEventScreen(Screen):
         locations: list[Location],
         signed_contracts: list[Contract],
         contract_id: int | None = None,
-    ):
+    ) -> None:
+        """Initialize the CreateEventScreen with available locations and contracts.
+
+        :param locations: List of existing locations to choose from.
+        :type locations: list[Location]
+        :param signed_contracts: List of signed contracts without associated events.
+        :type signed_contracts: list[Contract]
+        :param contract_id: Optional ID of a contract to pre-select.
+        :type contract_id: int | None
+        """
         super().__init__()
-        self.signed_contracts = signed_contracts
-        self.locations = locations
-        self.contract_id = contract_id
-        self.event_data = {}
+        self.signed_contracts: list[Contract] = signed_contracts
+        self.locations: list[Location] = locations
+        self.contract_id: int | None = contract_id
+        self.event_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (event data,
+        location selection, contract selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-event-main-container"):
             with Container(
@@ -708,6 +912,11 @@ class CreateEventScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles for containers and hides the new location form
+        by default.
+        """
         event_data_container = self.query_one("#event-data", Container)
         event_contract_container = self.query_one(
             "#event-contract", Container
@@ -725,13 +934,19 @@ class CreateEventScreen(Screen):
         ).display = False
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#event_name", Input),
@@ -778,8 +993,11 @@ class CreateEventScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -794,8 +1012,11 @@ class CreateEventScreen(Screen):
     def show_minput_invalid_reasons(
         self, event: MaskedInput.Changed
     ) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed masked input fields.
+
+        :param event: The masked input changed event.
+        :type event: MaskedInput.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -808,8 +1029,11 @@ class CreateEventScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -824,8 +1048,11 @@ class CreateEventScreen(Screen):
     def show_minput_invalid_reasons_2(
         self, event: MaskedInput.Blurred
     ) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred masked input fields.
+
+        :param event: The masked input blurred event.
+        :type event: MaskedInput.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -838,8 +1065,11 @@ class CreateEventScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -854,7 +1084,11 @@ class CreateEventScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -871,7 +1105,13 @@ class CreateEventScreen(Screen):
     def on_location_input_choice_changed(
         self, event: RadioSet.Changed
     ) -> None:
-        """Toggle containers' display based on user radiobutton input"""
+        """Toggle containers' display based on user radio button input.
+
+        Shows the location select or form container based on user choice.
+
+        :param event: The radio set changed event.
+        :type event: RadioSet.Changed
+        """
         self._validate_form()
         select_container = self.query_one(
             "#event-location-select-input-container", Container
@@ -889,14 +1129,26 @@ class CreateEventScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the data.
+        """
         self._collect_form_data()
         self.dismiss(self.event_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
+    def _collect_form_data(self) -> None:
+        """Collect all form data into event_data dictionary.
+
+        Retrieves values from all form fields and stores them in event_data.
+        """
         selected_contract = self.query_one(
             "#event-contract-select", Select
         ).value
@@ -946,6 +1198,21 @@ class CreateEventScreen(Screen):
 
 
 class UpdateEventScreen(Screen):
+    """Screen for updating an existing event in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing event data for modification.
+    Allows updating event details, location, contract, and support representative.
+
+    :param event_data: Dictionary containing all data of the event to update.
+    :type event_data: dict[str, Any]
+    :param locations: List of existing locations to choose from.
+    :type locations: list[Location]
+    :param support_representatives: List of collaborators who can be support representatives.
+    :type support_representatives: list[Collaborator]
+    :param signed_contracts: List of signed contracts (including current contract).
+    :type signed_contracts: list[Contract]
+    """
+
     SUB_TITLE = "UPDATE EVENT"
     CSS_PATH = "../styles/update_event_screen.tcss"
 
@@ -954,21 +1221,40 @@ class UpdateEventScreen(Screen):
 
     def __init__(
         self,
-        event_data: dict,
+        event_data: dict[str, Any],
         locations: list[Location],
         support_representatives: list[Collaborator],
         signed_contracts: list[Contract],
-    ):
-        super().__init__()
-        self.locations = locations
-        self.support_representatives = support_representatives
-        self.signed_contracts = signed_contracts
-        self.event_data = event_data
-        self.updated_event_data = {}
+    ) -> None:
+        """Initialize the UpdateEventScreen with event data and options.
 
-    def compose(self):
+        :param event_data: Dictionary containing all data of the event to update.
+        :type event_data: dict[str, Any]
+        :param locations: List of existing locations to choose from.
+        :type locations: list[Location]
+        :param support_representatives: List of collaborators who can be support representatives.
+        :type support_representatives: list[Collaborator]
+        :param signed_contracts: List of signed contracts.
+        :type signed_contracts: list[Contract]
         """
-        Compose the screen with a form to update event data.
+        super().__init__()
+        self.locations: list[Location] = locations
+        self.support_representatives: list[Collaborator] = (
+            support_representatives
+        )
+        self.signed_contracts: list[Contract] = signed_contracts
+        self.event_data: dict[str, Any] = event_data
+        self.updated_event_data: dict[str, Any] = {}
+
+    def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (event data,
+        contract selection, location selection, support representative selection),
+        and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         yield Header(show_clock=True)
         with Container(classes="update-event-main-container"):
@@ -1133,9 +1419,12 @@ class UpdateEventScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def _on_mount(self):
-        """Set container border title and subtitle and widget values"""
+    def on_mount(self) -> None:
+        """Initialize the screen after mounting.
 
+        Sets border titles for containers, converts dates to French format,
+        and highlights invalid select fields.
+        """
         event_data_container = self.query_one(
             "#update-event-data", Container
         )
@@ -1182,13 +1471,19 @@ class UpdateEventScreen(Screen):
                 select_current.border_subtitle = error_message
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#event_name", Input),
@@ -1221,8 +1516,11 @@ class UpdateEventScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1237,8 +1535,11 @@ class UpdateEventScreen(Screen):
     def show_minput_invalid_reasons(
         self, event: MaskedInput.Changed
     ) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed masked input fields.
+
+        :param event: The masked input changed event.
+        :type event: MaskedInput.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1251,8 +1552,11 @@ class UpdateEventScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1267,8 +1571,11 @@ class UpdateEventScreen(Screen):
     def show_minput_invalid_reasons_2(
         self, event: MaskedInput.Blurred
     ) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred masked input fields.
+
+        :param event: The masked input blurred event.
+        :type event: MaskedInput.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1281,8 +1588,11 @@ class UpdateEventScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -1297,7 +1607,11 @@ class UpdateEventScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -1312,14 +1626,26 @@ class UpdateEventScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_event_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self):
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_event_data dictionary.
+
+        Retrieves values from all form fields and stores them in updated_event_data.
+        """
         selected_contract = self.query_one(
             "#update-event-contract-select", Select
         ).value
@@ -1352,7 +1678,15 @@ class UpdateEventScreen(Screen):
 
 
 class CreateLocationScreen(Screen):
-    """Screen that displays a form to create a new location."""
+    """Screen for creating a new location in the EpicEvents CRM.
+
+    Provides a form for entering all location details including name,
+    street address, zip code, and city.
+
+    Note:
+        This screen is used when creating a location as part of event creation
+        or as a standalone operation.
+    """
 
     SUB_TITLE = "CREATE LOCATION"
     CSS_PATH = "../styles/create_location_screen.tcss"
@@ -1360,13 +1694,23 @@ class CreateLocationScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(
-        self,
-    ):
+    def __init__(self) -> None:
+        """Initialize the CreateLocationScreen.
+
+        Creates a new screen instance for location creation.
+        """
         super().__init__()
-        self.location_data = {}
+        self.location_data: dict[str, str] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form fields for location data,
+        and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-location-main-container"):
             with Container(
@@ -1458,19 +1802,29 @@ class CreateLocationScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border title for the location data container.
+        """
         location_data_container = self.query_one(
             "#location-data", Container
         )
         location_data_container.border_title = "Location Data"
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input fields.
         """
         widget_inputs = [
             self.query_one("#location_name", Input),
@@ -1481,7 +1835,6 @@ class CreateLocationScreen(Screen):
         ]
 
         # Check that all fields are valid
-        all_valid = False
         all_valid = all(
             widget_input.validate(widget_input.value).is_valid
             for widget_input in widget_inputs
@@ -1492,8 +1845,11 @@ class CreateLocationScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1508,8 +1864,11 @@ class CreateLocationScreen(Screen):
     def show_minput_invalid_reasons(
         self, event: MaskedInput.Changed
     ) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed masked input fields.
+
+        :param event: The masked input changed event.
+        :type event: MaskedInput.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1522,8 +1881,11 @@ class CreateLocationScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1538,8 +1900,11 @@ class CreateLocationScreen(Screen):
     def show_minput_invalid_reasons_2(
         self, event: MaskedInput.Blurred
     ) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred masked input fields.
+
+        :param event: The masked input blurred event.
+        :type event: MaskedInput.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1552,14 +1917,26 @@ class CreateLocationScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the location data.
+        """
         self._collect_form_data()
         self.dismiss(self.location_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
+    def _collect_form_data(self) -> None:
+        """Collect all form data into location_data dictionary.
+
+        Retrieves values from all form fields and stores them in location_data.
+        """
         self.location_data = {
             "name": self.query_one("#location_name", Input).value,
             "street_number": self.query_one(
@@ -1576,7 +1953,13 @@ class CreateLocationScreen(Screen):
 
 
 class UpdateLocationScreen(Screen):
-    """Screen that displays a form to update a location."""
+    """Screen for updating an existing location in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing location data for modification.
+
+    :param location_data: Dictionary containing all data of the location to update.
+    :type location_data: dict[str, str]
+    """
 
     SUB_TITLE = "UPDATE LOCATION"
     CSS_PATH = "../styles/update_location_screen.tcss"
@@ -1584,17 +1967,24 @@ class UpdateLocationScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(
-        self,
-        location_data: dict,
-    ):
-        super().__init__()
-        self.location_data = location_data
-        self.updated_location_data = {}
+    def __init__(self, location_data: dict[str, str]) -> None:
+        """Initialize the UpdateLocationScreen with location data.
 
-    def compose(self):
+        :param location_data: Dictionary containing all data of the location to update.
+        :type location_data: dict[str, str]
         """
-        Compose the screen with a form to update location data.
+        super().__init__()
+        self.location_data: dict[str, str] = location_data
+        self.updated_location_data: dict[str, str] = {}
+
+    def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form fields for location data,
+        and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         yield Header(show_clock=True)
         with Container(classes="update-location-main-container"):
@@ -1693,9 +2083,11 @@ class UpdateLocationScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def _on_mount(self):
-        """Set container border title and subtitle and widget values"""
+    def on_mount(self) -> None:
+        """Initialize the screen after mounting.
 
+        Sets border title and subtitle for the location data container.
+        """
         location_data_container = self.query_one(
             "#update-location-data", Container
         )
@@ -1703,13 +2095,19 @@ class UpdateLocationScreen(Screen):
         location_data_container.border_subtitle = "Edit relevant fields"
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input fields.
         """
         widget_inputs = [
             self.query_one("#location_name", Input),
@@ -1720,7 +2118,6 @@ class UpdateLocationScreen(Screen):
         ]
 
         # Check that all fields are valid
-        all_valid = False
         all_valid = all(
             widget_input.validate(widget_input.value).is_valid
             for widget_input in widget_inputs
@@ -1731,8 +2128,11 @@ class UpdateLocationScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1747,8 +2147,11 @@ class UpdateLocationScreen(Screen):
     def show_minput_invalid_reasons(
         self, event: MaskedInput.Changed
     ) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed masked input fields.
+
+        :param event: The masked input changed event.
+        :type event: MaskedInput.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1761,8 +2164,11 @@ class UpdateLocationScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1777,8 +2183,11 @@ class UpdateLocationScreen(Screen):
     def show_minput_invalid_reasons_2(
         self, event: MaskedInput.Blurred
     ) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred masked input fields.
+
+        :param event: The masked input blurred event.
+        :type event: MaskedInput.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1791,15 +2200,26 @@ class UpdateLocationScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated location data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_location_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self):
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_location_data dictionary.
 
+        Retrieves values from all form fields and stores them in updated_location_data.
+        """
         self.updated_location_data = {
             "location_id": self.location_data["location_id"],
             "location_name": self.query_one("#location_name", Input).value,

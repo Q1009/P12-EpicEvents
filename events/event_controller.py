@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
 from sqlalchemy.orm import Session, joinedload
 
 from collaborators.collaborator_model import (
@@ -22,25 +25,75 @@ from services.date_services import (
     format_utc_datetime,
 )
 
+if TYPE_CHECKING:
+    from textual.app import App
+
 
 class EventController:
-    """ """
+    """Controller for managing events and locations in the EpicEvents CRM.
 
-    def __init__(self, epic_events_app, session):
+    Handles all event-related operations including listing, creating, updating,
+    and filtering events. Also manages location CRUD operations. Coordinates
+    between the database (via SQLAlchemy session), the views, and other controllers.
+
+    :param epic_events_app: The main Textual application instance for screen management.
+    :type epic_events_app: textual.app.App
+    :param session: The SQLAlchemy database session for database operations.
+    :type session: sqlalchemy.orm.Session
+
+    .. note::
+        This controller uses the MVC pattern, receiving user input from views
+        and updating both the model (database) and views accordingly.
+    """
+
+    def __init__(self, epic_events_app: "App", session: Session) -> None:
+        """Initialize the EventController with application and database session.
+
+        Stores references to the main application and database session, and
+        initializes callback attributes for navigation.
+
+        :param epic_events_app: The main Textual application instance.
+        :type epic_events_app: textual.app.App
+        :param session: SQLAlchemy database session for database operations.
+        :type session: sqlalchemy.orm.Session
+        """
         self.session: Session = session
-        self.epic_events_app = epic_events_app
-        self.on_back_callback = None
-        self.on_consult_customer_callback = None
-        self.on_consult_contract_callback = None
+        self.epic_events_app: App = epic_events_app
+        self.on_back_callback: Callable[[], None] | None = None
+        self.on_consult_customer_callback: Callable[[int], None] | None = (
+            None
+        )
+        self.on_consult_contract_callback: Callable[[int], None] | None = (
+            None
+        )
 
     def start(
         self,
-        event_id=None,
-        contract_id=None,
-        on_back=None,
-        on_consult_customer=None,
-        on_consult_contract=None,
-    ):
+        event_id: int | None = None,
+        contract_id: int | None = None,
+        on_back: Callable[[], None] | None = None,
+        on_consult_customer: Callable[[int], None] | None = None,
+        on_consult_contract: Callable[[int], None] | None = None,
+    ) -> None:
+        """Start the event management workflow.
+
+        Stores callback references for navigation and either pushes the create
+        event screen (if contract_id is provided) or the event list screen.
+
+        :param event_id: Optional ID of an event to pre-select in the list.
+        :type event_id: int | None
+        :param contract_id: Optional contract ID to pre-select in creation form.
+            If provided, immediately pushes create event screen.
+        :type contract_id: int | None
+        :param on_back: Callback function to execute when user returns to previous screen.
+        :type on_back: Callable[[], None] | None
+        :param on_consult_customer: Callback for navigating to customer screen.
+            Called with customer ID.
+        :type on_consult_customer: Callable[[int], None] | None
+        :param on_consult_contract: Callback for navigating to contract screen.
+            Called with contract ID.
+        :type on_consult_contract: Callable[[int], None] | None
+        """
         self.on_back_callback = on_back
         self.on_consult_customer_callback = on_consult_customer
         self.on_consult_contract_callback = on_consult_contract
@@ -52,8 +105,23 @@ class EventController:
         events = self.get_all_events()
         self.push_event_screen(events, event_id)
 
-    def handle_user_choice(self, user_choice):
-        """Callback when user chooses from event menu"""
+    def handle_user_choice(
+        self, user_choice: str | tuple[str, Any]
+    ) -> None:
+        """Process user selection from the event menu.
+
+        Routes the user's menu choice to the appropriate action or screen.
+        Handles navigation between screens, filtering, and application exit.
+
+        :param user_choice: The user's selected menu option, which can be a simple
+            string or a tuple containing the action and additional parameters.
+        :type user_choice: str | tuple[str, Any]
+
+        .. note::
+            Available choices include: create_event, update_event, create_location,
+            update_location, consult_customer, consult_contract, filter_unsupported_events,
+            filter_user_events_as_support, filter_reset, back, and quit.
+        """
         match user_choice:
             case "create_event":
                 self.push_create_event_screen()
@@ -66,11 +134,11 @@ class EventController:
             case ("update_location", location_id):
                 self.push_update_location_screen(location_id)
             case ("consult_customer", customer_id):
-                self.on_consult_customer_callback(customer_id)
-                # return
+                if self.on_consult_customer_callback:
+                    self.on_consult_customer_callback(customer_id)
             case ("consult_contract", contract_id):
-                self.on_consult_contract_callback(contract_id)
-                # return
+                if self.on_consult_contract_callback:
+                    self.on_consult_contract_callback(contract_id)
             case ("filter_unsupported_events", filtered_table):
                 events = self.get_unsupported_events()
                 self.push_event_screen(
@@ -93,13 +161,17 @@ class EventController:
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                # return
             case "quit":
                 self.epic_events_app.exit()
 
     def get_all_events(self) -> list[Event]:
-        """
-        Returns all events from the database.
+        """Retrieve all events from the database.
+
+        Returns all :class:`Event` objects with their associated contract,
+        location, and support representative loaded via eager loading.
+
+        :return: List of all Event objects with related data.
+        :rtype: list[Event]
         """
         return (
             self.session.query(Event)
@@ -112,8 +184,14 @@ class EventController:
         )
 
     def get_unsupported_events(self) -> list[Event]:
-        """
-        Returns all unsupported events from the database.
+        """Retrieve all events without a support representative.
+
+        Returns all :class:`Event` objects that have no support representative
+        assigned, with their associated contract and location loaded via
+        eager loading.
+
+        :return: List of Event objects without support representative.
+        :rtype: list[Event]
         """
         return (
             self.session.query(Event)
@@ -122,14 +200,22 @@ class EventController:
                 joinedload(Event.location),
                 joinedload(Event.support_representative),
             )
-            .filter(
-                Event.support_representative == None,
-            )
+            .filter(Event.support_representative == None)
             .all()
         )
 
     def get_events_by_support_representative_as_user(self) -> list[Event]:
-        user = AuthenticationServices.get_user_info(self.session)
+        """Retrieve all events assigned to the current user as support representative.
+
+        Gets the current authenticated user and returns all events where
+        they are assigned as the support representative.
+
+        :return: List of Event objects assigned to current user.
+        :rtype: list[Event]
+        """
+        user: Collaborator | None = AuthenticationServices.get_user_info(
+            self.session
+        )
         if user is None:
             return []
         return (
@@ -139,9 +225,19 @@ class EventController:
         )
 
     def get_all_locations(self) -> list[Location]:
+        """Retrieve all locations from the database.
+
+        :return: List of all Location objects.
+        :rtype: list[Location]
+        """
         return self.session.query(Location).all()
 
     def get_signed_contracts_without_event(self) -> list[Contract]:
+        """Retrieve all signed contracts that don't have an associated event.
+
+        :return: List of Contract objects that are signed but have no event.
+        :rtype: list[Contract]
+        """
         return (
             self.session.query(Contract)
             .filter(
@@ -152,6 +248,11 @@ class EventController:
         )
 
     def get_support_representatives(self) -> list[Collaborator]:
+        """Retrieve all collaborators from the support department.
+
+        :return: List of Collaborator objects who are in the support department.
+        :rtype: list[Collaborator]
+        """
         return (
             self.session.query(Collaborator)
             .join(Collaborator.department)
@@ -159,8 +260,18 @@ class EventController:
             .all()
         )
 
-    def load_event_data_for_update(self, event_id: int):
-        event = (
+    def load_event_data_for_update(self, event_id: int) -> dict[str, Any]:
+        """Load event data for the update form.
+
+        Retrieves an event by ID and returns its data as a dictionary
+        suitable for pre-filling an update form.
+
+        :param event_id: The ID of the event to load.
+        :type event_id: int
+        :return: Dictionary containing all event fields for the update form.
+        :rtype: dict[str, Any]
+        """
+        event: Event | None = (
             self.session.query(Event).filter(Event.id == event_id).first()
         )
 
@@ -176,8 +287,20 @@ class EventController:
             "event_support_representative": event.support_representative,
         }
 
-    def load_location_data_for_update(self, location_id: int):
-        location = (
+    def load_location_data_for_update(
+        self, location_id: int
+    ) -> dict[str, Any]:
+        """Load location data for the update form.
+
+        Retrieves a location by ID and returns its data as a dictionary
+        suitable for pre-filling an update form.
+
+        :param location_id: The ID of the location to load.
+        :type location_id: int
+        :return: Dictionary containing all location fields for the update form.
+        :rtype: dict[str, Any]
+        """
+        location: Location | None = (
             self.session.query(Location)
             .filter(Location.id == location_id)
             .first()
@@ -199,9 +322,8 @@ class EventController:
         event_id: int | None = None,
         filtered_table_supported: bool = False,
         filtered_table_ownership: bool = False,
-    ):
-        """
-        Push the event list screen onto the application screen stack.
+    ) -> None:
+        """Push the event list screen onto the application screen stack.
 
         Instantiates an :class:`EventScreen` with the provided events, optional
         pre-selected event ID, and filter states, then pushes it onto the
@@ -218,10 +340,10 @@ class EventController:
         :param filtered_table_ownership: Flag indicating whether the table is filtered
             to show only events assigned to the current user. Defaults to False.
         :type filtered_table_ownership: bool
-        :return: None
-        :rtype: None
         """
-        current_user = AuthenticationServices.get_user_info(self.session)
+        current_user: Collaborator | None = (
+            AuthenticationServices.get_user_info(self.session)
+        )
         events_screen = EventScreen(
             events=events,
             user=current_user,
@@ -234,9 +356,10 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_create_event_screen(self, contract_id: int | None = None):
-        """
-        Push the create event screen onto the application screen stack.
+    def push_create_event_screen(
+        self, contract_id: int | None = None
+    ) -> None:
+        """Push the create event screen onto the application screen stack.
 
         Instantiates a :class:`CreateEventScreen` with all available locations
         and signed contracts without an associated event, then pushes it onto
@@ -245,11 +368,11 @@ class EventController:
         :param contract_id: Optional contract ID to pre-select in the creation form.
             If provided, the corresponding contract will be pre-selected. Defaults to None.
         :type contract_id: int | None
-        :return: None
-        :rtype: None
         """
-        all_locations = self.get_all_locations()
-        signed_contracts = self.get_signed_contracts_without_event()
+        all_locations: list[Location] = self.get_all_locations()
+        signed_contracts: list[Contract] = (
+            self.get_signed_contracts_without_event()
+        )
         create_event_screen = CreateEventScreen(
             locations=all_locations,
             signed_contracts=signed_contracts,
@@ -261,9 +384,8 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_update_event_screen(self, event_id: int):
-        """
-        Push the update event screen onto the application screen stack.
+    def push_update_event_screen(self, event_id: int) -> None:
+        """Push the update event screen onto the application screen stack.
 
         Instantiates an :class:`UpdateEventScreen` with the event data to update,
         all available locations, support representatives, and signed contracts without
@@ -273,13 +395,17 @@ class EventController:
         :param event_id: The ID of the event to update. The corresponding event data
             will be loaded and pre-filled in the update form.
         :type event_id: int
-        :return: None
-        :rtype: None
         """
-        all_locations = self.get_all_locations()
-        signed_contracts = self.get_signed_contracts_without_event()
-        support_representatives = self.get_support_representatives()
-        event_to_update = self.load_event_data_for_update(event_id)
+        all_locations: list[Location] = self.get_all_locations()
+        signed_contracts: list[Contract] = (
+            self.get_signed_contracts_without_event()
+        )
+        support_representatives: list[Collaborator] = (
+            self.get_support_representatives()
+        )
+        event_to_update: dict[str, Any] = self.load_event_data_for_update(
+            event_id
+        )
         update_event_screen = UpdateEventScreen(
             event_data=event_to_update,
             locations=all_locations,
@@ -292,15 +418,11 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_create_location_screen(self):
-        """
-        Push the create location screen onto the application screen stack.
+    def push_create_location_screen(self) -> None:
+        """Push the create location screen onto the application screen stack.
 
         Instantiates a :class:`CreateLocationScreen` and pushes it onto
         the application's screen stack with a callback to :meth:`create_location`.
-
-        :return: None
-        :rtype: None
         """
         create_location_screen = CreateLocationScreen()
         self.epic_events_app.push_screen(
@@ -309,9 +431,8 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def push_update_location_screen(self, location_id: int):
-        """
-        Push the update location screen onto the application screen stack.
+    def push_update_location_screen(self, location_id: int) -> None:
+        """Push the update location screen onto the application screen stack.
 
         Loads the data for the location to update, instantiates an
         :class:`UpdateLocationScreen` with this data, and pushes it onto
@@ -320,11 +441,9 @@ class EventController:
         :param location_id: The ID of the location to update. The corresponding
             location data will be loaded and pre-filled in the update form.
         :type location_id: int
-        :return: None
-        :rtype: None
         """
-        location_to_update = self.load_location_data_for_update(
-            location_id
+        location_to_update: dict[str, Any] = (
+            self.load_location_data_for_update(location_id)
         )
         update_location_screen = UpdateLocationScreen(
             location_data=location_to_update
@@ -335,8 +454,17 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def create_event(self, new_event_data):
-        """ """
+    def create_event(self, new_event_data: dict[str, Any] | None) -> None:
+        """Create a new event in the database.
+
+        Handles the event creation form submission. If creation is cancelled,
+        returns to the event list. Otherwise, processes the form data, creates
+        the event object (and location if new), and saves it to the database.
+
+        :param new_event_data: Dictionary containing event data from the form,
+            or None if creation was cancelled.
+        :type new_event_data: dict[str, Any] | None
+        """
         # If creation is cancelled
         if not new_event_data:
             self.epic_events_app.notify(
@@ -350,7 +478,9 @@ class EventController:
             return
 
         # Else, transform raw data (dict) from submitted form
-        event_location = new_event_data["event_location"]
+        event_location: Location | dict[str, Any] = new_event_data[
+            "event_location"
+        ]
         if isinstance(event_location, Location):
             new_event_location = event_location
         else:
@@ -372,7 +502,7 @@ class EventController:
         )
 
         # Create event object with transformed data
-        event = Event(
+        event: Event = Event(
             name=new_event_data["event_name"],
             start_date=new_event_start_date,
             end_date=new_event_end_date,
@@ -395,8 +525,19 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def update_event(self, updated_event_data):
-        """ """
+    def update_event(
+        self, updated_event_data: dict[str, Any] | None
+    ) -> None:
+        """Update an existing event in the database.
+
+        Handles the event update form submission. If update is cancelled,
+        returns to the event list. Otherwise, processes the form data and
+        updates the corresponding event in the database.
+
+        :param updated_event_data: Dictionary containing updated event data from
+            the form, or None if update was cancelled.
+        :type updated_event_data: dict[str, Any] | None
+        """
         if not updated_event_data:
             self.epic_events_app.notify(
                 "Event update cancelled", severity="warning"
@@ -444,8 +585,19 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def create_location(self, new_location_data):
-        """ """
+    def create_location(
+        self, new_location_data: dict[str, Any] | None
+    ) -> None:
+        """Create a new location in the database.
+
+        Handles the location creation form submission. If creation is cancelled,
+        returns to the event list. Otherwise, processes the form data, creates
+        the location object, and saves it to the database.
+
+        :param new_location_data: Dictionary containing location data from the form,
+            or None if creation was cancelled.
+        :type new_location_data: dict[str, Any] | None
+        """
         # If creation is cancelled
         if not new_location_data:
             self.epic_events_app.notify(
@@ -459,8 +611,7 @@ class EventController:
             return
 
         # Else, transform raw data (dict) from submitted form
-
-        new_location = Location(
+        new_location: Location = Location(
             name=new_location_data["name"],
             street_number=new_location_data["street_number"],
             street_name=new_location_data["street_name"],
@@ -481,7 +632,19 @@ class EventController:
         )
 
     @AuthenticationServices.check_authentication
-    def update_location(self, updated_location_data):
+    def update_location(
+        self, updated_location_data: dict[str, Any] | None
+    ) -> None:
+        """Update an existing location in the database.
+
+        Handles the location update form submission. If update is cancelled,
+        returns to the event list. Otherwise, processes the form data and
+        updates the corresponding location in the database.
+
+        :param updated_location_data: Dictionary containing updated location data
+            from the form, or None if update was cancelled.
+        :type updated_location_data: dict[str, Any] | None
+        """
         if not updated_location_data:
             self.epic_events_app.notify(
                 "Location update cancelled", severity="warning"
@@ -519,10 +682,20 @@ class EventController:
             on_consult_contract=self.on_consult_contract_callback,
         )
 
-    def _handle_auth_failure(self, error: AuthenticationError | None):
-        """Handles authentication failure"""
-        # if error:
-        #     self.epic_events_app.notify(
-        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
-        #     )
-        self.on_back_callback()
+    def _handle_auth_failure(
+        self, error: AuthenticationError | None
+    ) -> None:
+        """Handle authentication failure scenarios.
+
+        Called when authentication fails. Currently delegates to the back callback
+        to return to the previous screen.
+
+        :param error: The authentication error that occurred, if any.
+        :type error: AuthenticationError | None
+        """
+        if error:
+            self.epic_events_app.notify(
+                f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+            )
+        if self.on_back_callback:
+            self.on_back_callback()
