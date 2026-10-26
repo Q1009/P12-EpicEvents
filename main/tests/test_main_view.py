@@ -117,7 +117,7 @@ class TestAuthenticatedMainScreen:
             assert dismissed_result == "events"
 
     @pytest.mark.asyncio
-    async def test_logout_option_dismisses_with_id(self):
+    async def test_collaborator_option_dismisses_with_id(self):
         """Selecting 'Collaborators' should dismiss with 'collaborators' ID."""
         app = App()
         user_name = "John"
