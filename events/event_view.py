@@ -772,12 +772,14 @@ class CreateEventScreen(Screen):
             ):
                 with RadioSet(id="event-location-input-choice"):
                     yield RadioButton(
-                        "Existing location",
+                        id="existing-location",
+                        label="Existing location",
                         value=True,
                         classes="event-location-radio-button",
                     )
                     yield RadioButton(
-                        "New location",
+                        id="new-location",
+                        label="New location",
                         classes="event-location-radio-button",
                     )
                 with Container(
@@ -896,7 +898,10 @@ class CreateEventScreen(Screen):
                     select_kwargs["value"] = selected_contract
 
                 yield Select(contract_options, **select_kwargs)
-            with Container(classes="create-event-buttons-container"):
+            with Container(
+                id="create-event-buttons-container",
+                classes="create-event-buttons-container",
+            ):
                 yield Button(
                     "Create",
                     id="create",
@@ -1404,7 +1409,10 @@ class UpdateEventScreen(Screen):
                 yield Select(
                     support_representatives_options, **select_kwargs
                 )
-            with Container(classes="update-event-buttons-container"):
+            with Container(
+                id="update-event-buttons-container",
+                classes="update-event-buttons-container",
+            ):
                 yield Button(
                     "Update",
                     id="update",
@@ -1992,6 +2000,7 @@ class UpdateLocationScreen(Screen):
                 "Updating location: "
                 f"{self.location_data['location_name']} ",
                 classes="updating-location-static",
+                id="updating-location-static",
             )
             with Container(
                 id="update-location-data",
