@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -29,7 +29,23 @@ from services.permission_services import PermissionServices
 
 
 class ContractScreen(Screen):
-    """Screen that displays a table of contracts."""
+    """Screen for displaying and managing contracts in the EpicEvents CRM.
+
+    Provides a comprehensive view of all contracts with filtering capabilities,
+    detailed information display for selected contracts, and navigation options
+    for creating, updating, and consulting related entities.
+
+    :param contracts: List of Contract objects to display in the table.
+    :type contracts: list[Contract]
+    :param user: The currently authenticated collaborator.
+    :type user: Collaborator
+    :param contract_id: Optional ID of a contract to pre-select in the table.
+    :type contract_id: int | None
+    :param filtered_table_signature: Flag indicating if table shows only unsigned contracts.
+    :type filtered_table_signature: bool
+    :param filtered_table_payment: Flag indicating if table shows only unpaid contracts.
+    :type filtered_table_payment: bool
+    """
 
     SUB_TITLE = "CONTRACTS"
     CSS_PATH = "../styles/contract_screen.tcss"
@@ -62,16 +78,37 @@ class ContractScreen(Screen):
         filtered_table_signature: bool = False,
         filtered_table_payment: bool = False,
     ) -> None:
+        """Initialize the ContractScreen with contracts and user data.
+
+        :param contracts: List of Contract objects to display in the table.
+        :type contracts: list[Contract]
+        :param user: The currently authenticated collaborator.
+        :type user: Collaborator
+        :param contract_id: Optional ID of a contract to pre-select in the table.
+        :type contract_id: int | None
+        :param filtered_table_signature: Flag for unsigned contracts filter.
+        :type filtered_table_signature: bool
+        :param filtered_table_payment: Flag for unpaid contracts filter.
+        :type filtered_table_payment: bool
+        """
         super().__init__()
-        self.contracts = contracts
-        self.pre_selected_contract_id = contract_id
-        self.current_user = user
-        self.selected_customer_id = None
-        self.selected_event_id = None
-        self.filtered_table_signature = filtered_table_signature
-        self.filtered_table_payment = filtered_table_payment
+        self.contracts: list[Contract] = contracts
+        self.pre_selected_contract_id: int | None = contract_id
+        self.current_user: Collaborator = user
+        self.selected_customer_id: int | None = None
+        self.selected_event_id: int | None = None
+        self.filtered_table_signature: bool = filtered_table_signature
+        self.filtered_table_payment: bool = filtered_table_payment
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with data tables (contracts, customer,
+        event) and progress bar, action buttons, and footer.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="contract-main-container"):
             yield DataTable(id="contracts-table")
@@ -110,7 +147,11 @@ class ContractScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """."""
+        """Initialize the screen after mounting.
+
+        Builds all data tables, sets button states based on permissions,
+        and handles pre-selected contract if provided.
+        """
         self.build_contracts_table()
         self.build_contract_customer_table()
         self.build_contract_payment_progressbar()
@@ -143,6 +184,10 @@ class ContractScreen(Screen):
             self.selected_contract_id = self.contracts[0].id
 
     def build_contracts_table(self) -> None:
+        """Build and configure the contracts data table.
+
+        Sets up column headers and loads contract data into the table.
+        """
         table = self.query_one("#contracts-table", DataTable)
         table.border_title = "Contracts"
         table.cursor_type = "row"
@@ -162,7 +207,14 @@ class ContractScreen(Screen):
         self.load_contracts(table)
 
     def load_contracts(self, table: DataTable) -> None:
-        """Load contract data into the table."""
+        """Load contract data into the contracts table.
+
+        Populates the table with contract data including sales representative
+        names and formatted creation dates.
+
+        :param table: The DataTable widget to populate with contract data.
+        :type table: DataTable
+        """
         table.clear()
 
         for contract in self.contracts:
@@ -187,6 +239,10 @@ class ContractScreen(Screen):
         table.loading = False
 
     def build_contract_customer_table(self) -> None:
+        """Build and configure the customer data table.
+
+        Sets up column headers for displaying associated customer information.
+        """
         table = self.query_one("#contract-customer-table", DataTable)
         table.border_title = "Associated Customer"
         table.cursor_type = "row"
@@ -201,6 +257,13 @@ class ContractScreen(Screen):
     def load_contract_customer(
         self, table: DataTable, contract: Contract
     ) -> None:
+        """Load customer data for the selected contract.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param contract: The Contract object containing customer data.
+        :type contract: Contract
+        """
         table.clear()
 
         if contract.customer:
@@ -213,6 +276,10 @@ class ContractScreen(Screen):
         table.loading = False
 
     def build_contract_event_table(self) -> None:
+        """Build and configure the event data table.
+
+        Sets up column headers for displaying associated event information.
+        """
         table = self.query_one("#contract-event-table", DataTable)
         table.border_title = "Associated Event"
         table.cursor_type = "row"
@@ -226,6 +293,13 @@ class ContractScreen(Screen):
     def load_contract_event(
         self, table: DataTable, contract: Contract
     ) -> None:
+        """Load event data for the selected contract.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param contract: The Contract object containing event data.
+        :type contract: Contract
+        """
         table.clear()
 
         if contract.event:
@@ -237,6 +311,10 @@ class ContractScreen(Screen):
         table.loading = False
 
     def build_contract_payment_progressbar(self) -> None:
+        """Build and configure the payment progress bar.
+
+        Sets up the progress bar for displaying payment progress.
+        """
         progress_bar = self.query_one(
             "#contract-payment-progressbar", ProgressBar
         )
@@ -245,12 +323,30 @@ class ContractScreen(Screen):
     def load_contract_payment(
         self, progressbar: ProgressBar, contract: Contract
     ) -> None:
+        """Load payment data for the selected contract.
+
+        Updates the progress bar to show the payment percentage based on
+        total amount and amount due.
+
+        :param progressbar: The ProgressBar widget to update.
+        :type progressbar: ProgressBar
+        :param contract: The Contract object containing payment data.
+        :type contract: Contract
+        """
         total_amount = contract.total_amount
         amount_due = contract.amount_due
         paid_amount = total_amount - amount_due
         progressbar.update(total=total_amount, progress=paid_amount)
 
     def set_button_state(self, button_id: str) -> None:
+        """Set button visibility based on user permissions.
+
+        Checks if the current user has the required permissions for the button
+        and shows/hides it accordingly.
+
+        :param button_id: The ID of the button to check.
+        :type button_id: str
+        """
         if self.current_user is None:
             return
 
@@ -266,17 +362,17 @@ class ContractScreen(Screen):
         ]
         if missing_permissions:
             self.query_one(f"#{button_id}", Button).display = False
-            # raise PermissionError(
-            #     f"User {user.email} lacks permissions: "
-            #     f"{', '.join(p.name for p in missing_permissions)}"
-            # )
         else:
             self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_contract_id(self, new_id: int | None) -> None:
-        """
-        Watcher that loads customers and events based on the contract
-        highlighted in contracts-table
+        """Watcher that loads associated data based on the selected contract.
+
+        Updates customer table, event table, payment progress bar, and button states
+        when a new contract is selected in the contracts table.
+
+        :param new_id: The ID of the newly selected contract.
+        :type new_id: int | None
         """
         contract_customer_table = self.query_one(
             "#contract-customer-table", DataTable
@@ -297,7 +393,7 @@ class ContractScreen(Screen):
             return
 
         # Get contract by ID
-        selected_contract = next(
+        selected_contract: Contract | None = next(
             (c for c in self.contracts if c.id == new_id), None
         )
 
@@ -328,7 +424,12 @@ class ContractScreen(Screen):
         self.update_create_event_button_state(selected_contract)
         self.update_update_contract_button_state(selected_contract)
 
-    def update_consult_customer_button_state(self):
+    def update_consult_customer_button_state(self) -> None:
+        """Update the state of the consult customer button based on permissions.
+
+        Checks if the current user has permission to read all customers and
+        if a customer is selected, then updates button visibility.
+        """
         consult_customer_button = self.query_one(
             "#consult-customer", Button
         )
@@ -342,7 +443,12 @@ class ContractScreen(Screen):
 
         consult_customer_button.display = False
 
-    def update_consult_event_button_state(self):
+    def update_consult_event_button_state(self) -> None:
+        """Update the state of the consult event button based on permissions.
+
+        Checks if the current user has permission to read all events and
+        if an event is selected, then updates button visibility.
+        """
         consult_event_button = self.query_one("#consult-event", Button)
 
         if PermissionServices.has_permission(
@@ -356,26 +462,44 @@ class ContractScreen(Screen):
         consult_event_button.display = False
 
     def update_create_event_button_state(
-        self, selected_contract: Contract
-    ):
+        self, selected_contract: Contract | None
+    ) -> None:
+        """Update the state of the create event button based on permissions.
+
+        Checks if the current user has permission to create events and
+        if they are the sales representative for the selected signed contract
+        without an existing event.
+
+        :param selected_contract: The currently selected contract.
+        :type selected_contract: Contract | None
+        """
         create_event_button = self.query_one("#create-event", Button)
 
         if PermissionServices.has_permission(
             self.current_user, Permission.CREATE_EVENT
         ):
-            create_event_button.display = (
-                selected_contract.customer.sales_representative_id
-                == self.current_user.id
-                and selected_contract.status == ContractStatus.SIGNED
-                and self.selected_event_id is None
-            )
+            if selected_contract is not None:
+                create_event_button.display = (
+                    selected_contract.customer.sales_representative_id
+                    == self.current_user.id
+                    and selected_contract.status == ContractStatus.SIGNED
+                    and self.selected_event_id is None
+                )
             return
 
         create_event_button.display = False
 
     def update_update_contract_button_state(
-        self, selected_contract: Contract
-    ):
+        self, selected_contract: Contract | None
+    ) -> None:
+        """Update the state of the update contract button based on permissions.
+
+        Checks if the current user has permission to update all contracts
+        or only their own contracts, and updates button visibility accordingly.
+
+        :param selected_contract: The currently selected contract.
+        :type selected_contract: Contract | None
+        """
         update_contract_button = self.query_one("#update-contract", Button)
 
         if PermissionServices.has_permission(
@@ -387,15 +511,27 @@ class ContractScreen(Screen):
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_CONTRACTS
         ):
-            update_contract_button.display = (
-                selected_contract.customer.sales_representative_id
-                == self.current_user.id
-            )
+            if selected_contract is not None:
+                update_contract_button.display = (
+                    selected_contract.customer.sales_representative_id
+                    == self.current_user.id
+                )
             return
 
         update_contract_button.display = False
 
-    def check_action(self, action: str, parameters) -> bool | None:
+    def check_action(self, action: str, parameters: Any) -> bool | None:
+        """Check if an action should be allowed based on current filter state.
+
+        Prevents toggling filters that are already active.
+
+        :param action: The action to check.
+        :type action: str
+        :param parameters: Additional parameters for the action.
+        :type parameters: Any
+        :return: True if action should proceed, False if it should be blocked.
+        :rtype: bool | None
+        """
         # Returns False if
         # table is filtered by signature and action is filter_unsigned
         # or
@@ -422,24 +558,43 @@ class ContractScreen(Screen):
         )
 
     def action_filter_unsigned_contracts(self) -> None:
-        """Filter DataTable to show unsigned contracts"""
+        """Filter DataTable to show unsigned contracts.
+
+        Dismisses the screen with a tuple indicating to show only unsigned contracts.
+        """
         self.dismiss(("filter_unsigned_contracts", True))
 
     def action_filter_unpaid_contracts(self) -> None:
-        """Filter DataTable to show unpaid contracts"""
+        """Filter DataTable to show unpaid contracts.
+
+        Dismisses the screen with a tuple indicating to show only unpaid contracts.
+        """
         self.dismiss(("filter_unpaid_contracts", True))
 
     def action_filter_reset(self) -> None:
-        """Filter DataTable to show all contracts"""
+        """Filter DataTable to show all contracts.
+
+        Dismisses the screen with a tuple indicating to reset all filters.
+        """
         self.dismiss(("filter_reset", False))
 
     def action_go_back(self) -> None:
-        """Return to previous screen."""
+        """Return to previous screen.
+
+        Dismisses the screen with "back" action.
+        """
         self.dismiss("back")
 
     @on(DataTable.RowHighlighted, "#contracts-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-        """Saves highlighted contract id"""
+        """Save highlighted contract id.
+
+        Updates the selected_contract_id reactive variable when a row is highlighted
+        in the contracts table, which triggers the watcher to update related tables.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         contracts_table = self.query_one("#contracts-table", DataTable)
         # Get value from the cell
         contract_id = contracts_table.get_cell(
@@ -450,27 +605,54 @@ class ContractScreen(Screen):
 
     @on(Button.Pressed, "#create-contract")
     def go_create_contract(self) -> None:
+        """Navigate to create contract screen.
+
+        Dismisses the screen with "create_contract" action.
+        """
         self.dismiss("create_contract")
 
     @on(Button.Pressed, "#update-contract")
     def go_update_contract(self) -> None:
+        """Navigate to update contract screen for selected contract.
+
+        Dismisses the screen with a tuple containing action and contract ID.
+        """
         self.dismiss(("update_contract", self.selected_contract_id))
 
     @on(Button.Pressed, "#create-event")
     def go_create_event(self) -> None:
+        """Navigate to create event screen for selected contract.
+
+        Dismisses the screen with a tuple containing action and contract ID.
+        """
         self.dismiss(("create_event", self.selected_contract_id))
 
     @on(Button.Pressed, "#consult-customer")
     def go_consult_customer(self) -> None:
+        """Navigate to consult customer screen.
+
+        Dismisses the screen with a tuple containing action and customer ID.
+        """
         self.dismiss(("consult_customer", self.selected_customer_id))
 
     @on(Button.Pressed, "#consult-event")
     def go_consult_event(self) -> None:
+        """Navigate to consult event screen.
+
+        Dismisses the screen with a tuple containing action and event ID.
+        """
         self.dismiss(("consult_event", self.selected_event_id))
 
 
 class CreateContractScreen(Screen):
-    """Screen that displays a form to create a new contract."""
+    """Screen for creating a new contract in the EpicEvents CRM.
+
+    Provides a form for entering contract details including total amount,
+    amount due, and associated customer.
+
+    :param customers: List of existing customers to choose from.
+    :type customers: list[Customer]
+    """
 
     SUB_TITLE = "CREATE CONTRACT"
     CSS_PATH = "../styles/create_contract_screen.tcss"
@@ -478,12 +660,25 @@ class CreateContractScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, customers: list[Customer]):
+    def __init__(self, customers: list[Customer]) -> None:
+        """Initialize the CreateContractScreen with available customers.
+
+        :param customers: List of existing customers to choose from.
+        :type customers: list[Customer]
+        """
         super().__init__()
-        self.customers = customers
-        self.contract_data = {}
+        self.customers: list[Customer] = customers
+        self.contract_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (contract data,
+        customer selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-contract-main-container"):
             with Container(
@@ -560,6 +755,10 @@ class CreateContractScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles for contract data and customer selection containers.
+        """
         contract_data_container = self.query_one(
             "#contract-data", Container
         )
@@ -570,13 +769,19 @@ class CreateContractScreen(Screen):
         contract_customer_container.border_title = "Customer Selection"
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#contract_total_amount", Input),
@@ -603,8 +808,11 @@ class CreateContractScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -617,8 +825,11 @@ class CreateContractScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -631,8 +842,11 @@ class CreateContractScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -647,7 +861,11 @@ class CreateContractScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -662,15 +880,26 @@ class CreateContractScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the contract data.
+        """
         self._collect_form_data()
         self.dismiss(self.contract_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
-        """Collect all form data into a dictionary."""
+    def _collect_form_data(self) -> None:
+        """Collect all form data into contract_data dictionary.
+
+        Retrieves values from all form fields and stores them in contract_data.
+        """
         self.contract_data = {
             "contract_total_amount": self.query_one(
                 "#contract_total_amount", Input
@@ -685,7 +914,16 @@ class CreateContractScreen(Screen):
 
 
 class UpdateContractScreen(Screen):
-    """."""
+    """Screen for updating an existing contract in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing contract data for modification.
+    Allows updating contract details, customer, and status.
+
+    :param contract_data: Dictionary containing all data of the contract to update.
+    :type contract_data: dict[str, Any]
+    :param customers: List of existing customers to choose from.
+    :type customers: list[Customer]
+    """
 
     SUB_TITLE = "UPDATE CONTRACT"
     CSS_PATH = "../styles/update_contract_screen.tcss"
@@ -693,15 +931,29 @@ class UpdateContractScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, contract_data: dict, customers: list[Customer]):
-        super().__init__()
-        self.customers = customers
-        self.contract_data = contract_data
-        self.updated_contract_data = {}
+    def __init__(
+        self, contract_data: dict[str, Any], customers: list[Customer]
+    ) -> None:
+        """Initialize the UpdateContractScreen with contract data and options.
 
-    def compose(self):
+        :param contract_data: Dictionary containing all data of the contract to update.
+        :type contract_data: dict[str, Any]
+        :param customers: List of existing customers to choose from.
+        :type customers: list[Customer]
         """
-        Compose the screen with a form to update contract data.
+        super().__init__()
+        self.customers: list[Customer] = customers
+        self.contract_data: dict[str, Any] = contract_data
+        self.updated_contract_data: dict[str, Any] = {}
+
+    def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (contract data,
+        customer selection, status selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         yield Header(show_clock=True)
         with Container(classes="update-contract-main-container"):
@@ -804,9 +1056,12 @@ class UpdateContractScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def on_mount(self):
-        """Set container border title and subtitle"""
+    def on_mount(self) -> None:
+        """Set container border titles and subtitles and update widget states.
 
+        Initializes the screen by setting container titles and disabling
+        fields based on contract status.
+        """
         contract_data_container = self.query_one(
             "#update-contract-data", Container
         )
@@ -827,13 +1082,19 @@ class UpdateContractScreen(Screen):
         self.update_customer_select_state()
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#contract_total_amount", Input),
@@ -859,7 +1120,11 @@ class UpdateContractScreen(Screen):
         all_valid = all_inputs_valid and all_selects_valid
         self.is_form_valid = all_valid
 
-    def update_total_amount_input_state(self):
+    def update_total_amount_input_state(self) -> None:
+        """Update the state of the total amount input field.
+
+        Disables the total amount field if the contract status is SIGNED.
+        """
         total_amount_input = self.query_one(
             "#contract_total_amount", Input
         )
@@ -869,7 +1134,11 @@ class UpdateContractScreen(Screen):
             contract_status == ContractStatus.SIGNED
         )
 
-    def update_amount_due_input_state(self):
+    def update_amount_due_input_state(self) -> None:
+        """Update the state of the amount due input field.
+
+        Disables the amount due field if the contract status is SIGNED.
+        """
         amount_due_input = self.query_one("#contract_amount_due", Input)
         contract_status = self.contract_data.get("contract_status")
 
@@ -877,20 +1146,25 @@ class UpdateContractScreen(Screen):
             contract_status == ContractStatus.SIGNED
         )
 
-    def update_customer_select_state(self):
-        amount_due_input = self.query_one(
+    def update_customer_select_state(self) -> None:
+        """Update the state of the customer select field.
+
+        Disables the customer selection if the contract status is SIGNED.
+        """
+        customer_select = self.query_one(
             "#update-contract-customer-select", Select
         )
         contract_status = self.contract_data.get("contract_status")
 
-        amount_due_input.disabled = (
-            contract_status == ContractStatus.SIGNED
-        )
+        customer_select.disabled = contract_status == ContractStatus.SIGNED
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -903,8 +1177,11 @@ class UpdateContractScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -917,8 +1194,11 @@ class UpdateContractScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -933,7 +1213,11 @@ class UpdateContractScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -948,14 +1232,26 @@ class UpdateContractScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated contract data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_contract_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self):
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_contract_data dictionary.
+
+        Retrieves values from all form fields and stores them in updated_contract_data.
+        """
         selected_customer = self.query_one(
             "#update-contract-customer-select", Select
         ).value
