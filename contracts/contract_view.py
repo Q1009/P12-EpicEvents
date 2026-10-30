@@ -680,7 +680,10 @@ class CreateContractScreen(Screen):
         :rtype: ComposeResult
         """
         yield Header(show_clock=True)
-        with Container(classes="create-contract-main-container"):
+        with Container(
+            id="create-contract-main-container",
+            classes="create-contract-main-container",
+        ):
             with Container(
                 id="contract-data",
                 classes="contract-data-input-container",
@@ -739,7 +742,10 @@ class CreateContractScreen(Screen):
                     id="contract-customer-select",
                     prompt="Select a customer",
                 )
-            with Container(classes="create-contract-buttons-container"):
+            with Container(
+                id="create-contract-buttons-container",
+                classes="create-contract-buttons-container",
+            ):
                 yield Button(
                     "Create",
                     id="create",
@@ -964,6 +970,7 @@ class UpdateContractScreen(Screen):
                 f"{self.contract_data['contract_customer'].first_name} "
                 f"{self.contract_data['contract_customer'].last_name}",
                 classes="updating-contract-static",
+                id="updating-contract-static",
             )
             with Container(
                 id="update-contract-data",
