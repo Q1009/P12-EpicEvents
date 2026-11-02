@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -31,7 +31,19 @@ from services.permission_services import PermissionServices
 
 
 class CustomerScreen(Screen):
-    """Screen that displays a table of customers."""
+    """Screen for displaying and managing customers in the EpicEvents CRM.
+
+    Provides a comprehensive view of all customers with their associated
+    contacts and phone numbers. Allows navigation to create and update
+    customer and contact records.
+
+    :param customers: List of Customer objects to display in the table.
+    :type customers: list[Customer]
+    :param user: The currently authenticated collaborator.
+    :type user: Collaborator
+    :param customer_id: Optional ID of a customer to pre-select in the table.
+    :type customer_id: int | None
+    """
 
     SUB_TITLE = "CUSTOMERS"
     CSS_PATH = "../styles/customer_screen.tcss"
@@ -58,12 +70,29 @@ class CustomerScreen(Screen):
         user: Collaborator,
         customer_id: int | None = None,
     ) -> None:
+        """Initialize the CustomerScreen with customers and user data.
+
+        :param customers: List of Customer objects to display in the table.
+        :type customers: list[Customer]
+        :param user: The currently authenticated collaborator.
+        :type user: Collaborator
+        :param customer_id: Optional ID of a customer to pre-select in the table.
+        :type customer_id: int | None
+        """
         super().__init__()
-        self.customers = customers
-        self.current_user = user
-        self.pre_selected_customer_id = customer_id
+        self.customers: list[Customer] = customers
+        self.current_user: Collaborator = user
+        self.pre_selected_customer_id: int | None = customer_id
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with data tables (customers, contacts,
+        phone numbers), action buttons, and footer.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="customer-main-container"):
             yield DataTable(id="customers-table")
@@ -94,7 +123,11 @@ class CustomerScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """."""
+        """Initialize the screen after mounting.
+
+        Builds all data tables, sets button states based on permissions,
+        and handles pre-selected customer if provided.
+        """
         self.build_customers_table()
         self.build_contacts_table()
         self.build_phone_numbers_table()
@@ -106,7 +139,7 @@ class CustomerScreen(Screen):
         # Setting initial selected_customer_id: triggering the watcher
         # If a customer id was given to constructor
         if self.pre_selected_customer_id is not None:
-            customer = next(
+            customer: Customer | None = next(
                 (
                     c
                     for c in self.customers
@@ -126,6 +159,10 @@ class CustomerScreen(Screen):
             self.selected_customer_id = self.customers[0].id
 
     def build_customers_table(self) -> None:
+        """Build and configure the customers data table.
+
+        Sets up column headers and loads customer data into the table.
+        """
         table = self.query_one("#customers-table", DataTable)
         table.border_title = "Customers"
         table.cursor_type = "row"
@@ -146,16 +183,26 @@ class CustomerScreen(Screen):
         self.load_customers(table)
 
     def load_customers(self, table: DataTable) -> None:
-        """Load customer data into the table."""
+        """Load customer data into the customers table.
+
+        Populates the table with customer data including sales representative
+        names and formatted creation/update dates.
+
+        :param table: The DataTable widget to populate with customer data.
+        :type table: DataTable
+        """
         table.clear()
 
         for customer in self.customers:
             # sales representative
-            sales_representative = (
-                customer.sales_representative.first_name
-                + " "
-                + customer.sales_representative.last_name
-            )
+            if customer.sales_representative:
+                sales_representative = (
+                    customer.sales_representative.first_name
+                    + " "
+                    + customer.sales_representative.last_name
+                )
+            else:
+                sales_representative = None
             # creation and update date format conversion
             created_at = format_french_datetime(customer.created_at)
             updated_at = format_french_datetime(customer.updated_at)
@@ -173,6 +220,10 @@ class CustomerScreen(Screen):
         table.loading = False
 
     def build_contacts_table(self) -> None:
+        """Build and configure the contacts data table.
+
+        Sets up column headers for displaying associated contact information.
+        """
         table = self.query_one("#customer-contacts-table", DataTable)
         table.border_title = "Contacts"
         table.cursor_type = "row"
@@ -186,6 +237,13 @@ class CustomerScreen(Screen):
         table.loading = True
 
     def load_contacts(self, table: DataTable, customer: Customer) -> None:
+        """Load contact data for the selected customer.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param customer: The Customer object containing contacts.
+        :type customer: Customer
+        """
         table.clear()
 
         for contact in customer.contacts:
@@ -199,6 +257,10 @@ class CustomerScreen(Screen):
         table.loading = False
 
     def build_phone_numbers_table(self) -> None:
+        """Build and configure the phone numbers data table.
+
+        Sets up column headers for displaying associated phone number information.
+        """
         table = self.query_one("#contact-phone-numbers-table", DataTable)
         table.border_title = "Phone Numbers"
         table.cursor_type = "row"
@@ -211,6 +273,13 @@ class CustomerScreen(Screen):
     def load_phone_numbers(
         self, table: DataTable, contact: Contact
     ) -> None:
+        """Load phone number data for the selected contact.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param contact: The Contact object containing phone numbers.
+        :type contact: Contact
+        """
         table.clear()
         for phone_number in contact.phone_numbers:
             table.add_row(
@@ -221,6 +290,14 @@ class CustomerScreen(Screen):
         table.loading = False
 
     def set_button_state(self, button_id: str) -> None:
+        """Set button visibility based on user permissions.
+
+        Checks if the current user has the required permissions for the button
+        and shows/hides it accordingly.
+
+        :param button_id: The ID of the button to check.
+        :type button_id: str
+        """
         if self.current_user is None:
             return
 
@@ -236,18 +313,17 @@ class CustomerScreen(Screen):
         ]
         if missing_permissions:
             self.query_one(f"#{button_id}", Button).display = False
-            # raise PermissionError(
-            #     f"User {user.email} lacks permissions: "
-            #     f"{', '.join(p.name for p in missing_permissions)}"
-            # )
         else:
             self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_customer_id(self, new_id: int | None) -> None:
-        """
-        Watcher that loads customer-contacts-table and updated
-        selected_contact_id based on the client highlighted
-        in customers-table
+        """Watcher that loads contacts and updates selected contact.
+
+        Updates the contacts table and selected contact when a new customer
+        is selected in the customers table. Also updates button states.
+
+        :param new_id: The ID of the newly selected customer.
+        :type new_id: int | None
         """
         contacts_table = self.query_one(
             "#customer-contacts-table", DataTable
@@ -259,11 +335,11 @@ class CustomerScreen(Screen):
             return
 
         # Get customer by ID
-        selected_customer = next(
+        selected_customer: Customer | None = next(
             (c for c in self.customers if c.id == new_id), None
         )
 
-        if selected_customer:
+        if selected_customer and selected_customer.contacts:
             self.load_contacts(contacts_table, selected_customer)
             self.selected_contact_id = selected_customer.contacts[0].id
 
@@ -272,9 +348,13 @@ class CustomerScreen(Screen):
         self.update_update_contact_button_state(selected_customer)
 
     def watch_selected_contact_id(self, new_id: int | None) -> None:
-        """
-        Watcher that loads contact-phone-numbers-table
-        based on the contact highlighted in customer-contacts-table
+        """Watcher that loads phone numbers based on the selected contact.
+
+        Updates the phone numbers table when a new contact is selected
+        in the contacts table.
+
+        :param new_id: The ID of the newly selected contact.
+        :type new_id: int | None
         """
         phone_numbers_table = self.query_one(
             "#contact-phone-numbers-table", DataTable
@@ -286,7 +366,7 @@ class CustomerScreen(Screen):
 
         # Get contact by ID
         if self.selected_customer_id:
-            selected_customer = next(
+            selected_customer: Customer | None = next(
                 (
                     c
                     for c in self.customers
@@ -295,7 +375,7 @@ class CustomerScreen(Screen):
                 None,
             )
             if selected_customer:
-                selected_contact = next(
+                selected_contact: Contact | None = next(
                     (
                         contact
                         for contact in selected_customer.contacts
@@ -309,44 +389,72 @@ class CustomerScreen(Screen):
                     )
 
     def update_update_customer_button_state(
-        self, selected_customer: Customer
+        self, selected_customer: Customer | None
     ) -> None:
+        """Update the state of the update customer button based on permissions.
+
+        Checks if the current user has permission to update their own customers
+        and if they are the sales representative for the selected customer.
+
+        :param selected_customer: The currently selected customer.
+        :type selected_customer: Customer | None
+        """
         update_customer_button = self.query_one("#update-customer", Button)
 
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_OWN_CUSTOMERS
         ):
-            update_customer_button.display = (
-                selected_customer.sales_representative_id
-                == self.current_user.id
-            )
+            if selected_customer is not None:
+                update_customer_button.display = (
+                    selected_customer.sales_representative_id
+                    == self.current_user.id
+                )
             return
 
         update_customer_button.display = False
 
     def update_update_contact_button_state(
-        self, selected_customer: Customer
+        self, selected_customer: Customer | None
     ) -> None:
+        """Update the state of the update contact button based on permissions.
+
+        Checks if the current user has permission to update contacts and
+        if they are the sales representative for the selected customer.
+
+        :param selected_customer: The currently selected customer.
+        :type selected_customer: Customer | None
+        """
         update_contact_button = self.query_one("#update-contact", Button)
 
         if PermissionServices.has_permission(
             self.current_user, Permission.UPDATE_CONTACT
         ):
-            update_contact_button.display = (
-                selected_customer.sales_representative_id
-                == self.current_user.id
-            )
+            if selected_customer is not None:
+                update_contact_button.display = (
+                    selected_customer.sales_representative_id
+                    == self.current_user.id
+                )
             return
 
         update_contact_button.display = False
 
     def action_go_back(self) -> None:
-        """Return to previous screen."""
+        """Return to previous screen.
+
+        Dismisses the screen with "back" action.
+        """
         self.dismiss("back")
 
     @on(DataTable.RowHighlighted, "#customers-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-        """Saves highlighted customer id"""
+        """Save highlighted customer id.
+
+        Updates the selected_customer_id reactive variable when a row is highlighted
+        in the customers table, which triggers the watcher to update related tables.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         customers_table = self.query_one("#customers-table", DataTable)
         # Get value from the cell
         customer_id = customers_table.get_cell(
@@ -359,7 +467,14 @@ class CustomerScreen(Screen):
     def on_contact_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
-        """Saves highlighted contact id"""
+        """Save highlighted contact id.
+
+        Updates the selected_contact_id reactive variable when a row is highlighted
+        in the contacts table, which triggers the watcher to update phone numbers table.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         customer_contacts_table = self.query_one(
             "#customer-contacts-table", DataTable
         )
@@ -376,23 +491,46 @@ class CustomerScreen(Screen):
 
     @on(Button.Pressed, "#create-customer")
     def go_create_customer(self) -> None:
+        """Navigate to create customer screen.
+
+        Dismisses the screen with "create_customer" action.
+        """
         self.dismiss("create_customer")
 
     @on(Button.Pressed, "#update-customer")
     def go_update_customer(self) -> None:
+        """Navigate to update customer screen for selected customer.
+
+        Dismisses the screen with a tuple containing action and customer ID.
+        """
         self.dismiss(("update_customer", self.selected_customer_id))
 
     @on(Button.Pressed, "#create-contact")
     def go_create_contact(self) -> None:
+        """Navigate to create contact screen.
+
+        Dismisses the screen with "create_contact" action.
+        """
         self.dismiss("create_contact")
 
     @on(Button.Pressed, "#update-contact")
     def go_update_contact(self) -> None:
+        """Navigate to update contact screen for selected contact.
+
+        Dismisses the screen with a tuple containing action and contact ID.
+        """
         self.dismiss(("update_contact", self.selected_contact_id))
 
 
 class CreateCustomerScreen(Screen):
-    """Screen that displays a form to create a new customer."""
+    """Screen for creating a new customer in the EpicEvents CRM.
+
+    Provides a form for entering customer details and associated contact
+    information. Allows selection of an existing contact or creation of a new one.
+
+    :param contacts: List of existing contacts to choose from.
+    :type contacts: list[Contact]
+    """
 
     SUB_TITLE = "CREATE CUSTOMERS"
     CSS_PATH = "../styles/create_customer_screen.tcss"
@@ -400,12 +538,25 @@ class CreateCustomerScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, contacts: list[Contact]):
+    def __init__(self, contacts: list[Contact]) -> None:
+        """Initialize the CreateCustomerScreen with available contacts.
+
+        :param contacts: List of existing contacts to choose from.
+        :type contacts: list[Contact]
+        """
         super().__init__()
-        self.contacts = contacts
-        self.customer_data = {}
+        self.contacts: list[Contact] = contacts
+        self.customer_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (customer data,
+        contact selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-customer-main-container"):
             with Container(
@@ -560,6 +711,11 @@ class CreateCustomerScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles for containers and hides the select container
+        by default (showing new contact form instead).
+        """
         customer_data_container = self.query_one(
             "#customer-data", Container
         )
@@ -575,13 +731,19 @@ class CreateCustomerScreen(Screen):
         ).display = False
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#customer_last_name", Input),
@@ -624,8 +786,11 @@ class CreateCustomerScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -638,8 +803,11 @@ class CreateCustomerScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -652,8 +820,11 @@ class CreateCustomerScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -668,7 +839,11 @@ class CreateCustomerScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -685,7 +860,14 @@ class CreateCustomerScreen(Screen):
     def on_contact_input_choice_changed(
         self, event: RadioSet.Changed
     ) -> None:
-        """Toggle containers' display based on user radiobutton input"""
+        """Toggle containers' display based on user radio button input.
+
+        Shows either the contact select or the new contact form container
+        based on user choice.
+
+        :param event: The radio set changed event.
+        :type event: RadioSet.Changed
+        """
         self._validate_form()
         select_container = self.query_one(
             "#customer-contact-select-input-container", Container
@@ -703,15 +885,27 @@ class CreateCustomerScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the customer data.
+        """
         self._collect_form_data()
         self.dismiss(self.customer_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
-        """Collect all form data into a dictionary."""
+    def _collect_form_data(self) -> None:
+        """Collect all form data into customer_data dictionary.
+
+        Retrieves values from all form fields and stores them in customer_data.
+        Handles both existing contact selection and new contact creation.
+        """
         radio_set = self.query_one(
             "#customer-contact-input-choice", RadioSet
         )
@@ -750,7 +944,19 @@ class CreateCustomerScreen(Screen):
 
 
 class UpdateCustomerScreen(Screen):
-    """."""
+    """Screen for updating an existing customer in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing customer data for modification.
+    Allows updating personal details, company name, assigned contacts, and
+    sales representative.
+
+    :param customer_data: Dictionary containing all data of the customer to update.
+    :type customer_data: dict[str, Any]
+    :param contacts: List of existing contacts to choose from.
+    :type contacts: list[Contact]
+    :param sales_representatives: List of sales representatives to choose from.
+    :type sales_representatives: list[Collaborator]
+    """
 
     SUB_TITLE = "UPDATE CUSTOMERS"
     CSS_PATH = "../styles/update_customer_screen.tcss"
@@ -760,19 +966,36 @@ class UpdateCustomerScreen(Screen):
 
     def __init__(
         self,
-        customer_data: dict,
+        customer_data: dict[str, Any],
         contacts: list[Contact],
         sales_representatives: list[Collaborator],
-    ):
-        super().__init__()
-        self.customer_data = customer_data
-        self.updated_customer_data = {}
-        self.contacts = contacts
-        self.sales_representatives = sales_representatives
+    ) -> None:
+        """Initialize the UpdateCustomerScreen with customer data and options.
 
-    def compose(self):
+        :param customer_data: Dictionary containing all data of the customer to update.
+        :type customer_data: dict[str, Any]
+        :param contacts: List of existing contacts to choose from.
+        :type contacts: list[Contact]
+        :param sales_representatives: List of sales representatives to choose from.
+        :type sales_representatives: list[Collaborator]
         """
-        Compose the screen with a form to update customer data.
+        super().__init__()
+        self.customer_data: dict[str, Any] = customer_data
+        self.updated_customer_data: dict[str, Any] = {}
+        self.contacts: list[Contact] = contacts
+        self.sales_representatives: list[Collaborator] = (
+            sales_representatives
+        )
+
+    def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (personal data,
+        contacts selection, sales representative selection), and footer with
+        action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         yield Header(show_clock=True)
         with Container(classes="update-customer-main-container"):
@@ -853,8 +1076,8 @@ class UpdateCustomerScreen(Screen):
                 id="update-customer-sales-representative",
                 classes="update-customer-sales-representative-input-container",
             ):
-                # Add current collaborator if he is not from sales==
-                collab = self.customer_data.get(
+                # Add current collaborator if he is not from sales
+                collab: Collaborator | None = self.customer_data.get(
                     "customer_sales_representative"
                 )
                 if collab not in self.sales_representatives:
@@ -871,7 +1094,7 @@ class UpdateCustomerScreen(Screen):
                     )
                     for sales_representative in self.sales_representatives
                 ]
-                selected_sales_representative = next(
+                selected_sales_representative: Collaborator | None = next(
                     (
                         sales_representative
                         for sales_representative in self.sales_representatives
@@ -907,11 +1130,11 @@ class UpdateCustomerScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def _on_mount(self):
-        """
-        Fill the selection list with contacts and the pretty with selected contacts
-        """
+    def on_mount(self) -> None:
+        """Initialize the screen after mounting.
 
+        Sets container border titles and subtitles for all form sections.
+        """
         self.query_one(
             "#update-customer-data", Container
         ).border_title = "Personal Data"
@@ -929,13 +1152,19 @@ class UpdateCustomerScreen(Screen):
         ).border_subtitle = "Click on contact to assign/unassign"
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input, select, and selection list fields.
         """
         widget_inputs = [
             self.query_one("#customer_last_name", Input),
@@ -979,8 +1208,11 @@ class UpdateCustomerScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -993,8 +1225,11 @@ class UpdateCustomerScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1007,8 +1242,11 @@ class UpdateCustomerScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -1023,7 +1261,11 @@ class UpdateCustomerScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -1040,8 +1282,11 @@ class UpdateCustomerScreen(Screen):
     def show_selection_list_invalid_reasons(
         self, event: SelectionList.SelectedChanged
     ) -> None:
-        """Activates when the collection of selected values of the SelectionList changes."""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed selection list.
+
+        :param event: The selection list changed event.
+        :type event: SelectionList.SelectedChanged
+        """
         self._validate_form()
         selection_list_widget = event.selection_list
 
@@ -1056,19 +1301,32 @@ class UpdateCustomerScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated customer data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_customer_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self):
-        """."""
-        selected_sales_representative = self.query_one(
-            "#update-customer-sales-representative-select", Select
-        ).value
-        selected_contacts = [
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_customer_data dictionary.
+
+        Retrieves values from all form fields and stores them in updated_customer_data.
+        """
+        selected_sales_representative: Collaborator | None = (
+            self.query_one(
+                "#update-customer-sales-representative-select", Select
+            ).value
+        )
+        selected_contacts: list[Contact] = [
             selection
             for selection in self.query_one(SelectionList).selected
         ]
@@ -1088,7 +1346,16 @@ class UpdateCustomerScreen(Screen):
 
 
 class CreateContactScreen(Screen):
-    """."""
+    """Screen for creating a new contact in the EpicEvents CRM.
+
+    Provides a form for entering contact details including name, email,
+    and one or more phone numbers. Allows dynamically adding additional
+    phone number fields.
+
+    Note:
+        This screen is used for creating standalone contacts that can
+        later be associated with customers.
+    """
 
     SUB_TITLE = "CREATE CONTACT"
     CSS_PATH = "../styles/create_contact_screen.tcss"
@@ -1096,12 +1363,24 @@ class CreateContactScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the CreateContactScreen.
+
+        Creates a new screen instance for contact creation.
+        """
         super().__init__()
-        self.contact_data = {}
-        self.phone_number_counter = 2
+        self.contact_data: dict[str, Any] = {}
+        self.phone_number_counter: int = 2
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (personal data,
+        phone numbers), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-contact-main-container"):
             with Container(
@@ -1195,6 +1474,10 @@ class CreateContactScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles for contact data and phone number containers.
+        """
         contact_data_container = self.query_one("#contact-data", Container)
         phone_number_container = self.query_one("#phone-number", Container)
         contact_data_container.border_title = "Personal Data"
@@ -1202,8 +1485,10 @@ class CreateContactScreen(Screen):
 
     @on(Button.Pressed, "#add-phone-number")
     def on_add_phone_number(self) -> None:
-        """
-        Adds a field to input new phone number
+        """Add a new phone number input field.
+
+        Dynamically adds a new label and input field for an additional phone number
+        before the phone number buttons container, and increments the counter.
         """
         container = self.query_one("#phone-number", Container)
         # New label
@@ -1240,13 +1525,19 @@ class CreateContactScreen(Screen):
         self._validate_form()
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input fields, including dynamically added phone number fields.
         """
         widget_inputs = [
             self.query_one("#contact_last_name", Input),
@@ -1273,8 +1564,11 @@ class CreateContactScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1287,8 +1581,11 @@ class CreateContactScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1301,17 +1598,29 @@ class CreateContactScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the contact data.
+        """
         self._collect_form_data()
         self.dismiss(self.contact_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
-        """Collect all form data into a dictionary."""
+    def _collect_form_data(self) -> None:
+        """Collect all form data into contact_data dictionary.
+
+        Retrieves values from all form fields and stores them in contact_data,
+        including all phone numbers from dynamically added fields.
+        """
         all_inputs = self.query(Input)
-        phone_numbers = []
+        phone_numbers: list[str] = []
 
         for input in all_inputs:
             if (
@@ -1334,8 +1643,14 @@ class CreateContactScreen(Screen):
 
 
 class UpdateContactScreen(Screen):
-    """
-    Screen to update a contact with editable phone numbers.
+    """Screen for updating an existing contact in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing contact data for modification.
+    Allows updating personal details and phone numbers, with the ability to
+    add additional phone number fields dynamically.
+
+    :param contact_data: Dictionary containing all data of the contact to update.
+    :type contact_data: dict[str, Any]
     """
 
     SUB_TITLE = "UPDATE CONTACT"
@@ -1344,16 +1659,29 @@ class UpdateContactScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, contact_data: dict):
+    def __init__(self, contact_data: dict[str, Any]) -> None:
+        """Initialize the UpdateContactScreen with contact data.
+
+        :param contact_data: Dictionary containing all data of the contact to update.
+        :type contact_data: dict[str, Any]
+        """
         super().__init__()
-        self.contact_data = contact_data
-        self.updated_contact_data = {}
+        self.contact_data: dict[str, Any] = contact_data
+        self.updated_contact_data: dict[str, Any] = {}
         # Counter for additional phone numbers (starts after the existing ones)
-        self.phone_number_counter = len(
+        self.phone_number_counter: int = len(
             contact_data.get("phone_numbers", [])
         )
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (personal data,
+        phone numbers), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="update-contact-main-container"):
             yield Static(
@@ -1460,6 +1788,10 @@ class UpdateContactScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles and subtitles for personal data and phone number sections.
+        """
         self.query_one(
             "#update-contact-data", Container
         ).border_title = "Personal Data"
@@ -1475,8 +1807,10 @@ class UpdateContactScreen(Screen):
 
     @on(Button.Pressed, "#add-phone-number")
     def on_add_phone_number(self) -> None:
-        """
-        Add a new phone number input field before the button container.
+        """Add a new phone number input field.
+
+        Dynamically adds a new label and input field for an additional phone number
+        before the phone number buttons container, and increments the counter.
         """
         container = self.query_one("#update-phone-number", Container)
         buttons_container = self.query_one(
@@ -1491,7 +1825,7 @@ class UpdateContactScreen(Screen):
         input_field = Input(
             placeholder="00 12 34 56 78",
             id=f"phone_number_{self.phone_number_counter + 1}",
-            type="number",
+            type="text",
             classes="form-input",
         )
 
@@ -1504,13 +1838,19 @@ class UpdateContactScreen(Screen):
         self._validate_form()
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input fields, including dynamically added phone number fields.
         """
         widget_inputs = [
             self.query_one("#contact_last_name", Input),
@@ -1537,8 +1877,11 @@ class UpdateContactScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1551,8 +1894,11 @@ class UpdateContactScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -1565,17 +1911,29 @@ class UpdateContactScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated contact data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_contact_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
-        """Collect all form data including all phone numbers."""
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_contact_data dictionary.
+
+        Retrieves values from all form fields and stores them in updated_contact_data,
+        including all phone numbers from dynamically added fields.
+        """
         all_inputs = self.query(Input)
-        phone_numbers = []
+        phone_numbers: list[str] = []
 
         for input in all_inputs:
             if (

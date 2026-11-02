@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -27,25 +29,83 @@ from services.authentication_services import (
     AuthenticationServices,
 )
 
+if TYPE_CHECKING:
+    from textual.app import App
+
 
 class CustomerController:
-    def __init__(self, epic_events_app, session):
+    """Controller for managing customers and contacts in the EpicEvents CRM.
+
+    Handles all customer-related operations including listing, creating, updating,
+    and managing customer and contact data. Coordinates between the database
+    (via SQLAlchemy session), the views, and the authentication controller.
+
+    :param epic_events_app: The main Textual application instance for screen management.
+    :type epic_events_app: textual.app.App
+    :param session: The SQLAlchemy database session for database operations.
+    :type session: sqlalchemy.orm.Session
+
+    .. note::
+        This controller uses the MVC pattern, receiving user input from views
+        and updating both the model (database) and views accordingly.
+    """
+
+    def __init__(self, epic_events_app: "App", session: Session) -> None:
+        """Initialize the CustomerController with application and database session.
+
+        Stores references to the main application and database session, and
+        initializes the authentication controller for user operations.
+
+        :param epic_events_app: The main Textual application instance.
+        :type epic_events_app: textual.app.App
+        :param session: SQLAlchemy database session for database operations.
+        :type session: sqlalchemy.orm.Session
+        """
         self.session: Session = session
-        self.epic_events_app = epic_events_app
-        self.on_back_callback = None
-        self.authentication_controller = AuthenticationController(
-            self.epic_events_app, self.session
+        self.epic_events_app: App = epic_events_app
+        self.on_back_callback: Callable[[], None] | None = None
+        self.authentication_controller: AuthenticationController = (
+            AuthenticationController(self.epic_events_app, self.session)
         )
 
-    def start(self, customer_id=None, on_back=None):
+    def start(
+        self,
+        customer_id: int | None = None,
+        on_back: Callable[[], None] | None = None,
+    ) -> None:
+        """Start the customer management workflow.
+
+        Stores the back callback and pushes the customer list screen with
+        all customers, optionally pre-selecting a specific customer.
+
+        :param customer_id: Optional ID of a customer to pre-select in the list.
+        :type customer_id: int | None
+        :param on_back: Callback function to execute when user returns to previous screen.
+        :type on_back: Callable[[], None] | None
+        """
         self.on_back_callback = on_back
-        customers = self.get_all_customers()
+        customers: list[Customer] = self.get_all_customers()
         self.push_customer_screen(
             customers=customers, customer_id=customer_id
         )
 
-    def handle_user_choice(self, user_choice):
-        """Callback when user chooses from customer menu"""
+    def handle_user_choice(
+        self, user_choice: str | tuple[str, Any]
+    ) -> None:
+        """Process user selection from the customer menu.
+
+        Routes the user's menu choice to the appropriate action or screen.
+        Handles navigation between screens, creating/updating customers and
+        contacts, and application exit.
+
+        :param user_choice: The user's selected menu option, which can be a simple
+            string or a tuple containing the action and additional parameters.
+        :type user_choice: str | tuple[str, Any]
+
+        .. note::
+            Available choices include: create_customer, update_customer, create_contact,
+            update_contact, back, and quit.
+        """
         match user_choice:
             case "create_customer":
                 self.push_create_customer_screen()
@@ -58,13 +118,17 @@ class CustomerController:
             case "back":
                 if self.on_back_callback:
                     self.on_back_callback()
-                # return
             case "quit":
                 self.epic_events_app.exit()
 
     def get_all_customers(self) -> list[Customer]:
-        """
-        Returns all customers from the database.
+        """Retrieve all customers from the database.
+
+        Returns all :class:`Customer` objects with their associated contacts,
+        contact phone numbers, and sales representative loaded via eager loading.
+
+        :return: List of all Customer objects with related data.
+        :rtype: list[Customer]
         """
         return (
             self.session.query(Customer)
@@ -78,6 +142,11 @@ class CustomerController:
         )
 
     def get_sales_representatives(self) -> list[Collaborator]:
+        """Retrieve all collaborators from the sales department.
+
+        :return: List of Collaborator objects who are in the sales department.
+        :rtype: list[Collaborator]
+        """
         return (
             self.session.query(Collaborator)
             .join(Collaborator.department)
@@ -85,8 +154,20 @@ class CustomerController:
             .all()
         )
 
-    def load_customer_data_for_update(self, customer_id: int):
-        customer = (
+    def load_customer_data_for_update(
+        self, customer_id: int
+    ) -> dict[str, Any]:
+        """Load customer data for the update form.
+
+        Retrieves a customer by ID and returns its data as a dictionary
+        suitable for pre-filling an update form.
+
+        :param customer_id: The ID of the customer to load.
+        :type customer_id: int
+        :return: Dictionary containing all customer fields for the update form.
+        :rtype: dict[str, Any]
+        """
+        customer: Customer | None = (
             self.session.query(Customer)
             .filter(Customer.id == customer_id)
             .first()
@@ -101,11 +182,20 @@ class CustomerController:
             "customer_sales_representative": customer.sales_representative,
         }
 
-    def load_contact_data_for_update(self, contact_id: int):
+    def load_contact_data_for_update(
+        self, contact_id: int
+    ) -> dict[str, Any]:
+        """Load contact data for the update form.
+
+        Retrieves a contact by ID and returns its data as a dictionary
+        suitable for pre-filling an update form, including all phone numbers.
+
+        :param contact_id: The ID of the contact to load.
+        :type contact_id: int
+        :return: Dictionary containing all contact fields for the update form.
+        :rtype: dict[str, Any]
         """
-        Load contact data for the update form.
-        """
-        contact = (
+        contact: Contact | None = (
             self.session.query(Contact)
             .options(joinedload(Contact.phone_numbers))
             .filter(Contact.id == contact_id)
@@ -123,16 +213,22 @@ class CustomerController:
         }
 
     def get_all_contacts(self) -> list[Contact]:
-        """
-        Returns all contacts from the database.
+        """Retrieve all contacts from the database.
+
+        :return: List of all Contact objects.
+        :rtype: list[Contact]
         """
         return self.session.query(Contact).all()
 
     def get_customers_by_sales_rep_id(
         self, user_id: int
     ) -> list[Customer]:
-        """
-        Returns all customers where sales_representative_id matches the given user_id.
+        """Retrieve all customers assigned to a specific sales representative.
+
+        :param user_id: The ID of the sales representative.
+        :type user_id: int
+        :return: List of Customer objects assigned to the specified sales representative.
+        :rtype: list[Customer]
         """
         return (
             self.session.query(Customer)
@@ -141,8 +237,10 @@ class CustomerController:
         )
 
     def get_customers_without_sales_rep(self) -> list[Customer]:
-        """
-        Returns all customers that have no sales_representative_id assigned.
+        """Retrieve all customers that have no sales representative assigned.
+
+        :return: List of Customer objects with no sales representative.
+        :rtype: list[Customer]
         """
         return (
             self.session.query(Customer)
@@ -156,22 +254,21 @@ class CustomerController:
         customers: list[Customer],
         customer_id: int | None = None,
     ) -> None:
-        """
-        Push the customer list screen onto the application screen stack.
+        """Push the customer list screen onto the application screen stack.
 
-        Instantiates a :class:`CustomerScreen` with the provided customers and an optional
-        pre-selected customer ID, then pushes it onto the application's screen stack
-        with a callback to :meth:`handle_user_choice`.
+        Instantiates a :class:`CustomerScreen` with the provided customers and an
+        optional pre-selected customer ID, then pushes it onto the application's
+        screen stack with a callback to :meth:`handle_user_choice`.
 
         :param customers: List of :class:`Customer` objects to display in the screen table.
         :type customers: list[Customer]
         :param customer_id: Optional ID of a customer to pre-select in the table.
             If provided, the corresponding customer will be highlighted. Defaults to None.
         :type customer_id: int | None
-        :return: None
-        :rtype: None
         """
-        current_user = AuthenticationServices.get_user_info(self.session)
+        current_user: Collaborator | None = (
+            AuthenticationServices.get_user_info(self.session)
+        )
         customers_screen = CustomerScreen(
             customers=customers,
             user=current_user,
@@ -183,17 +280,13 @@ class CustomerController:
 
     @AuthenticationServices.check_authentication
     def push_create_customer_screen(self) -> None:
-        """
-        Push the create customer screen onto the application screen stack.
+        """Push the create customer screen onto the application screen stack.
 
         Retrieves all contacts and instantiates a :class:`CreateCustomerScreen`
         with them, then pushes it onto the application's screen stack with a callback
         to :meth:`create_customer`.
-
-        :return: None
-        :rtype: None
         """
-        all_contacts = self.get_all_contacts()
+        all_contacts: list[Contact] = self.get_all_contacts()
         create_customer_screen = CreateCustomerScreen(
             contacts=all_contacts
         )
@@ -204,8 +297,7 @@ class CustomerController:
 
     @AuthenticationServices.check_authentication
     def push_update_customer_screen(self, customer_id: int) -> None:
-        """
-        Push the update customer screen onto the application screen stack.
+        """Push the update customer screen onto the application screen stack.
 
         Retrieves all contacts and sales representatives, loads the data for the
         customer to update, instantiates an :class:`UpdateCustomerScreen` with this
@@ -215,13 +307,13 @@ class CustomerController:
         :param customer_id: The ID of the customer to update. The corresponding
             customer data will be loaded and pre-filled in the update form.
         :type customer_id: int
-        :return: None
-        :rtype: None
         """
-        all_contacts = self.get_all_contacts()
-        sales_representatives = self.get_sales_representatives()
-        customer_to_update = self.load_customer_data_for_update(
-            customer_id
+        all_contacts: list[Contact] = self.get_all_contacts()
+        sales_representatives: list[Collaborator] = (
+            self.get_sales_representatives()
+        )
+        customer_to_update: dict[str, Any] = (
+            self.load_customer_data_for_update(customer_id)
         )
         update_customer_screen = UpdateCustomerScreen(
             customer_data=customer_to_update,
@@ -234,14 +326,10 @@ class CustomerController:
 
     @AuthenticationServices.check_authentication
     def push_create_contact_screen(self) -> None:
-        """
-        Push the create contact screen onto the application screen stack.
+        """Push the create contact screen onto the application screen stack.
 
         Instantiates a :class:`CreateContactScreen` and pushes it onto the
         application's screen stack with a callback to :meth:`create_contact`.
-
-        :return: None
-        :rtype: None
         """
         create_contact_screen = CreateContactScreen()
         self.epic_events_app.push_screen(
@@ -250,8 +338,7 @@ class CustomerController:
 
     @AuthenticationServices.check_authentication
     def push_update_contact_screen(self, contact_id: int) -> None:
-        """
-        Push the update contact screen onto the application screen stack.
+        """Push the update contact screen onto the application screen stack.
 
         Loads the data for the contact to update, instantiates an
         :class:`UpdateContactScreen` with this data, and pushes it onto the
@@ -260,10 +347,10 @@ class CustomerController:
         :param contact_id: The ID of the contact to update. The corresponding
             contact data will be loaded and pre-filled in the update form.
         :type contact_id: int
-        :return: None
-        :rtype: None
         """
-        contact_to_update = self.load_contact_data_for_update(contact_id)
+        contact_to_update: dict[str, Any] = (
+            self.load_contact_data_for_update(contact_id)
+        )
         update_contact_screen = UpdateContactScreen(
             contact_data=contact_to_update
         )
@@ -272,8 +359,19 @@ class CustomerController:
         )
 
     @AuthenticationServices.check_authentication
-    def create_customer(self, new_customer_data):
-        """ """
+    def create_customer(
+        self, new_customer_data: dict[str, Any] | None
+    ) -> None:
+        """Create a new customer and associated contact in the database.
+
+        Handles the customer creation form submission. If creation is cancelled,
+        returns to the customer list. Otherwise, processes the form data, creates
+        the contact, phone number, and customer objects, and saves them to the database.
+
+        :param new_customer_data: Dictionary containing customer and contact data from
+            the form, or None if creation was cancelled.
+        :type new_customer_data: dict[str, Any] | None
+        """
         # If creation was cancelled
         if not new_customer_data:
             self.epic_events_app.notify(
@@ -284,9 +382,11 @@ class CustomerController:
 
         # Else, transform raw data (dict) from submitted form
         # Contact
-        customer_contact = new_customer_data["customer_contact"]
+        customer_contact: Contact | dict[str, Any] = new_customer_data[
+            "customer_contact"
+        ]
         if isinstance(customer_contact, Contact):
-            new_customer_contact = customer_contact
+            new_customer_contact: Contact = customer_contact
         else:
             new_customer_contact = Contact(
                 last_name=customer_contact["last_name"],
@@ -296,14 +396,14 @@ class CustomerController:
             self.session.add(new_customer_contact)
 
             # Phone Number
-            phone_number = PhoneNumber(
+            phone_number: PhoneNumber = PhoneNumber(
                 number=customer_contact["phone_number"],
                 contact=new_customer_contact,
             )
             self.session.add(phone_number)
 
         # Customer
-        customer = Customer(
+        customer: Customer = Customer(
             last_name=new_customer_data["customer_last_name"],
             first_name=new_customer_data["customer_first_name"],
             company_name=new_customer_data["company_name"],
@@ -320,8 +420,20 @@ class CustomerController:
         self.start(on_back=self.on_back_callback)
 
     @AuthenticationServices.check_authentication
-    def update_customer(self, updated_customer_data):
-        """ """
+    def update_customer(
+        self, updated_customer_data: dict[str, Any] | None
+    ) -> None:
+        """Update an existing customer in the database.
+
+        Handles the customer update form submission. If update is cancelled,
+        returns to the customer list. Otherwise, processes the form data and
+        updates the corresponding customer in the database, including its
+        associated contacts and sales representative.
+
+        :param updated_customer_data: Dictionary containing updated customer data
+            from the form, or None if update was cancelled.
+        :type updated_customer_data: dict[str, Any] | None
+        """
         if not updated_customer_data:
             self.epic_events_app.notify(
                 "Customer update cancelled", severity="warning"
@@ -329,11 +441,11 @@ class CustomerController:
             self.start(on_back=self.on_back_callback)
             return
 
-        customer = self.session.query(Customer).filter(
+        customer_query = self.session.query(Customer).filter(
             Customer.id == updated_customer_data["id"]
         )
 
-        customer.update(
+        customer_query.update(
             {
                 "first_name": updated_customer_data["customer_first_name"],
                 "last_name": updated_customer_data["customer_last_name"],
@@ -345,9 +457,8 @@ class CustomerController:
             }
         )
 
-        customer.first().contacts = updated_customer_data[
-            "customer_contacts"
-        ]
+        customer: Customer = customer_query.first()
+        customer.contacts = updated_customer_data["customer_contacts"]
 
         self.session.commit()
         self.epic_events_app.notify(
@@ -356,8 +467,19 @@ class CustomerController:
         self.start(on_back=self.on_back_callback)
 
     @AuthenticationServices.check_authentication
-    def create_contact(self, new_contact_data):
-        """ """
+    def create_contact(
+        self, new_contact_data: dict[str, Any] | None
+    ) -> None:
+        """Create a new contact in the database.
+
+        Handles the contact creation form submission. If creation is cancelled,
+        returns to the customer list. Otherwise, processes the form data, creates
+        the contact object and associated phone numbers, and saves them to the database.
+
+        :param new_contact_data: Dictionary containing contact data from the form,
+            or None if creation was cancelled.
+        :type new_contact_data: dict[str, Any] | None
+        """
         # If creation was cancelled
         if not new_contact_data:
             self.epic_events_app.notify(
@@ -367,7 +489,7 @@ class CustomerController:
             return
 
         # Else, transform raw data (dict) from submitted form
-        contact = Contact(
+        contact: Contact = Contact(
             first_name=new_contact_data["contact_first_name"],
             last_name=new_contact_data["contact_last_name"],
             email=new_contact_data["email"],
@@ -376,7 +498,7 @@ class CustomerController:
 
         # Phone numbers
         for phone_number in new_contact_data["phone_numbers"]:
-            new_phone_number = PhoneNumber(
+            new_phone_number: PhoneNumber = PhoneNumber(
                 number=phone_number, contact=contact
             )
             self.session.add(new_phone_number)
@@ -388,9 +510,19 @@ class CustomerController:
         self.start(on_back=self.on_back_callback)
 
     @AuthenticationServices.check_authentication
-    def update_contact(self, updated_contact_data):
-        """
-        Update contact and its phone numbers.
+    def update_contact(
+        self, updated_contact_data: dict[str, Any] | None
+    ) -> None:
+        """Update an existing contact in the database.
+
+        Handles the contact update form submission. If update is cancelled,
+        returns to the customer list. Otherwise, processes the form data and
+        updates the corresponding contact in the database, including replacing
+        all associated phone numbers with the new ones from the form.
+
+        :param updated_contact_data: Dictionary containing updated contact data
+            from the form, or None if update was cancelled.
+        :type updated_contact_data: dict[str, Any] | None
         """
         if not updated_contact_data:
             self.epic_events_app.notify(
@@ -399,7 +531,7 @@ class CustomerController:
             self.start(on_back=self.on_back_callback)
             return
 
-        contact_id = updated_contact_data["id"]
+        contact_id: int = updated_contact_data["id"]
         self.session.query(Contact).filter(
             Contact.id == updated_contact_data["id"]
         ).update(
@@ -410,7 +542,7 @@ class CustomerController:
             }
         )
         # Delete old phone numbers
-        old_phones = (
+        old_phones: list[PhoneNumber] = (
             self.session.query(PhoneNumber)
             .filter(PhoneNumber.contact_id == contact_id)
             .all()
@@ -419,13 +551,15 @@ class CustomerController:
             self.session.delete(phone)
 
         # Add new phone numbers
-        contact = (
+        contact: Contact = (
             self.session.query(Contact)
             .filter(Contact.id == updated_contact_data["id"])
             .first()
         )
         for phone_number in updated_contact_data.get("phone_numbers", []):
-            new_phone = PhoneNumber(number=phone_number, contact=contact)
+            new_phone: PhoneNumber = PhoneNumber(
+                number=phone_number, contact=contact
+            )
             self.session.add(new_phone)
 
         self.session.commit()
@@ -434,10 +568,20 @@ class CustomerController:
         )
         self.start(on_back=self.on_back_callback)
 
-    def _handle_auth_failure(self, error: AuthenticationError | None):
-        """Handles authentication failure"""
-        # if error:
-        #     self.epic_events_app.notify(
-        #         f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
-        #     )
-        self.on_back_callback()
+    def _handle_auth_failure(
+        self, error: AuthenticationError | None
+    ) -> None:
+        """Handle authentication failure scenarios.
+
+        Called when authentication fails. Displays an error notification if
+        an error occurred and returns to the previous screen via the back callback.
+
+        :param error: The authentication error that occurred, if any.
+        :type error: AuthenticationError | None
+        """
+        if error:
+            self.epic_events_app.notify(
+                f"[bold red]⚠️  {error!s}[/bold red]", severity="error"
+            )
+        if self.on_back_callback:
+            self.on_back_callback()
