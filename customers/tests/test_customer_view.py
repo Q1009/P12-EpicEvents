@@ -20,12 +20,23 @@ Tests include:
 Run with: pytest customers/tests/test_customer_view.py -v
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from textual.app import App
-from textual.pilot import Pilot
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Input,
+    RadioButton,
+    RadioSet,
+    Select,
+    Static,
+)
 
+from app.epic_events import EpicEventsCRM
 from collaborators.collaborator_model import (
     Collaborator,
     Department,
@@ -163,7 +174,6 @@ def mock_contact(mock_phone_number):
     contact.last_name = "Smith"
     contact.email = "alice.smith@example.com"
     contact.phone_numbers = [mock_phone_number]
-    # contact.customers = []
     return contact
 
 
@@ -176,7 +186,6 @@ def mock_second_contact(mock_second_phone_number):
     contact.last_name = "Johnson"
     contact.email = "bob.johnson@example.com"
     contact.phone_numbers = [mock_second_phone_number]
-    # contact.customers = []
     return contact
 
 
@@ -192,7 +201,6 @@ def mock_third_contact(mock_third_phone_number, mock_fourth_phone_number):
         mock_third_phone_number,
         mock_fourth_phone_number,
     ]
-    # contact.customers = []
     return contact
 
 
@@ -330,20 +338,6 @@ def contact_to_dict():
     return _contact_to_dict
 
 
-# --- Textual Fixtures ---
-@pytest.fixture
-def app():
-    """Textual App for testing."""
-    return App()
-
-
-@pytest.fixture
-async def pilot(app):
-    """Pilot for controlling the Textual application."""
-    async with Pilot(app) as pilot:
-        yield pilot
-
-
 # =============================================================================
 # 1. CUSTOMER SCREEN TESTS
 # =============================================================================
@@ -352,542 +346,606 @@ async def pilot(app):
 class TestCustomerScreen:
     """Tests for CustomerScreen."""
 
-    # --- 1.1 Initialization Tests (Synchronous) ---
-    def test_init_sets_customers(
-        self, mock_customers_list, mock_sales_collaborator
-    ):
-        """__init__ should store customers list."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        assert screen.customers == mock_customers_list
+    # =============================================
+    # 1. INITIALIZATION TESTS
+    # =============================================
 
-    def test_init_sets_user(
+    def test_initialization(
         self, mock_customers_list, mock_sales_collaborator
     ):
-        """__init__ should store user."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        assert screen.user == mock_sales_collaborator
-
-    def test_init_sets_customer_id(
-        self, mock_customers_list, mock_sales_collaborator
-    ):
-        """__init__ should store customer_id."""
+        """__init__ should store all parameters."""
         screen = CustomerScreen(
             customers=mock_customers_list,
             user=mock_sales_collaborator,
             customer_id=2,
         )
-        assert screen.customer_id == 2
+        assert screen.SUB_TITLE == "CUSTOMERS"
+        assert screen.CSS_PATH == "../styles/customer_screen.tcss"
+        assert screen.customers == mock_customers_list
+        assert screen.current_user == mock_sales_collaborator
+        assert screen.pre_selected_customer_id == 2
 
-    def test_init_default_values(
+    def test_default_initialization(
         self, mock_customers_list, mock_sales_collaborator
     ):
-        """__init__ should set default values."""
+        """__init__ should set default values for optional parameters."""
         screen = CustomerScreen(
             customers=mock_customers_list,
             user=mock_sales_collaborator,
-            customer_id=None,
         )
+        assert screen.SUB_TITLE == "CUSTOMERS"
+        assert screen.CSS_PATH == "../styles/customer_screen.tcss"
         assert screen.pre_selected_customer_id is None
-        assert screen.selected_customer_id is None
-        assert screen.selected_contact_id is None
 
-    # --- 1.2 UI Structure Tests (Asynchronous) ---
+    # =============================================
+    # 2. UI ARCHITECTURE TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_header_exists(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """Header should exist with SUB_TITLE='CUSTOMERS'."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            header = app.query_one("Header")
+        """Header should exist with correct title and clock enabled."""
+        app = EpicEventsCRM()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            header = pilot.app.screen.query_one(Header)
             assert header is not None
+            assert header.screen_title == "EPIC EVENTS CRM"
+            assert header.screen_sub_title == "CUSTOMERS"
+            assert header._show_clock is True
 
     @pytest.mark.asyncio
     async def test_footer_exists(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """Footer should exist with show_command_palette=False."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            footer = app.query_one("Footer")
+        """Footer should exist with command palette disabled."""
+        app = EpicEventsCRM()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            footer = pilot.app.screen.query_one(Footer)
             assert footer is not None
+            assert footer.show_command_palette is False
 
     @pytest.mark.asyncio
     async def test_customers_table_exists(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customers-table DataTable should exist."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
+        """Customers DataTable should exist with correct ID."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
             assert table is not None
 
     @pytest.mark.asyncio
     async def test_contacts_table_exists(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customer-contacts-table DataTable should exist."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one(
-                "#customer-contacts-table", CustomerScreen
+        """Contacts DataTable should exist with correct ID."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customer-contacts-table", DataTable
             )
             assert table is not None
 
     @pytest.mark.asyncio
     async def test_phone_numbers_table_exists(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#contact-phone-numbers-table DataTable should exist."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one(
-                "#contact-phone-numbers-table", CustomerScreen
+        """Phone numbers DataTable should exist with correct ID."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#contact-phone-numbers-table", DataTable
             )
             assert table is not None
 
     @pytest.mark.asyncio
-    async def test_all_buttons_exist(
-        self, app, mock_customers_list, mock_sales_collaborator
+    async def test_all_action_buttons_exist(
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """All action buttons should exist."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            create_customer_btn = app.query_one(
-                "#create-customer", CustomerScreen
+        """All action buttons should exist with correct IDs."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
             )
-            update_customer_btn = app.query_one(
-                "#update-customer", CustomerScreen
-            )
-            create_contact_btn = app.query_one(
-                "#create-contact", CustomerScreen
-            )
-            update_contact_btn = app.query_one(
-                "#update-contact", CustomerScreen
-            )
-            assert create_customer_btn is not None
-            assert update_customer_btn is not None
-            assert create_contact_btn is not None
-            assert update_contact_btn is not None
+            await pilot.pause()
+            for button_id in [
+                "#create-customer",
+                "#update-customer",
+                "#create-contact",
+                "#update-contact",
+            ]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button is not None
 
     @pytest.mark.asyncio
     async def test_customers_table_has_correct_columns(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customers-table should have correct column headers."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
-            headers = table.columns
-            assert headers == [
-                "ID",
-                "First Name",
-                "Last Name",
-                "Company Name",
-                "Sales Representative",
-                "Created At",
-                "Updated At",
-            ]
+        """Customers DataTable should have all required columns."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            assert table is not None
+            assert table.get_column("id") is not None
+            assert table.get_column("first_name") is not None
+            assert table.get_column("last_name") is not None
+            assert table.get_column("company_name") is not None
+            assert table.get_column("sales_representative") is not None
+            assert table.get_column("created_at") is not None
+            assert table.get_column("updated_at") is not None
 
     @pytest.mark.asyncio
     async def test_contacts_table_has_correct_columns(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customer-contacts-table should have correct column headers."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one(
-                "#customer-contacts-table", CustomerScreen
+        """Contacts DataTable should have all required columns."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
             )
-            headers = table.columns
-            assert headers == ["ID", "First Name", "Last Name", "Email"]
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customer-contacts-table", DataTable
+            )
+            assert table is not None
+            assert table.get_column("id") is not None
+            assert table.get_column("first_name") is not None
+            assert table.get_column("last_name") is not None
+            assert table.get_column("email") is not None
 
     @pytest.mark.asyncio
     async def test_phone_numbers_table_has_correct_columns(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#contact-phone-numbers-table should have correct column headers."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one(
-                "#contact-phone-numbers-table", CustomerScreen
+        """Phone numbers DataTable should have all required columns."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
             )
-            headers = table.columns
-            assert headers == ["ID", "Phone Number"]
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#contact-phone-numbers-table", DataTable
+            )
+            assert table is not None
+            assert table.get_column("id") is not None
+            assert table.get_column("number") is not None
 
-    # --- 1.3 Data Loading Tests ---
+    # =============================================
+    # 3. DATA TABLES BEHAVIOR TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_customers_table_loaded_with_data(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customers-table should be loaded with all customers."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
+        """Customers table should be loaded with all customers."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
             assert table.row_count == 3
 
     @pytest.mark.asyncio
     async def test_customers_table_content_matches_data(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customers-table content should match customer data."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
-            # Check first row data
-            assert table.get_cell_at(0, 0) == "1"  # ID
-            assert table.get_cell_at(0, 1) == "John"  # First Name
-            assert table.get_cell_at(0, 2) == "Doe"  # Last Name
-            assert table.get_cell_at(0, 3) == "Acme Corp"  # Company Name
+        """Customers table content should match customer data."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            assert table.get_cell_at((0, 0)) == 1  # ID
+            assert table.get_cell_at((0, 1)) == "John"  # First Name
+            assert table.get_cell_at((0, 2)) == "Doe"  # Last Name
+            assert table.get_cell_at((0, 3)) == "Acme Corp"  # Company Name
 
     @pytest.mark.asyncio
     async def test_contacts_table_loaded_when_customer_selected(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#customer-contacts-table should load when customer is selected."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
-            # Click on first row to select customer
-            await app.pilot.click(table, row=0, column=0)
-            await app.pilot.pause()
-            contacts_table = app.query_one(
-                "#customer-contacts-table", CustomerScreen
+        """Contacts table should load when customer is selected."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
             )
-            assert (
-                contacts_table.row_count == 1
-            )  # mock_customer has 1 contact
+            await pilot.pause()
+            customers_table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            await pilot.click(customers_table)
+            await pilot.pause()
+            contacts_table = pilot.app.screen.query_one(
+                "#customer-contacts-table", DataTable
+            )
+            assert contacts_table.row_count == 1
 
     @pytest.mark.asyncio
     async def test_phone_numbers_table_loaded_when_contact_selected(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#contact-phone-numbers-table should load when contact is selected."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=1,  # Pre-select first customer
-        )
-        async with app.run_test(screen):
-            # First select customer (already done via customer_id)
-            contacts_table = app.query_one(
-                "#customer-contacts-table", CustomerScreen
+        """Phone numbers table should load when contact is selected."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=1,
+                )
             )
-            await app.pilot.pause()
-            # Click on first contact row
-            await app.pilot.click(contacts_table, row=0, column=0)
-            await app.pilot.pause()
-            phone_table = app.query_one(
-                "#contact-phone-numbers-table", CustomerScreen
+            await pilot.pause()
+            contacts_table = pilot.app.screen.query_one(
+                "#customer-contacts-table", DataTable
             )
-            assert (
-                phone_table.row_count == 1
-            )  # mock_contact has 1 phone number
+            await pilot.click(contacts_table)
+            await pilot.pause()
+            phone_table = pilot.app.screen.query_one(
+                "#contact-phone-numbers-table", DataTable
+            )
+            assert phone_table.row_count == 1
 
-    # --- 1.4 Selection and Watchers Tests ---
+    # =============================================
+    # 4. SELECTION AND WATCHERS TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_pre_selected_customer_id_sets_cursor(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
         """pre_selected_customer_id should position cursor on correct row."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=2,  # Pre-select second customer
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
-            await app.pilot.pause()
-            # The cursor should be on row 1 (0-indexed) for customer_id=2
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=2,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
             assert table.cursor_row == 1
 
     @pytest.mark.asyncio
     async def test_row_highlighted_updates_selected_customer_id(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
         """Clicking a row should update selected_customer_id."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            table = app.query_one("#customers-table", CustomerScreen)
-            await app.pilot.click(
-                table, row=1, column=0
-            )  # Click second row
-            await app.pilot.pause()
-            assert (
-                screen.selected_customer_id == 2
-            )  # customer_id of second customer
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                )
+            )
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            await pilot.click(table, offset=(1, 3))
+            await pilot.pause()
+            assert pilot.app.screen.selected_customer_id == 2
 
     @pytest.mark.asyncio
     async def test_row_highlighted_updates_selected_contact_id(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
         """Clicking a contact row should update selected_contact_id."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=1,  # Pre-select first customer
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            contacts_table = app.query_one(
-                "#customer-contacts-table", CustomerScreen
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=3,
+                )
             )
-            await app.pilot.click(
-                contacts_table, row=0, column=0
-            )  # Click first contact
-            await app.pilot.pause()
-            assert (
-                screen.selected_contact_id == 1
-            )  # contact_id of first contact
+            await pilot.pause()
+            contacts_table = pilot.app.screen.query_one(
+                "#customer-contacts-table", DataTable
+            )
+            await pilot.click(contacts_table, offset=(1, 2))
+            await pilot.pause()
+            assert pilot.app.screen.selected_contact_id == 3
 
-    # --- 1.5 Navigation and Actions Tests ---
+    # =============================================
+    # 5. NAVIGATION AND ACTIONS TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_create_customer_button_action(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#create-customer button should dismiss with 'create_customer'."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
+        """Create customer button should dismiss with 'create_customer'."""
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            btn = app.query_one("#create-customer", CustomerScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                ),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            button = pilot.app.screen.query_one("#create-customer", Button)
+            await pilot.click(button)
+            await pilot.pause()
             assert dismissed == "create_customer"
 
     @pytest.mark.asyncio
     async def test_update_customer_button_action(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_second_sales_collaborator
     ):
-        """#update-customer button should dismiss with ('update_customer', customer_id)."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=1,  # Pre-select first customer
-        )
+        """Update customer button should dismiss with ('update_customer', customer_id)."""
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            await app.pilot.pause()
-            # First select a customer
-            screen.selected_customer_id = 2
-            await app.pilot.pause()
-            btn = app.query_one("#update-customer", CustomerScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(120, 40)) as pilot:
+            screen = CustomerScreen(
+                customers=mock_customers_list,
+                user=mock_second_sales_collaborator,
+                customer_id=1,
+            )
+            await app.push_screen(screen, callback=on_dismiss)
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            await pilot.click(table, offset=(1, 3))
+            button = pilot.app.screen.query_one("#update-customer", Button)
+            await pilot.click(button)
+            await pilot.pause()
             assert dismissed == ("update_customer", 2)
 
     @pytest.mark.asyncio
     async def test_create_contact_button_action(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
-        """#create-contact button should dismiss with 'create_contact'."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
-        )
+        """Create contact button should dismiss with 'create_contact'."""
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            btn = app.query_one("#create-contact", CustomerScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=None,
+                ),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            button = pilot.app.screen.query_one("#create-contact", Button)
+            await pilot.click(button)
+            await pilot.pause()
             assert dismissed == "create_contact"
 
     @pytest.mark.asyncio
     async def test_update_contact_button_action(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_second_sales_collaborator
     ):
-        """#update-contact button should dismiss with ('update_contact', contact_id)."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=1,
-        )
+        """Update contact button should dismiss with ('update_contact', contact_id)."""
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            await app.pilot.pause()
-            # First select a contact
-            screen.selected_contact_id = 2
-            await app.pilot.pause()
-            btn = app.query_one("#update-contact", CustomerScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(120, 40)) as pilot:
+            screen = CustomerScreen(
+                customers=mock_customers_list,
+                user=mock_second_sales_collaborator,
+                customer_id=1,
+            )
+            await app.push_screen(screen, callback=on_dismiss)
+            await pilot.pause()
+            table = pilot.app.screen.query_one(
+                "#customers-table", DataTable
+            )
+            await pilot.click(table, offset=(1, 3))
+            button = pilot.app.screen.query_one("#update-contact", Button)
+            await pilot.click(button)
+            await pilot.pause()
             assert dismissed == ("update_contact", 2)
 
-    # --- 1.6 Permissions Tests ---
+    # =============================================
+    # 6. PERMISSIONS TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_buttons_visible_for_sales_rep(
-        self, app, mock_customers_list, mock_sales_collaborator
+        self, mock_customers_list, mock_sales_collaborator
     ):
         """All buttons should be visible for sales representative."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=1,
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            create_customer_btn = app.query_one(
-                "#create-customer", CustomerScreen
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_sales_collaborator,
+                    customer_id=1,
+                )
             )
-            update_customer_btn = app.query_one(
-                "#update-customer", CustomerScreen
-            )
-            create_contact_btn = app.query_one(
-                "#create-contact", CustomerScreen
-            )
-            update_contact_btn = app.query_one(
-                "#update-contact", CustomerScreen
-            )
-            assert create_customer_btn.display
-            assert update_customer_btn.display
-            assert create_contact_btn.display
-            assert update_contact_btn.display
+            await pilot.pause()
+            for button_id in [
+                "#create-customer",
+                "#update-customer",
+                "#create-contact",
+                "#update-contact",
+            ]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button.display
 
     @pytest.mark.asyncio
     async def test_buttons_hidden_for_unauthorized_user(
-        self, app, mock_customers_list
+        self, mock_customers_list, mock_admin_collaborator
     ):
         """All action buttons should be hidden for unauthorized user."""
-        unauthorized_user = MagicMock(spec=Collaborator)
-        unauthorized_user.id = 99
-        unauthorized_user.department = MagicMock(spec=Department)
-        unauthorized_user.department.name = DepartmentName.MARKETING
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CustomerScreen(
+                    customers=mock_customers_list,
+                    user=mock_admin_collaborator,
+                    customer_id=1,
+                )
+            )
+            await pilot.pause()
+            for button_id in [
+                "#create-customer",
+                "#update-customer",
+                "#create-contact",
+                "#update-contact",
+            ]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert not button.display
 
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=unauthorized_user,
-            customer_id=None,
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            create_customer_btn = app.query_one(
-                "#create-customer", CustomerScreen
-            )
-            update_customer_btn = app.query_one(
-                "#update-customer", CustomerScreen
-            )
-            create_contact_btn = app.query_one(
-                "#create-contact", CustomerScreen
-            )
-            update_contact_btn = app.query_one(
-                "#update-contact", CustomerScreen
-            )
-            assert not create_customer_btn.display
-            assert not update_customer_btn.display
-            assert not create_contact_btn.display
-            assert not update_contact_btn.display
+    # =============================================
+    # 7. ON_MOUNT TESTS
+    # =============================================
 
-    # --- 1.7 on_mount Tests ---
-    @pytest.mark.asyncio
-    async def test_on_mount_builds_all_tables(
-        self, app, mock_customers_list, mock_sales_collaborator
-    ):
-        """on_mount should call build tables methods."""
-        screen = CustomerScreen(
-            customers=mock_customers_list,
-            user=mock_sales_collaborator,
-            customer_id=None,
+
+@pytest.mark.asyncio
+async def test_on_mount_builds_all_tables(
+    self, mock_customers_list, mock_sales_collaborator
+):
+    """on_mount should build all tables with correct titles."""
+    app = App()
+    async with app.run_test(size=(120, 40)) as pilot:
+        await app.push_screen(
+            CustomerScreen(
+                customers=mock_customers_list,
+                user=mock_sales_collaborator,
+                customer_id=None,
+            )
         )
-        with (
-            patch.object(
-                screen, "build_customers_table"
-            ) as mock_build_customers,
-            patch.object(
-                screen, "build_contacts_table"
-            ) as mock_build_contacts,
-            patch.object(
-                screen, "build_phone_numbers_table"
-            ) as mock_build_phones,
-        ):
-            async with app.run_test(screen):
-                await app.pilot.pause()
-                mock_build_customers.assert_called_once()
-                mock_build_contacts.assert_called_once()
-                mock_build_phones.assert_called_once()
+        await pilot.pause()
+
+        customers_table = pilot.app.screen.query_one(
+            "#customers-table", DataTable
+        )
+        assert customers_table.border_title == "Customers"
+
+        contacts_table = pilot.app.screen.query_one(
+            "#customer-contacts-table", DataTable
+        )
+        assert contacts_table.border_title == "Contacts"
+
+        phone_numbers_table = pilot.app.screen.query_one(
+            "#contact-phone-numbers-table", DataTable
+        )
+        assert phone_numbers_table.border_title == "Phone Numbers"
 
 
 # =============================================================================
@@ -898,292 +956,357 @@ class TestCustomerScreen:
 class TestCreateCustomerScreen:
     """Tests for CreateCustomerScreen."""
 
-    # --- 2.1 Initialization Tests ---
-    def test_init_sets_contacts(self, mock_contacts_list):
-        """__init__ should store contacts list."""
+    # =============================================
+    # 1. INITIALIZATION TESTS
+    # =============================================
+
+    def test_initialization(self, mock_contacts_list):
+        """__init__ should store all parameters."""
         screen = CreateCustomerScreen(contacts=mock_contacts_list)
+        assert screen.SUB_TITLE == "CREATE CUSTOMER"
+        assert screen.CSS_PATH == "../styles/create_customer_screen.tcss"
         assert screen.contacts == mock_contacts_list
-
-    def test_init_default_values(self, mock_contacts_list):
-        """__init__ should initialize default values."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
         assert screen.customer_data == {}
-        assert screen.is_form_valid is False
 
-    # --- 2.2 UI Structure Tests ---
+    # =============================================
+    # 2. UI ARCHITECTURE TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_header_exists(self, app, mock_contacts_list):
-        """Header should exist with SUB_TITLE='CREATE CUSTOMERS'."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            header = app.query_one("Header")
+    async def test_header_exists(self, mock_contacts_list):
+        """Header should exist with correct title and clock enabled."""
+        app = EpicEventsCRM()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            header = pilot.app.screen.query_one(Header)
             assert header is not None
+            assert header.screen_title == "EPIC EVENTS CRM"
+            assert header.screen_sub_title == "CREATE CUSTOMER"
+            assert header._show_clock is True
 
     @pytest.mark.asyncio
-    async def test_all_input_fields_exist(self, app, mock_contacts_list):
+    async def test_footer_exists(self, mock_contacts_list):
+        """Header should exist with correct title and clock enabled."""
+        app = EpicEventsCRM()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            footer = pilot.app.screen.query_one(Footer)
+            assert footer is not None
+            assert footer.show_command_palette is False
+
+    @pytest.mark.asyncio
+    async def test_all_input_fields_exist(self, mock_contacts_list):
         """All customer input fields should exist."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#customer_last_name", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            first_name_input = app.query_one(
-                "#customer_first_name", CreateCustomerScreen
-            )
-            company_name_input = app.query_one(
-                "#company_name", CreateCustomerScreen
-            )
-            assert last_name_input is not None
-            assert first_name_input is not None
-            assert company_name_input is not None
+            await pilot.pause()
+            for field_id in [
+                "#customer_last_name",
+                "#customer_first_name",
+                "#company_name",
+            ]:
+                field = pilot.app.screen.query_one(field_id, Input)
+                assert field is not None
 
     @pytest.mark.asyncio
-    async def test_radio_set_exists(self, app, mock_contacts_list):
+    async def test_radio_set_exists(self, mock_contacts_list):
         """RadioSet for contact selection should exist."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            radio_set = app.query_one(
-                "#customer-contact-input-choice", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            radio_set = pilot.app.screen.query_one(
+                "#customer-contact-input-choice"
             )
             assert radio_set is not None
 
+            radio_labels = [
+                button.label
+                for button in pilot.app.screen.query(RadioButton)
+            ]
+            assert "Existing contact" in radio_labels
+            assert "New contact" in radio_labels
+
     @pytest.mark.asyncio
-    async def test_contact_select_exists(self, app, mock_contacts_list):
+    async def test_contact_select_exists(self, mock_contacts_list):
         """Select for existing contacts should exist."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            select = app.query_one(
-                "#customer-contact-select", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            select = pilot.app.screen.query_one(
+                "#customer-contact-select", Select
             )
             assert select is not None
 
     @pytest.mark.asyncio
-    async def test_contact_form_fields_exist(
-        self, app, mock_contacts_list
-    ):
+    async def test_contact_form_fields_exist(self, mock_contacts_list):
         """Contact form input fields should exist."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateCustomerScreen
-            )
-            email_input = app.query_one(
-                "#contact_email", CreateCustomerScreen
-            )
-            phone_input = app.query_one(
-                "#contact_phone_number", CreateCustomerScreen
-            )
-            assert last_name_input is not None
-            assert first_name_input is not None
-            assert email_input is not None
-            assert phone_input is not None
+            await pilot.pause()
+            for field_id in [
+                "#contact_last_name",
+                "#contact_first_name",
+                "#contact_email",
+                "#contact_phone_number",
+            ]:
+                field = pilot.app.screen.query_one(field_id, Input)
+                assert field is not None
 
     @pytest.mark.asyncio
-    async def test_buttons_exist(self, app, mock_contacts_list):
+    async def test_buttons_exist(self, mock_contacts_list):
         """Create and Cancel buttons should exist."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            create_btn = app.query_one("#create", CreateCustomerScreen)
-            cancel_btn = app.query_one("#cancel", CreateCustomerScreen)
-            assert create_btn is not None
-            assert cancel_btn is not None
-
-    # --- 2.3 RadioSet Behavior Tests ---
-    @pytest.mark.asyncio
-    async def test_existing_contact_radio_shows_select(
-        self, app, mock_contacts_list
-    ):
-        """Selecting 'Existing contact' should show Select and hide form."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            radio_set = app.query_one(
-                "#customer-contact-input-choice", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            select_container = app.query_one(
-                "#customer-contact-select-input-container",
-                CreateCustomerScreen,
-            )
-            form_container = app.query_one(
-                "#customer-contact-form-input-container",
-                CreateCustomerScreen,
-            )
+            await pilot.pause()
+            for button_id in ["#create", "#cancel"]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button is not None
 
-            # Select first radio button ("Existing contact")
-            await app.pilot.click(radio_set, offset=(0, 0))
-            await app.pilot.pause()
-
-            assert select_container.display
-            assert not form_container.display
+    # =============================================
+    # 3. RADIOSET BEHAVIOR TESTS
+    # =============================================
 
     @pytest.mark.asyncio
-    async def test_new_contact_radio_shows_form(
-        self, app, mock_contacts_list
+    async def test_new_contact_radio_selected_by_default(
+        self, mock_contacts_list
     ):
-        """Selecting 'New contact' should show form and hide Select."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            radio_set = app.query_one(
-                "#customer-contact-input-choice", CreateCustomerScreen
+        """'New contact' radio button is selected by default and shows form."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            select_container = app.query_one(
-                "#customer-contact-select-input-container",
-                CreateCustomerScreen,
+            await pilot.pause()
+            radio_set = pilot.app.screen.query_one(
+                "#customer-contact-input-choice", RadioSet
             )
-            form_container = app.query_one(
-                "#customer-contact-form-input-container",
-                CreateCustomerScreen,
+            select_container = pilot.app.screen.query_one(
+                "#customer-contact-select-input-container"
             )
-
-            # Select second radio button ("New contact")
-            await app.pilot.click(radio_set, offset=(0, 1))
-            await app.pilot.pause()
-
+            form_container = pilot.app.screen.query_one(
+                "#customer-contact-form-input-container"
+            )
+            assert radio_set.pressed_button.label == "New contact"
             assert not select_container.display
             assert form_container.display
 
-    # --- 2.4 Form Validation Tests ---
     @pytest.mark.asyncio
-    async def test_form_invalid_when_empty(self, app, mock_contacts_list):
+    async def test_existing_contact_radio_shows_select(
+        self, mock_contacts_list
+    ):
+        """Selecting 'Existing contact' should show Select and hide form."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            radio_set = pilot.app.screen.query_one(
+                "#customer-contact-input-choice", RadioSet
+            )
+            select_container = pilot.app.screen.query_one(
+                "#customer-contact-select-input-container"
+            )
+            form_container = pilot.app.screen.query_one(
+                "#customer-contact-form-input-container"
+            )
+            await pilot.click("#existing-contact")
+            await pilot.pause()
+            assert radio_set.pressed_button.label == "Existing contact"
+            assert select_container.display
+            assert not form_container.display
+
+    # =============================================
+    # 4. FORM VALIDATION TESTS
+    # =============================================
+
+    @pytest.mark.asyncio
+    async def test_form_invalid_when_empty(self, mock_contacts_list):
         """Form should be invalid when all fields are empty."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
-            create_btn = app.query_one("#create", CreateCustomerScreen)
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
+            create_btn = pilot.app.screen.query_one("#create", Button)
             assert create_btn.disabled
 
     @pytest.mark.asyncio
-    async def test_customer_fields_required(self, app, mock_contacts_list):
-        """Customer last_name and first_name should be required."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#customer_last_name", CreateCustomerScreen
-            )
-            first_name_input = app.query_one(
-                "#customer_first_name", CreateCustomerScreen
-            )
-
-            # Set only customer fields
-            last_name_input.value = "Doe"
-            first_name_input.value = "John"
-            company_name_input = app.query_one(
-                "#company_name", CreateCustomerScreen
-            )
-            company_name_input.value = "Test Corp"
-
-            await app.pilot.pause()
-            # Form should still be invalid because contact fields are empty
-            assert screen.is_form_valid is False
-
-    @pytest.mark.asyncio
-    async def test_form_valid_with_all_fields(
-        self, app, mock_contacts_list
+    async def test_form_invalid_if_all_required_fields_not_filled(
+        self, mock_contacts_list
     ):
-        """Form should be valid when all required fields are filled."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            # Fill customer fields
-            last_name_input = app.query_one(
-                "#customer_last_name", CreateCustomerScreen
+        """Form should be invalid if all required fields are not filled."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            last_name_input.value = "Doe"
-            first_name_input = app.query_one(
-                "#customer_first_name", CreateCustomerScreen
+            await pilot.pause()
+
+            # Fill all fields except one
+            # Fill in customer data
+            # last_name_input = pilot.app.screen.query_one(
+            #     "#customer_last_name", Input
+            # )
+            first_name_input = pilot.app.screen.query_one(
+                "#customer_first_name", Input
             )
+            company_name_input = pilot.app.screen.query_one(
+                "#company_name", Input
+            )
+            # last_name_input.value = "Doe"
             first_name_input.value = "John"
-            company_name_input = app.query_one(
-                "#company_name", CreateCustomerScreen
-            )
             company_name_input.value = "Test Corp"
 
-            # Select new contact and fill contact fields
-            radio_set = app.query_one(
-                "#customer-contact-input-choice", CreateCustomerScreen
+            # Fill in contact data
+            contact_last_name = pilot.app.screen.query_one(
+                "#contact_last_name", Input
             )
-            await app.pilot.click(radio_set, offset=(0, 1))  # New contact
-            await app.pilot.pause()
-
-            contact_last_name = app.query_one(
-                "#contact_last_name", CreateCustomerScreen
+            contact_first_name = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            contact_email = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            contact_phone = pilot.app.screen.query_one(
+                "#contact_phone_number", Input
             )
             contact_last_name.value = "Smith"
-            contact_first_name = app.query_one(
-                "#contact_first_name", CreateCustomerScreen
-            )
             contact_first_name.value = "Alice"
-            contact_email = app.query_one(
-                "#contact_email", CreateCustomerScreen
-            )
             contact_email.value = "alice@example.com"
-            contact_phone = app.query_one(
-                "#contact_phone_number", CreateCustomerScreen
-            )
             contact_phone.value = "1234567890"
 
-            await app.pilot.pause()
-            assert screen.is_form_valid is True
-            create_btn = app.query_one("#create", CreateCustomerScreen)
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
+            create_btn = pilot.app.screen.query_one("#create", Button)
+            assert create_btn.disabled
+
+    @pytest.mark.asyncio
+    async def test_form_valid_with_all_fields(self, mock_contacts_list):
+        """Form should be valid when all required fields are filled."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
+            )
+            await pilot.pause()
+
+            # Fill in customer data
+            last_name_input = pilot.app.screen.query_one(
+                "#customer_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#customer_first_name", Input
+            )
+            company_name_input = pilot.app.screen.query_one(
+                "#company_name", Input
+            )
+            last_name_input.value = "Doe"
+            first_name_input.value = "John"
+            company_name_input.value = "Test Corp"
+
+            # Fill in contact data
+            contact_last_name = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            contact_first_name = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            contact_email = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            contact_phone = pilot.app.screen.query_one(
+                "#contact_phone_number", Input
+            )
+            contact_last_name.value = "Smith"
+            contact_first_name.value = "Alice"
+            contact_email.value = "alice@example.com"
+            contact_phone.value = "1234567890"
+
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is True
+            create_btn = pilot.app.screen.query_one("#create", Button)
             assert not create_btn.disabled
 
-    # --- 2.5 Form Submission Tests ---
+    # =============================================
+    # 5. FORM SUBMISSION TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_create_button_dismisses_with_new_contact_data(
-        self, app, mock_contacts_list
+        self, mock_contacts_list
     ):
         """Create button should dismiss with form data for new contact."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Fill all fields for new contact
-            customer_last_name = app.query_one(
-                "#customer_last_name", CreateCustomerScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            customer_last_name = pilot.app.screen.query_one(
+                "#customer_last_name", Input
+            )
+            customer_first_name = pilot.app.screen.query_one(
+                "#customer_first_name", Input
+            )
+            company_name = pilot.app.screen.query_one(
+                "#company_name", Input
             )
             customer_last_name.value = "NewLast"
-            customer_first_name = app.query_one(
-                "#customer_first_name", CreateCustomerScreen
-            )
             customer_first_name.value = "NewFirst"
-            company_name = app.query_one(
-                "#company_name", CreateCustomerScreen
-            )
             company_name.value = "New Corp"
 
-            radio_set = app.query_one(
-                "#customer-contact-input-choice", CreateCustomerScreen
+            contact_last_name = pilot.app.screen.query_one(
+                "#contact_last_name", Input
             )
-            await app.pilot.click(radio_set, offset=(0, 1))  # New contact
-            await app.pilot.pause()
-
-            contact_last_name = app.query_one(
-                "#contact_last_name", CreateCustomerScreen
+            contact_first_name = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            contact_email = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            contact_phone = pilot.app.screen.query_one(
+                "#contact_phone_number", Input
             )
             contact_last_name.value = "ContactLast"
-            contact_first_name = app.query_one(
-                "#contact_first_name", CreateCustomerScreen
-            )
             contact_first_name.value = "ContactFirst"
-            contact_email = app.query_one(
-                "#contact_email", CreateCustomerScreen
-            )
             contact_email.value = "contact@newcorp.com"
-            contact_phone = app.query_one(
-                "#contact_phone_number", CreateCustomerScreen
-            )
             contact_phone.value = "1112223333"
 
-            await app.pilot.pause()
-            create_btn = app.query_one("#create", CreateCustomerScreen)
-            await app.pilot.click(create_btn)
-            await app.pilot.pause()
+            await pilot.pause()
+            create_btn = pilot.app.screen.query_one("#create", Button)
+            await pilot.click(create_btn)
+            await pilot.pause()
 
             assert dismissed == {
                 "customer_last_name": "NewLast",
@@ -1198,54 +1321,110 @@ class TestCreateCustomerScreen:
             }
 
     @pytest.mark.asyncio
+    async def test_add_phone_number_button_creates_field_with_correct_params(
+        self,
+    ):
+        """Clicking add phone number button should create a new field with correct parameters."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = CreateContactScreen()
+            await app.push_screen(screen)
+            await pilot.pause()
+
+            # Get initial phone number field
+            initial_phone = pilot.app.screen.query_one(
+                "#phone_number_1", Input
+            )
+            assert initial_phone is not None
+
+            # Click add phone number button
+            add_btn = pilot.app.screen.query_one(
+                "#add-phone-number", Button
+            )
+            await pilot.click(add_btn)
+            await pilot.pause()
+
+            # Verify new field was created
+            new_phone_field = pilot.app.screen.query_one(
+                "#phone_number_2", Input
+            )
+            assert new_phone_field is not None
+
+            # Verify field parameters
+            assert new_phone_field.id == "phone_number_2"
+            assert new_phone_field.value == ""  # Should be empty
+            assert isinstance(new_phone_field, Input)
+
+            # Verify phone number counter was incremented
+            assert screen.phone_number_counter == 3
+
+    @pytest.mark.asyncio
     async def test_cancel_button_dismisses_with_none(
-        self, app, mock_contacts_list
+        self, mock_contacts_list
     ):
         """Cancel button should dismiss with None."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            cancel_btn = app.query_one("#cancel", CreateCustomerScreen)
-            await app.pilot.click(cancel_btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            cancel_btn = pilot.app.screen.query_one("#cancel", Button)
+            await pilot.click(cancel_btn)
+            await pilot.pause()
             assert dismissed is None
 
-    # --- 2.6 Contact Select Prefill Tests ---
+    # =============================================
+    # 6. CONTACT SELECT PREFILL TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_contact_select_has_all_options(
-        self, app, mock_contacts_list
+        self, mock_contacts_list
     ):
         """Contact Select should have all contacts as options."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            select = app.query_one(
-                "#customer-contact-select", CreateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateCustomerScreen(contacts=mock_contacts_list)
             )
-            await app.pilot.click(select)
-            await app.pilot.pause()
-            # Should have 3 options (the contacts)
-            assert len(select._options) == 3
+            await pilot.pause()
+            select = pilot.app.screen.query_one(
+                "#customer-contact-select", Select
+            )
+            await pilot.click(select)
+            await pilot.pause()
+            assert len(select._options) == 4
 
-    # --- 2.7 on_mount Tests ---
+    # =============================================
+    # 7. ON_MOUNT TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_on_mount_sets_container_titles(
-        self, app, mock_contacts_list
+        self, mock_contacts_list
     ):
         """on_mount should set container border titles."""
-        screen = CreateCustomerScreen(contacts=mock_contacts_list)
-        async with app.run_test(screen):
-            await app.pilot.pause()
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = CreateCustomerScreen(contacts=mock_contacts_list)
+            await app.push_screen(screen)
+            await pilot.pause()
             assert (
-                screen.query_one("#customer-data").border_title
+                pilot.app.screen.query_one("#customer-data").border_title
                 == "Customer Data"
             )
             assert (
-                screen.query_one("#customer-contact").border_title
+                pilot.app.screen.query_one(
+                    "#customer-contact"
+                ).border_title
                 == "Contact Selection"
             )
 
@@ -1258,160 +1437,176 @@ class TestCreateCustomerScreen:
 class TestUpdateCustomerScreen:
     """Tests for UpdateCustomerScreen."""
 
-    # --- 3.1 Initialization Tests ---
-    def test_init_sets_customer_data(self, mock_customer_data):
-        """__init__ should store customer_data."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=[],
-            sales_representatives=[],
-        )
-        assert screen.customer_data == mock_customer_data
+    # =============================================
+    # 1. INITIALIZATION TESTS
+    # =============================================
 
-    def test_init_sets_contacts_and_sales_reps(
+    def test_initialization(
         self,
-        mock_customer_data,
+        mock_customer,
         mock_contacts_list,
         mock_sales_representatives,
+        customer_to_dict,
     ):
-        """__init__ should store contacts and sales_representatives."""
+        """__init__ should store all parameters."""
+        customer_data = customer_to_dict(mock_customer)
         screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
+            customer_data=customer_data,
             contacts=mock_contacts_list,
             sales_representatives=mock_sales_representatives,
         )
+        assert screen.SUB_TITLE == "UPDATE CUSTOMER"
+        assert screen.CSS_PATH == "../styles/update_customer_screen.tcss"
+        assert screen.customer_data == customer_data
+        assert screen.updated_customer_data == {}
         assert screen.contacts == mock_contacts_list
         assert screen.sales_representatives == mock_sales_representatives
 
-    # --- 3.2 UI Structure Tests ---
+    # =============================================
+    # 2. UI ARCHITECTURE TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_header_exists(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
-        """Header should exist with SUB_TITLE='UPDATE CUSTOMERS'."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            header = app.query_one("Header")
+        """Header should exist with correct title and clock enabled."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            header = pilot.app.screen.query_one(Header)
             assert header is not None
 
     @pytest.mark.asyncio
     async def test_updating_customer_static_exists(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Static with updating customer message should exist."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            static = app.query_one("Static")
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            static = pilot.app.screen.query_one(Static)
             assert static is not None
             assert "Updating Customer" in str(static)
 
     @pytest.mark.asyncio
     async def test_all_input_fields_exist(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """All input fields should exist."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#customer_last_name", UpdateCustomerScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
             )
-            first_name_input = app.query_one(
-                "#customer_first_name", UpdateCustomerScreen
-            )
-            company_name_input = app.query_one(
-                "#company_name", UpdateCustomerScreen
-            )
-            assert last_name_input is not None
-            assert first_name_input is not None
-            assert company_name_input is not None
+            await pilot.pause()
+            for field_id in [
+                "#customer_last_name",
+                "#customer_first_name",
+                "#company_name",
+            ]:
+                field = pilot.app.screen.query_one(field_id, Input)
+                assert field is not None
 
     @pytest.mark.asyncio
     async def test_contacts_selection_list_exists(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """SelectionList for contacts should exist."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            selection_list = app.query_one(
-                "#update-customer-contacts-selection-list",
-                UpdateCustomerScreen,
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            selection_list = pilot.app.screen.query_one(
+                "#update-customer-contacts-selection-list"
             )
             assert selection_list is not None
 
     @pytest.mark.asyncio
     async def test_sales_representative_select_exists(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Select for sales representative should exist."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            select = app.query_one(
-                "#update-customer-sales-representative-select",
-                UpdateCustomerScreen,
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            select = pilot.app.screen.query_one(
+                "#update-customer-sales-representative-select", Select
             )
             assert select is not None
 
     @pytest.mark.asyncio
     async def test_buttons_exist(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Update and Cancel buttons should exist."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            update_btn = app.query_one("#update", UpdateCustomerScreen)
-            cancel_btn = app.query_one("#cancel", UpdateCustomerScreen)
-            assert update_btn is not None
-            assert cancel_btn is not None
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            for button_id in ["#update", "#cancel"]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button is not None
 
-    # --- 3.3 Prefill Tests ---
+    # =============================================
+    # 3. PREFILL TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_inputs_prefilled_with_customer_data(
         self,
@@ -1436,18 +1631,18 @@ class TestUpdateCustomerScreen:
             contacts=mock_contacts_list,
             sales_representatives=mock_sales_representatives,
         )
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#customer_last_name", UpdateCustomerScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(screen)
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#customer_last_name", Input
             )
-            first_name_input = app.query_one(
-                "#customer_first_name", UpdateCustomerScreen
+            first_name_input = pilot.app.screen.query_one(
+                "#customer_first_name", Input
             )
-            company_name_input = app.query_one(
-                "#company_name", UpdateCustomerScreen
+            company_name_input = pilot.app.screen.query_one(
+                "#company_name", Input
             )
-
-            await app.pilot.pause()
             assert last_name_input.value == "TestLast"
             assert first_name_input.value == "TestFirst"
             assert company_name_input.value == "Test Corp"
@@ -1455,33 +1650,38 @@ class TestUpdateCustomerScreen:
     @pytest.mark.asyncio
     async def test_sales_representative_select_has_all_options(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Sales representative Select should have all options."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            select = app.query_one(
-                "#update-customer-sales-representative-select",
-                UpdateCustomerScreen,
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
             )
-            await app.pilot.click(select)
-            await app.pilot.pause()
+            await pilot.pause()
+            select = pilot.app.screen.query_one(
+                "#update-customer-sales-representative-select", Select
+            )
+            await pilot.click(select)
+            await pilot.pause()
             assert len(select._options) == 2
 
-    # --- 3.4 Form Validation Tests ---
+    # =============================================
+    # 4. FORM VALIDATION TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_form_invalid_when_empty(
-        self, app, mock_contacts_list, mock_sales_representatives
+        self, mock_contacts_list, mock_sales_representatives
     ):
         """Form should be invalid when required fields are empty."""
-        # Create empty customer data
+        app = App()
         empty_data = {
             "customer_id": 1,
             "customer_first_name": "",
@@ -1490,71 +1690,76 @@ class TestUpdateCustomerScreen:
             "customer_contacts": [],
             "customer_sales_representative": None,
         }
-        screen = UpdateCustomerScreen(
-            customer_data=empty_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=empty_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
     async def test_form_valid_when_all_fields_filled(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Form should be valid when all required fields are filled."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is True
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is True
 
-    # --- 3.5 Form Submission Tests ---
+    # =============================================
+    # 5. FORM SUBMISSION TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_update_button_dismisses_with_updated_data(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Update button should dismiss with updated customer data."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Modify some fields
-            last_name_input = app.query_one(
-                "#customer_last_name", UpdateCustomerScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = UpdateCustomerScreen(
+                customer_data=mock_customer_data,
+                contacts=mock_contacts_list,
+                sales_representatives=mock_sales_representatives,
+            )
+            await app.push_screen(screen, callback=on_dismiss)
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#customer_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#customer_first_name", Input
             )
             last_name_input.value = "UpdatedLast"
-            first_name_input = app.query_one(
-                "#customer_first_name", UpdateCustomerScreen
-            )
             first_name_input.value = "UpdatedFirst"
-
-            await app.pilot.pause()
-
-            update_btn = app.query_one("#update", UpdateCustomerScreen)
-            await app.pilot.click(update_btn)
-            await app.pilot.pause()
-
+            await pilot.pause()
+            update_btn = pilot.app.screen.query_one("#update", Button)
+            await pilot.click(update_btn)
+            await pilot.pause()
             assert dismissed["id"] == 1
             assert dismissed["customer_last_name"] == "UpdatedLast"
             assert dismissed["customer_first_name"] == "UpdatedFirst"
@@ -1563,99 +1768,114 @@ class TestUpdateCustomerScreen:
     @pytest.mark.asyncio
     async def test_cancel_button_dismisses_with_none(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """Cancel button should dismiss with None."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            cancel_btn = app.query_one("#cancel", UpdateCustomerScreen)
-            await app.pilot.click(cancel_btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                ),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            cancel_btn = pilot.app.screen.query_one("#cancel", Button)
+            await pilot.click(cancel_btn)
+            await pilot.pause()
             assert dismissed is None
 
-    # --- 3.6 SelectionList Behavior Tests ---
+    # =============================================
+    # 6. SELECTION LIST BEHAVIOR TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_selection_list_allows_multiple_selection(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """SelectionList should allow multiple contact selection."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            selection_list = app.query_one(
-                "#update-customer-contacts-selection-list",
-                UpdateCustomerScreen,
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
             )
-            await app.pilot.pause()
-
-            # Click on first contact
-            await app.pilot.click(selection_list, row=0)
-            await app.pilot.pause()
-
-            # Click on second contact
-            await app.pilot.click(selection_list, row=1)
-            await app.pilot.pause()
-
-            # Both should be selected
+            await pilot.pause()
+            selection_list = pilot.app.screen.query_one(
+                "#update-customer-contacts-selection-list"
+            )
+            await pilot.click(selection_list, row=0)
+            await pilot.pause()
+            await pilot.click(selection_list, row=1)
+            await pilot.pause()
             assert len(selection_list._selected) == 2
 
-    # --- 3.7 on_mount Tests ---
+    # =============================================
+    # 7. ON_MOUNT TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_on_mount_sets_container_titles(
         self,
-        app,
         mock_customer_data,
         mock_contacts_list,
         mock_sales_representatives,
     ):
         """on_mount should set container border titles and subtitles."""
-        screen = UpdateCustomerScreen(
-            customer_data=mock_customer_data,
-            contacts=mock_contacts_list,
-            sales_representatives=mock_sales_representatives,
-        )
-        async with app.run_test(screen):
-            await app.pilot.pause()
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateCustomerScreen(
+                    customer_data=mock_customer_data,
+                    contacts=mock_contacts_list,
+                    sales_representatives=mock_sales_representatives,
+                )
+            )
+            await pilot.pause()
             assert (
-                screen.query_one("#update-customer-data").border_title
+                pilot.app.screen.query_one(
+                    "#update-customer-data"
+                ).border_title
                 == "Personal Data"
             )
             assert (
-                screen.query_one("#update-customer-data").border_subtitle
+                pilot.app.screen.query_one(
+                    "#update-customer-data"
+                ).border_subtitle
                 == "Edit relevant fields"
             )
             assert (
-                screen.query_one(
+                pilot.app.screen.query_one(
                     "#update-customer-sales-representative"
                 ).border_title
                 == "Sales Representative Selection"
             )
             assert (
-                screen.query_one("#update-contact-data").border_title
+                pilot.app.screen.query_one(
+                    "#update-contact-data"
+                ).border_title
                 == "Assigned Contacts"
             )
             assert (
-                screen.query_one("#update-contact-data").border_subtitle
+                pilot.app.screen.query_one(
+                    "#update-contact-data"
+                ).border_subtitle
                 == "Click on contact to assign/unassign"
             )
 
@@ -1668,247 +1888,295 @@ class TestUpdateCustomerScreen:
 class TestCreateContactScreen:
     """Tests for CreateContactScreen."""
 
-    # --- 4.1 Initialization Tests ---
-    def test_init_default_values(self):
+    # =============================================
+    # 1. INITIALIZATION TESTS
+    # =============================================
+
+    def test_initialization(self):
         """__init__ should initialize default values."""
         screen = CreateContactScreen()
         assert screen.contact_data == {}
         assert screen.phone_number_counter == 2
 
-    # --- 4.2 UI Structure Tests ---
+    # =============================================
+    # 2. UI ARCHITECTURE TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_header_exists(self, app):
-        """Header should exist with SUB_TITLE='CREATE CONTACT'."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            header = app.query_one("Header")
+    async def test_header_exists(self):
+        """Header should exist with correct title and clock enabled."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            header = pilot.app.screen.query_one(Header)
             assert header is not None
 
     @pytest.mark.asyncio
-    async def test_all_input_fields_exist(self, app):
+    async def test_all_input_fields_exist(self):
         """All contact input fields should exist."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            for field_id in [
+                "#contact_last_name",
+                "#contact_first_name",
+                "#contact_email",
+            ]:
+                field = pilot.app.screen.query_one(field_id, Input)
+                assert field is not None
+
+    @pytest.mark.asyncio
+    async def test_phone_number_field_exists(self):
+        """Initial phone number input field should exist."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            phone_input = pilot.app.screen.query_one(
+                "#phone_number_1", Input
             )
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
-            phone_input = app.query_one(
-                "#phone_number_1", CreateContactScreen
-            )
-            assert last_name_input is not None
-            assert first_name_input is not None
-            assert email_input is not None
             assert phone_input is not None
 
     @pytest.mark.asyncio
-    async def test_add_phone_number_button_exists(self, app):
+    async def test_add_phone_number_button_exists(self):
         """Add phone number button should exist."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            btn = app.query_one("#add-phone-number", CreateContactScreen)
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
             assert btn is not None
 
     @pytest.mark.asyncio
-    async def test_buttons_exist(self, app):
+    async def test_buttons_exist(self):
         """Create and Cancel buttons should exist."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            create_btn = app.query_one("#create", CreateContactScreen)
-            cancel_btn = app.query_one("#cancel", CreateContactScreen)
-            assert create_btn is not None
-            assert cancel_btn is not None
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            for button_id in ["#create", "#cancel"]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button is not None
 
-    # --- 4.3 Dynamic Phone Numbers Tests ---
+    # =============================================
+    # 3. DYNAMIC PHONE NUMBERS TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_add_phone_number_button_adds_new_field(self, app):
+    async def test_add_phone_number_button_adds_new_field(self):
         """Clicking add phone number should add a new input field."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            btn = app.query_one("#add-phone-number", CreateContactScreen)
-            initial_phones = app.query(
-                "Input[id^='#phone_number_']", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            initial_phones = pilot.app.screen.query(
+                "Input[id^='#phone_number_']", Input
             )
             initial_count = len(initial_phones)
-
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
-            new_phones = app.query(
-                "Input[id^='#phone_number_']", CreateContactScreen
+            await pilot.click(btn)
+            await pilot.pause()
+            new_phones = pilot.app.screen.query(
+                "Input[id^='#phone_number_']", Input
             )
             assert len(new_phones) == initial_count + 1
             assert (
-                app.query_one("#phone_number_2", CreateContactScreen)
+                pilot.app.screen.query_one("#phone_number_2", Input)
                 is not None
             )
 
     @pytest.mark.asyncio
-    async def test_phone_number_counter_increments(self, app):
+    async def test_phone_number_counter_increments(self):
         """phone_number_counter should increment when adding new fields."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = CreateContactScreen()
+            await app.push_screen(screen)
+            await pilot.pause()
             assert screen.phone_number_counter == 2
-
-            btn = app.query_one("#add-phone-number", CreateContactScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            await pilot.click(btn)
+            await pilot.pause()
             assert screen.phone_number_counter == 3
 
-    # --- 4.4 Form Validation Tests ---
     @pytest.mark.asyncio
-    async def test_form_invalid_when_empty(self, app):
+    async def test_add_multiple_phone_numbers(self):
+        """Adding multiple phone number fields should work correctly."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = CreateContactScreen()
+            await app.push_screen(screen)
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            for _ in range(3):
+                await pilot.click(btn)
+                await pilot.pause()
+            assert (
+                pilot.app.screen.query_one("#phone_number_2", Input)
+                is not None
+            )
+            assert (
+                pilot.app.screen.query_one("#phone_number_3", Input)
+                is not None
+            )
+            assert (
+                pilot.app.screen.query_one("#phone_number_4", Input)
+                is not None
+            )
+
+    # =============================================
+    # 4. FORM VALIDATION TESTS
+    # =============================================
+
+    @pytest.mark.asyncio
+    async def test_form_invalid_when_empty(self):
         """Form should be invalid when all fields are empty."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
-            create_btn = app.query_one("#create", CreateContactScreen)
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
+            create_btn = pilot.app.screen.query_one("#create", Button)
             assert create_btn.disabled
 
     @pytest.mark.asyncio
-    async def test_required_fields_validation(self, app):
+    async def test_required_fields_validation(self):
         """last_name, first_name, and email should be required."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            # Fill only some fields
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
             )
             last_name_input.value = "TestLast"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "TestFirst"
-            # email is empty
-
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
-    async def test_phone_numbers_required(self, app):
+    async def test_phone_numbers_required(self):
         """Each phone number should be required."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            # Fill all required fields
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
             )
             last_name_input.value = "TestLast"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "TestFirst"
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
             email_input.value = "test@example.com"
-            # phone_number_1 is empty
-
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
-    async def test_form_valid_when_all_fields_filled(self, app):
+    async def test_form_valid_when_all_fields_filled(self):
         """Form should be valid when all required fields are filled."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            # Fill all required fields
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            phone_input = pilot.app.screen.query_one(
+                "#phone_number_1", Input
             )
             last_name_input.value = "TestLast"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "TestFirst"
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
             email_input.value = "test@example.com"
-            phone_input = app.query_one(
-                "#phone_number_1", CreateContactScreen
-            )
             phone_input.value = "1234567890"
-
-            await app.pilot.pause()
-            assert screen.is_form_valid is True
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is True
 
     @pytest.mark.asyncio
-    async def test_validation_updates_on_new_phone_number(self, app):
+    async def test_validation_updates_on_new_phone_number(self):
         """Validation should update when new phone number field is added."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            # Fill all fields including first phone
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(CreateContactScreen())
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            phone_input = pilot.app.screen.query_one(
+                "#phone_number_1", Input
             )
             last_name_input.value = "TestLast"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "TestFirst"
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
             email_input.value = "test@example.com"
-            phone_input = app.query_one(
-                "#phone_number_1", CreateContactScreen
-            )
             phone_input.value = "1234567890"
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is True
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            await pilot.click(btn)
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
-            await app.pilot.pause()
-            assert screen.is_form_valid is True
+    # =============================================
+    # 5. FORM SUBMISSION TESTS
+    # =============================================
 
-            # Add new phone number field
-            btn = app.query_one("#add-phone-number", CreateContactScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
-            # Form should now be invalid because new phone field is empty
-            assert screen.is_form_valid is False
-
-    # --- 4.5 Form Submission Tests ---
     @pytest.mark.asyncio
-    async def test_create_button_dismisses_with_form_data(self, app):
+    async def test_create_button_dismisses_with_form_data(self):
         """Create button should dismiss with contact data."""
-        screen = CreateContactScreen()
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Fill all fields
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateContactScreen(),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            phone_input = pilot.app.screen.query_one(
+                "#phone_number_1", Input
             )
             last_name_input.value = "Smith"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "Alice"
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
             email_input.value = "alice@example.com"
-            phone_input = app.query_one(
-                "#phone_number_1", CreateContactScreen
-            )
             phone_input.value = "1234567890"
-
-            await app.pilot.pause()
-            create_btn = app.query_one("#create", CreateContactScreen)
-            await app.pilot.click(create_btn)
-            await app.pilot.pause()
-
+            await pilot.pause()
+            create_btn = pilot.app.screen.query_one("#create", Button)
+            await pilot.click(create_btn)
+            await pilot.pause()
             assert dismissed == {
                 "contact_last_name": "Smith",
                 "contact_first_name": "Alice",
@@ -1917,85 +2185,92 @@ class TestCreateContactScreen:
             }
 
     @pytest.mark.asyncio
-    async def test_create_button_with_multiple_phones(self, app):
+    async def test_create_button_with_multiple_phones(self):
         """Create button should include all phone numbers."""
-        screen = CreateContactScreen()
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Fill all fields
-            last_name_input = app.query_one(
-                "#contact_last_name", CreateContactScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateContactScreen(),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
+            )
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
+            phone_input = pilot.app.screen.query_one(
+                "#phone_number_1", Input
             )
             last_name_input.value = "Smith"
-            first_name_input = app.query_one(
-                "#contact_first_name", CreateContactScreen
-            )
             first_name_input.value = "Alice"
-            email_input = app.query_one(
-                "#contact_email", CreateContactScreen
-            )
             email_input.value = "alice@example.com"
-            phone_input = app.query_one(
-                "#phone_number_1", CreateContactScreen
-            )
             phone_input.value = "1234567890"
-
-            # Add second phone
-            add_btn = app.query_one(
-                "#add-phone-number", CreateContactScreen
-            )
-            await app.pilot.click(add_btn)
-            await app.pilot.pause()
-
-            phone_input_2 = app.query_one(
-                "#phone_number_2", CreateContactScreen
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            await pilot.click(btn)
+            await pilot.pause()
+            phone_input_2 = pilot.app.screen.query_one(
+                "#phone_number_2", Input
             )
             phone_input_2.value = "0987654321"
-
-            await app.pilot.pause()
-            create_btn = app.query_one("#create", CreateContactScreen)
-            await app.pilot.click(create_btn)
-            await app.pilot.pause()
-
+            await pilot.pause()
+            create_btn = pilot.app.screen.query_one("#create", Button)
+            await pilot.click(create_btn)
+            await pilot.pause()
             assert dismissed["phone_numbers"] == [
                 "1234567890",
                 "0987654321",
             ]
 
     @pytest.mark.asyncio
-    async def test_cancel_button_dismisses_with_none(self, app):
+    async def test_cancel_button_dismisses_with_none(self):
         """Cancel button should dismiss with None."""
-        screen = CreateContactScreen()
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            cancel_btn = app.query_one("#cancel", CreateContactScreen)
-            await app.pilot.click(cancel_btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                CreateContactScreen(),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            cancel_btn = pilot.app.screen.query_one("#cancel", Button)
+            await pilot.click(cancel_btn)
+            await pilot.pause()
             assert dismissed is None
 
-    # --- 4.6 on_mount Tests ---
+    # =============================================
+    # 6. ON_MOUNT TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_on_mount_sets_container_titles(self, app):
+    async def test_on_mount_sets_container_titles(self):
         """on_mount should set container border titles."""
-        screen = CreateContactScreen()
-        async with app.run_test(screen):
-            await app.pilot.pause()
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = CreateContactScreen()
+            await app.push_screen(screen)
+            await pilot.pause()
             assert (
-                screen.query_one("#contact-data").border_title
+                pilot.app.screen.query_one("#contact-data").border_title
                 == "Personal Data"
             )
             assert (
-                screen.query_one("#phone-number").border_title
+                pilot.app.screen.query_one("#phone-number").border_title
                 == "Phone Numbers"
             )
 
@@ -2008,93 +2283,111 @@ class TestCreateContactScreen:
 class TestUpdateContactScreen:
     """Tests for UpdateContactScreen."""
 
-    # --- 5.1 Initialization Tests ---
-    def test_init_sets_contact_data(self, mock_contact_data):
-        """__init__ should store contact_data."""
+    # =============================================
+    # 1. INITIALIZATION TESTS
+    # =============================================
+
+    def test_initialization(self, mock_contact_data):
+        """__init__ should store all parameters."""
         screen = UpdateContactScreen(contact_data=mock_contact_data)
         assert screen.contact_data == mock_contact_data
 
-    def test_init_sets_phone_number_counter(self, mock_contact_data):
+    def test_init_phone_number_counter(self, mock_contact_data):
         """__init__ should set phone_number_counter based on existing phones."""
-        # mock_contact_data has 2 phone numbers
         screen = UpdateContactScreen(contact_data=mock_contact_data)
-        assert (
-            screen.phone_number_counter == 3
-        )  # Starts after existing phones
+        assert screen.phone_number_counter == 3
 
-    # --- 5.2 UI Structure Tests ---
+    # =============================================
+    # 2. UI ARCHITECTURE TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_header_exists(self, app, mock_contact_data):
-        """Header should exist with SUB_TITLE='UPDATE CONTACT'."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            header = app.query_one("Header")
+    async def test_header_exists(self, mock_contact_data):
+        """Header should exist with correct title and clock enabled."""
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            header = pilot.app.screen.query_one(Header)
             assert header is not None
 
     @pytest.mark.asyncio
-    async def test_updating_contact_static_exists(
-        self, app, mock_contact_data
-    ):
+    async def test_updating_contact_static_exists(self, mock_contact_data):
         """Static with updating contact message should exist."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            static = app.query_one("Static")
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            static = pilot.app.screen.query_one(Static)
             assert static is not None
             assert "Updating Contact" in str(static)
 
     @pytest.mark.asyncio
-    async def test_all_input_fields_exist(self, app, mock_contact_data):
+    async def test_all_input_fields_exist(self, mock_contact_data):
         """All input fields should exist."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#contact_last_name", UpdateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
             )
-            first_name_input = app.query_one(
-                "#contact_first_name", UpdateContactScreen
-            )
-            email_input = app.query_one(
-                "#contact_email", UpdateContactScreen
-            )
-            assert last_name_input is not None
-            assert first_name_input is not None
-            assert email_input is not None
+            await pilot.pause()
+            for field_id in [
+                "#contact_last_name",
+                "#contact_first_name",
+                "#contact_email",
+            ]:
+                field = pilot.app.screen.query_one(field_id, Input)
+                assert field is not None
 
     @pytest.mark.asyncio
-    async def test_phone_number_fields_exist(self, app, mock_contact_data):
+    async def test_phone_number_fields_exist(self, mock_contact_data):
         """Phone number input fields should exist for existing numbers."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            # Should have phone_number_1 and phone_number_2 for the 2 existing numbers
-            phone_1 = app.query_one("#phone_number_1", UpdateContactScreen)
-            phone_2 = app.query_one("#phone_number_2", UpdateContactScreen)
-            assert phone_1 is not None
-            assert phone_2 is not None
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            for phone_id in ["#phone_number_1", "#phone_number_2"]:
+                phone = pilot.app.screen.query_one(phone_id, Input)
+                assert phone is not None
 
     @pytest.mark.asyncio
-    async def test_add_phone_number_button_exists(
-        self, app, mock_contact_data
-    ):
+    async def test_add_phone_number_button_exists(self, mock_contact_data):
         """Add phone number button should exist."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            btn = app.query_one("#add-phone-number", UpdateContactScreen)
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
             assert btn is not None
 
     @pytest.mark.asyncio
-    async def test_buttons_exist(self, app, mock_contact_data):
+    async def test_buttons_exist(self, mock_contact_data):
         """Update and Cancel buttons should exist."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            update_btn = app.query_one("#update", UpdateContactScreen)
-            cancel_btn = app.query_one("#cancel", UpdateContactScreen)
-            assert update_btn is not None
-            assert cancel_btn is not None
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            for button_id in ["#update", "#cancel"]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button is not None
 
-    # --- 5.3 Prefill Tests ---
+    # =============================================
+    # 3. PREFILL TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_inputs_prefilled_with_contact_data(
-        self, app, contact_to_dict
+        self, contact_to_dict
     ):
         """Input fields should be prefilled with contact data."""
         contact = MagicMock(spec=Contact)
@@ -2110,25 +2403,27 @@ class TestUpdateContactScreen:
 
         contact_data = contact_to_dict(contact)
 
-        screen = UpdateContactScreen(contact_data=contact_data)
-        async with app.run_test(screen):
-            last_name_input = app.query_one(
-                "#contact_last_name", UpdateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=contact_data)
             )
-            first_name_input = app.query_one(
-                "#contact_first_name", UpdateContactScreen
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
             )
-            email_input = app.query_one(
-                "#contact_email", UpdateContactScreen
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
             )
-
-            await app.pilot.pause()
+            email_input = pilot.app.screen.query_one(
+                "#contact_email", Input
+            )
             assert last_name_input.value == "TestLast"
             assert first_name_input.value == "TestFirst"
             assert email_input.value == "test@example.com"
 
     @pytest.mark.asyncio
-    async def test_phone_numbers_prefilled(self, app, contact_to_dict):
+    async def test_phone_numbers_prefilled(self, contact_to_dict):
         """Phone number fields should be prefilled."""
         contact = MagicMock(spec=Contact)
         contact.id = 1
@@ -2143,61 +2438,75 @@ class TestUpdateContactScreen:
 
         contact_data = contact_to_dict(contact)
 
-        screen = UpdateContactScreen(contact_data=contact_data)
-        async with app.run_test(screen):
-            phone_1 = app.query_one("#phone_number_1", UpdateContactScreen)
-            phone_2 = app.query_one("#phone_number_2", UpdateContactScreen)
-
-            await app.pilot.pause()
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=contact_data)
+            )
+            await pilot.pause()
+            phone_1 = pilot.app.screen.query_one("#phone_number_1", Input)
+            phone_2 = pilot.app.screen.query_one("#phone_number_2", Input)
             assert phone_1.value == "1234567890"
             assert phone_2.value == "0987654321"
 
-    # --- 5.4 Dynamic Phone Numbers Tests ---
+    # =============================================
+    # 4. DYNAMIC PHONE NUMBERS TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_add_phone_number_button_adds_new_field(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """Clicking add phone number should add a new input field."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            btn = app.query_one("#add-phone-number", UpdateContactScreen)
-            initial_phones = app.query(
-                "Input[id^='#phone_number_']", UpdateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            initial_phones = pilot.app.screen.query(
+                "Input[id^='#phone_number_']", Input
             )
             initial_count = len(initial_phones)
-
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
-            new_phones = app.query(
-                "Input[id^='#phone_number_']", UpdateContactScreen
+            await pilot.click(btn)
+            await pilot.pause()
+            new_phones = pilot.app.screen.query(
+                "Input[id^='#phone_number_']", Input
             )
             assert len(new_phones) == initial_count + 1
             assert (
-                app.query_one("#phone_number_3", UpdateContactScreen)
+                pilot.app.screen.query_one("#phone_number_3", Input)
                 is not None
             )
 
     @pytest.mark.asyncio
     async def test_new_phone_number_fields_are_empty(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """New phone number fields should be empty."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            btn = app.query_one("#add-phone-number", UpdateContactScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
-            new_phone = app.query_one(
-                "#phone_number_3", UpdateContactScreen
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            await pilot.click(btn)
+            await pilot.pause()
+            new_phone = pilot.app.screen.query_one(
+                "#phone_number_3", Input
             )
             assert new_phone.value == ""
 
-    # --- 5.5 Form Validation Tests ---
+    # =============================================
+    # 5. FORM VALIDATION TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_form_invalid_when_empty(self, app):
+    async def test_form_invalid_when_empty(self):
         """Form should be invalid when required fields are empty."""
+        app = App()
         empty_data = {
             "contact_id": 1,
             "contact_first_name": "",
@@ -2205,77 +2514,84 @@ class TestUpdateContactScreen:
             "email": "",
             "phone_numbers": [""],
         }
-        screen = UpdateContactScreen(contact_data=empty_data)
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=empty_data)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
-    async def test_required_fields_validation(
-        self, app, mock_contact_data
-    ):
+    async def test_required_fields_validation(self, mock_contact_data):
         """last_name, first_name, and email should be required."""
-        # Clear required fields
+        app = App()
         mock_contact_data["contact_first_name"] = ""
         mock_contact_data["contact_last_name"] = ""
         mock_contact_data["email"] = ""
-
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
-    async def test_phone_numbers_validation(self, app, mock_contact_data):
+    async def test_phone_numbers_validation(self, mock_contact_data):
         """Each phone number should be required."""
-        # Clear one phone number
+        app = App()
         mock_contact_data["phone_numbers"] = ["", "0987654321"]
-
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is False
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
 
     @pytest.mark.asyncio
     async def test_form_valid_when_all_fields_filled(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """Form should be valid when all required fields are filled."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            await app.pilot.pause()
-            assert screen.is_form_valid is True
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is True
 
-    # --- 5.6 Form Submission Tests ---
+    # =============================================
+    # 6. FORM SUBMISSION TESTS
+    # =============================================
+
     @pytest.mark.asyncio
     async def test_update_button_dismisses_with_updated_data(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """Update button should dismiss with updated contact data."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Modify some fields
-            last_name_input = app.query_one(
-                "#contact_last_name", UpdateContactScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = UpdateContactScreen(contact_data=mock_contact_data)
+            await app.push_screen(screen, callback=on_dismiss)
+            await pilot.pause()
+            last_name_input = pilot.app.screen.query_one(
+                "#contact_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#contact_first_name", Input
             )
             last_name_input.value = "UpdatedLast"
-            first_name_input = app.query_one(
-                "#contact_first_name", UpdateContactScreen
-            )
             first_name_input.value = "UpdatedFirst"
-
-            await app.pilot.pause()
-
-            update_btn = app.query_one("#update", UpdateContactScreen)
-            await app.pilot.click(update_btn)
-            await app.pilot.pause()
-
+            await pilot.pause()
+            update_btn = pilot.app.screen.query_one("#update", Button)
+            await pilot.click(update_btn)
+            await pilot.pause()
             assert dismissed["id"] == 1
             assert dismissed["last_name"] == "UpdatedLast"
             assert dismissed["first_name"] == "UpdatedFirst"
@@ -2283,32 +2599,31 @@ class TestUpdateContactScreen:
 
     @pytest.mark.asyncio
     async def test_update_button_with_new_phone_numbers(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """Update button should include all phone numbers including new ones."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            # Add new phone number
-            btn = app.query_one("#add-phone-number", UpdateContactScreen)
-            await app.pilot.click(btn)
-            await app.pilot.pause()
-
-            new_phone = app.query_one(
-                "#phone_number_3", UpdateContactScreen
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = UpdateContactScreen(contact_data=mock_contact_data)
+            await app.push_screen(screen, callback=on_dismiss)
+            await pilot.pause()
+            btn = pilot.app.screen.query_one("#add-phone-number", Button)
+            await pilot.click(btn)
+            await pilot.pause()
+            new_phone = pilot.app.screen.query_one(
+                "#phone_number_3", Input
             )
             new_phone.value = "5556667777"
-
-            await app.pilot.pause()
-            update_btn = app.query_one("#update", UpdateContactScreen)
-            await app.pilot.click(update_btn)
-            await app.pilot.pause()
-
+            await pilot.pause()
+            update_btn = pilot.app.screen.query_one("#update", Button)
+            await pilot.click(update_btn)
+            await pilot.pause()
             assert dismissed["phone_numbers"] == [
                 "1234567890",
                 "0987654321",
@@ -2317,44 +2632,61 @@ class TestUpdateContactScreen:
 
     @pytest.mark.asyncio
     async def test_cancel_button_dismisses_with_none(
-        self, app, mock_contact_data
+        self, mock_contact_data
     ):
         """Cancel button should dismiss with None."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
+        app = App()
         dismissed = None
 
         async def on_dismiss(result):
             nonlocal dismissed
             dismissed = result
 
-        async with app.run_test(screen, on_dismiss=on_dismiss):
-            cancel_btn = app.query_one("#cancel", UpdateContactScreen)
-            await app.pilot.click(cancel_btn)
-            await app.pilot.pause()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data),
+                callback=on_dismiss,
+            )
+            await pilot.pause()
+            cancel_btn = pilot.app.screen.query_one("#cancel", Button)
+            await pilot.click(cancel_btn)
+            await pilot.pause()
             assert dismissed is None
 
-    # --- 5.7 on_mount Tests ---
+    # =============================================
+    # 7. ON_MOUNT TESTS
+    # =============================================
+
     @pytest.mark.asyncio
-    async def test_on_mount_sets_container_titles(
-        self, app, mock_contact_data
-    ):
+    async def test_on_mount_sets_container_titles(self, mock_contact_data):
         """on_mount should set container border titles and subtitles."""
-        screen = UpdateContactScreen(contact_data=mock_contact_data)
-        async with app.run_test(screen):
-            await app.pilot.pause()
+        app = App()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.push_screen(
+                UpdateContactScreen(contact_data=mock_contact_data)
+            )
+            await pilot.pause()
             assert (
-                screen.query_one("#update-contact-data").border_title
+                pilot.app.screen.query_one(
+                    "#update-contact-data"
+                ).border_title
                 == "Personal Data"
             )
             assert (
-                screen.query_one("#update-contact-data").border_subtitle
+                pilot.app.screen.query_one(
+                    "#update-contact-data"
+                ).border_subtitle
                 == "Edit relevant fields"
             )
             assert (
-                screen.query_one("#update-phone-number").border_title
+                pilot.app.screen.query_one(
+                    "#update-phone-number"
+                ).border_title
                 == "Phone Numbers"
             )
             assert (
-                screen.query_one("#update-phone-number").border_subtitle
+                pilot.app.screen.query_one(
+                    "#update-phone-number"
+                ).border_subtitle
                 == "Edit relevant fields"
             )

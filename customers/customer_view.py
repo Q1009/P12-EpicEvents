@@ -532,7 +532,7 @@ class CreateCustomerScreen(Screen):
     :type contacts: list[Contact]
     """
 
-    SUB_TITLE = "CREATE CUSTOMERS"
+    SUB_TITLE = "CREATE CUSTOMER"
     CSS_PATH = "../styles/create_customer_screen.tcss"
 
     # Reactive variables
@@ -611,11 +611,13 @@ class CreateCustomerScreen(Screen):
                     yield RadioButton(
                         "Existing contact",
                         classes="customer-contact-radio-button",
+                        id="existing-contact",
                     )
                     yield RadioButton(
                         "New contact",
                         value=True,
                         classes="customer-contact-radio-button",
+                        id="new-contact",
                     )
                 with Container(
                     classes="customer-contact-select-input-container",
@@ -958,7 +960,7 @@ class UpdateCustomerScreen(Screen):
     :type sales_representatives: list[Collaborator]
     """
 
-    SUB_TITLE = "UPDATE CUSTOMERS"
+    SUB_TITLE = "UPDATE CUSTOMER"
     CSS_PATH = "../styles/update_customer_screen.tcss"
 
     # Reactive variables
