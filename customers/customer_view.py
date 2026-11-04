@@ -1005,6 +1005,7 @@ class UpdateCustomerScreen(Screen):
                 "Updating Customer: "
                 f"{self.customer_data['customer_first_name']} "
                 f"{self.customer_data['customer_last_name']}",
+                id="updating-customer-static",
                 classes="updating-customer-static",
             )
             with Container(
@@ -1688,6 +1689,7 @@ class UpdateContactScreen(Screen):
         with Container(classes="update-contact-main-container"):
             yield Static(
                 f"Updating Contact: {self.contact_data['contact_first_name']} {self.contact_data['contact_last_name']}",
+                id="updating-contact-static",
                 classes="updating-contact-static",
             )
             with Container(
@@ -1825,10 +1827,17 @@ class UpdateContactScreen(Screen):
             id=f"phone_label_{self.phone_number_counter + 1}",
         )
         input_field = Input(
-            placeholder="00 12 34 56 78",
             id=f"phone_number_{self.phone_number_counter + 1}",
+            placeholder="+33 6 00 00 00 00",
             type="text",
+            max_length=20,
             classes="form-input",
+            validators=[
+                Length(
+                    minimum=1,
+                    failure_description="Field cannot be empty.",
+                ),
+            ],
         )
 
         container.mount(label, before=buttons_container)
