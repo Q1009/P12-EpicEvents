@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -25,7 +25,17 @@ from services.permission_services import PermissionServices
 
 
 class CollaboratorScreen(Screen):
-    """Screen that displays a table of collaborators."""
+    """Screen for displaying and managing collaborators in the EpicEvents CRM.
+
+    Provides a comprehensive view of all collaborators with their associated
+    customers and events. Allows navigation to create, update, delete collaborators,
+    and consult related customer or event information.
+
+    :param collaborators: List of Collaborator objects to display in the table.
+    :type collaborators: list[Collaborator]
+    :param user: The currently authenticated collaborator.
+    :type user: Collaborator
+    """
 
     SUB_TITLE = "COLLABORATORS"
     CSS_PATH = "../styles/collaborator_screen.tcss"
@@ -49,13 +59,28 @@ class CollaboratorScreen(Screen):
     def __init__(
         self, collaborators: list[Collaborator], user: Collaborator
     ) -> None:
+        """Initialize the CollaboratorScreen with collaborators and user data.
+
+        :param collaborators: List of Collaborator objects to display in the table.
+        :type collaborators: list[Collaborator]
+        :param user: The currently authenticated collaborator.
+        :type user: Collaborator
+        """
         super().__init__()
-        self.collaborators = collaborators
-        self.current_user = user
-        self.selected_collaborator_first_name: str = None
-        self.selected_collaborator_last_name: str = None
+        self.collaborators: list[Collaborator] = collaborators
+        self.current_user: Collaborator = user
+        self.selected_collaborator_first_name: str | None = None
+        self.selected_collaborator_last_name: str | None = None
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with data tables (collaborators,
+        customers, events), action buttons, and footer.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="collaborator-main-container"):
             yield DataTable(id="collaborators-table")
@@ -91,7 +116,11 @@ class CollaboratorScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
-        """."""
+        """Initialize the screen after mounting.
+
+        Builds all data tables, sets button states based on permissions,
+        and selects the first collaborator if the list is not empty.
+        """
         self.build_collaborators_table()
         self.build_collaborator_customers_table()
         self.build_collaborator_events_table()
@@ -106,6 +135,10 @@ class CollaboratorScreen(Screen):
             self.selected_collaborator_id = self.collaborators[0].id
 
     def build_collaborators_table(self) -> None:
+        """Build and configure the collaborators data table.
+
+        Sets up column headers for displaying collaborator information.
+        """
         table = self.query_one("#collaborators-table", DataTable)
         table.border_title = "Collaborators"
         table.cursor_type = "row"
@@ -124,7 +157,14 @@ class CollaboratorScreen(Screen):
         self.load_collaborators(table)
 
     def load_collaborators(self, table: DataTable) -> None:
-        """Load collaborator data into the table."""
+        """Load collaborator data into the collaborators table.
+
+        Populates the table with collaborator data including department names,
+        number of assigned customers, and number of assigned events.
+
+        :param table: The DataTable widget to populate with collaborator data.
+        :type table: DataTable
+        """
         table.clear()
 
         for collaborator in self.collaborators:
@@ -148,6 +188,11 @@ class CollaboratorScreen(Screen):
         table.loading = False
 
     def build_collaborator_customers_table(self) -> None:
+        """Build and configure the customer data table.
+
+        Sets up column headers for displaying customers assigned to the
+        selected collaborator.
+        """
         table = self.query_one("#collaborator-customers-table", DataTable)
         table.border_title = "Assigned Customers"
         table.cursor_type = "row"
@@ -162,6 +207,13 @@ class CollaboratorScreen(Screen):
     def load_collaborator_customers(
         self, table: DataTable, collaborator: Collaborator
     ) -> None:
+        """Load customer data for the selected collaborator.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param collaborator: The Collaborator object whose customers to load.
+        :type collaborator: Collaborator
+        """
         table.clear()
 
         for customer in collaborator.customers:
@@ -174,6 +226,11 @@ class CollaboratorScreen(Screen):
         table.loading = False
 
     def build_collaborator_events_table(self) -> None:
+        """Build and configure the event data table.
+
+        Sets up column headers for displaying events assigned to the
+        selected collaborator.
+        """
         table = self.query_one("#collaborator-events-table", DataTable)
         table.border_title = "Assigned Events"
         table.cursor_type = "row"
@@ -187,6 +244,13 @@ class CollaboratorScreen(Screen):
     def load_collaborator_events(
         self, table: DataTable, collaborator: Collaborator
     ) -> None:
+        """Load event data for the selected collaborator.
+
+        :param table: The DataTable widget to populate.
+        :type table: DataTable
+        :param collaborator: The Collaborator object whose events to load.
+        :type collaborator: Collaborator
+        """
         table.clear()
 
         for event in collaborator.events:
@@ -198,6 +262,14 @@ class CollaboratorScreen(Screen):
         table.loading = False
 
     def set_button_state(self, button_id: str) -> None:
+        """Set button visibility based on user permissions.
+
+        Checks if the current user has the required permissions for the button
+        and shows/hides it accordingly.
+
+        :param button_id: The ID of the button to check.
+        :type button_id: str
+        """
         if self.current_user is None:
             return
 
@@ -214,17 +286,18 @@ class CollaboratorScreen(Screen):
 
         if missing_permissions:
             self.query_one(f"#{button_id}", Button).display = False
-            # raise PermissionError(
-            #     f"User {user.email} lacks permissions: "
-            #     f"{', '.join(p.name for p in missing_permissions)}"
-            # )
         else:
             self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_collaborator_id(self, new_id: int | None) -> None:
-        """
-        Watcher that loads customers and events based on the collaborator
-        highlighted in collaborators-table
+        """Watcher that loads associated data based on the selected collaborator.
+
+        Updates customer and event tables, and selected IDs when a new
+        collaborator is selected in the collaborators table. Also updates
+        button states for consult actions.
+
+        :param new_id: The ID of the newly selected collaborator.
+        :type new_id: int | None
         """
         collaborator_customers_table = self.query_one(
             "#collaborator-customers-table", DataTable
@@ -240,11 +313,11 @@ class CollaboratorScreen(Screen):
             self.selected_event_id = None
         else:
             # Get collaborator by ID
-            selected_collaborator = next(
+            selected_collaborator: Collaborator | None = next(
                 (c for c in self.collaborators if c.id == new_id), None
             )
             if selected_collaborator:
-                # Load associated widgets bases on selected_collaborator
+                # Load associated widgets based on selected_collaborator
                 self.load_collaborator_customers(
                     collaborator_customers_table, selected_collaborator
                 )
@@ -279,7 +352,12 @@ class CollaboratorScreen(Screen):
         self.update_consult_customer_button_state()
         self.update_consult_event_button_state()
 
-    def update_consult_customer_button_state(self):
+    def update_consult_customer_button_state(self) -> None:
+        """Update the state of the consult customer button based on permissions.
+
+        Checks if the current user has permission to read all customers and
+        if a customer is selected, then updates button visibility.
+        """
         consult_customer_button = self.query_one(
             "#consult-customer", Button
         )
@@ -293,7 +371,12 @@ class CollaboratorScreen(Screen):
 
         consult_customer_button.display = False
 
-    def update_consult_event_button_state(self):
+    def update_consult_event_button_state(self) -> None:
+        """Update the state of the consult event button based on permissions.
+
+        Checks if the current user has permission to read all events and
+        if an event is selected, then updates button visibility.
+        """
         consult_event_button = self.query_one("#consult-event", Button)
 
         if PermissionServices.has_permission(
@@ -307,15 +390,33 @@ class CollaboratorScreen(Screen):
         consult_event_button.display = False
 
     def action_go_back(self) -> None:
-        """Return to previous screen."""
+        """Return to previous screen.
+
+        Dismisses the screen with "back" action.
+        """
         self.dismiss("back")
 
-    def _delete_collaborator(self, collaborator_id):
+    def _delete_collaborator(self, collaborator_id: int | None) -> None:
+        """Callback for delete confirmation.
+
+        Dismisses the screen with a tuple containing the delete action and
+        the collaborator ID to be deleted.
+
+        :param collaborator_id: The ID of the collaborator to delete.
+        :type collaborator_id: int | None
+        """
         self.dismiss(("delete_collaborator", collaborator_id))
 
     @on(DataTable.RowHighlighted, "#collaborators-table")
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-        """Saves highlighted collaborator id"""
+        """Save highlighted collaborator id.
+
+        Updates the selected_collaborator_id reactive variable when a row is
+        highlighted in the collaborators table, which triggers the watcher.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         collaborators_table = self.query_one(
             "#collaborators-table", DataTable
         )
@@ -330,7 +431,14 @@ class CollaboratorScreen(Screen):
     def on_customer_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
-        """Saves highlighted customer id"""
+        """Save highlighted customer id.
+
+        Updates the selected_customer_id reactive variable when a row is
+        highlighted in the customer table.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         collaborator_customers_table = self.query_one(
             "#collaborator-customers-table", DataTable
         )
@@ -345,7 +453,14 @@ class CollaboratorScreen(Screen):
     def on_event_row_highlighted(
         self, event: DataTable.RowHighlighted
     ) -> None:
-        """Saves highlighted event id"""
+        """Save highlighted event id.
+
+        Updates the selected_event_id reactive variable when a row is
+        highlighted in the event table.
+
+        :param event: The row highlighted event.
+        :type event: DataTable.RowHighlighted
+        """
         collaborator_events_table = self.query_one(
             "#collaborator-events-table", DataTable
         )
@@ -358,36 +473,67 @@ class CollaboratorScreen(Screen):
 
     @on(Button.Pressed, "#create-collaborator")
     def go_create_collaborator(self) -> None:
+        """Navigate to create collaborator screen.
+
+        Dismisses the screen with "create_collaborator" action.
+        """
         self.dismiss("create_collaborator")
 
     @on(Button.Pressed, "#update-collaborator")
     def go_update_collaborator(self) -> None:
+        """Navigate to update collaborator screen for selected collaborator.
+
+        Dismisses the screen with a tuple containing action and collaborator ID.
+        """
         self.dismiss(
             ("update_collaborator", self.selected_collaborator_id)
         )
 
     @on(Button.Pressed, "#delete-collaborator")
     def go_delete_collaborator(self) -> None:
-        delete_collaborator_screen = DeleteCollaboratorScreen(
-            self.selected_collaborator_id,
-            self.selected_collaborator_first_name,
-            self.selected_collaborator_last_name,
-        )
-        self.app.push_screen(
-            delete_collaborator_screen, callback=self._delete_collaborator
-        )
+        """Display delete confirmation modal for selected collaborator.
+
+        Creates and pushes a DeleteCollaboratorScreen modal with the selected
+        collaborator's information, and registers a callback for handling
+        the delete confirmation.
+        """
+        if self.selected_collaborator_id is not None:
+            delete_collaborator_screen = DeleteCollaboratorScreen(
+                self.selected_collaborator_id,
+                self.selected_collaborator_first_name,
+                self.selected_collaborator_last_name,
+            )
+            self.app.push_screen(
+                delete_collaborator_screen,
+                callback=self._delete_collaborator,
+            )
 
     @on(Button.Pressed, "#consult-customer")
     def go_consult_customer(self) -> None:
+        """Navigate to consult customer screen.
+
+        Dismisses the screen with a tuple containing action and customer ID.
+        """
         self.dismiss(("consult_customer", self.selected_customer_id))
 
     @on(Button.Pressed, "#consult-event")
     def go_consult_event(self) -> None:
+        """Navigate to consult event screen.
+
+        Dismisses the screen with a tuple containing action and event ID.
+        """
         self.dismiss(("consult_event", self.selected_event_id))
 
 
 class CreateCollaboratorScreen(Screen):
-    """Screen that displays a form to create a new collaborator."""
+    """Screen for creating a new collaborator in the EpicEvents CRM.
+
+    Provides a form for entering collaborator details including name,
+    password, and department assignment.
+
+    :param departments: List of existing departments to choose from.
+    :type departments: list[Department]
+    """
 
     SUB_TITLE = "CREATE COLLABORATOR"
     CSS_PATH = "../styles/create_collaborator_screen.tcss"
@@ -395,12 +541,25 @@ class CreateCollaboratorScreen(Screen):
     # Reactive variables
     is_form_valid: reactive[bool] = reactive(False)
 
-    def __init__(self, departments: list[Department]):
+    def __init__(self, departments: list[Department]) -> None:
+        """Initialize the CreateCollaboratorScreen with available departments.
+
+        :param departments: List of existing departments to choose from.
+        :type departments: list[Department]
+        """
         super().__init__()
-        self.departments = departments
-        self.collabortor_data = {}
+        self.departments: list[Department] = departments
+        self.collaborator_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (personal data,
+        department selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
+        """
         yield Header(show_clock=True)
         with Container(classes="create-collaborator-main-container"):
             with Container(
@@ -445,7 +604,7 @@ class CreateCollaboratorScreen(Screen):
                     id="password",
                     type="text",
                     max_length=100,
-                    password=False,  # Set to True
+                    password=True,
                     classes="form-input",
                     validators=[
                         Length(
@@ -488,6 +647,10 @@ class CreateCollaboratorScreen(Screen):
         yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
+        """Initialize the screen after mounting.
+
+        Sets border titles for personal data and department selection containers.
+        """
         collaborator_data_container = self.query_one(
             "#collaborator-data", Container
         )
@@ -500,13 +663,19 @@ class CreateCollaboratorScreen(Screen):
         )
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Create button based on form input validation."""
+        """Disable or enable Create button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         create_button = self.query_one("#create", Button)
         create_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#collaborator_last_name", Input),
@@ -534,8 +703,11 @@ class CreateCollaboratorScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -548,8 +720,11 @@ class CreateCollaboratorScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -562,8 +737,11 @@ class CreateCollaboratorScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -578,7 +756,11 @@ class CreateCollaboratorScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -593,15 +775,26 @@ class CreateCollaboratorScreen(Screen):
 
     @on(Button.Pressed, "#create")
     def go_create(self) -> None:
+        """Handle Create button press.
+
+        Collects form data and dismisses screen with the collaborator data.
+        """
         self._collect_form_data()
         self.dismiss(self.collaborator_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self) -> dict:
-        """Collect all form data into a dictionary."""
+    def _collect_form_data(self) -> None:
+        """Collect all form data into collaborator_data dictionary.
+
+        Retrieves values from all form fields and stores them in collaborator_data.
+        """
         self.collaborator_data = {
             "collaborator_last_name": self.query_one(
                 "#collaborator_last_name", Input
@@ -617,7 +810,16 @@ class CreateCollaboratorScreen(Screen):
 
 
 class UpdateCollaboratorScreen(Screen):
-    """."""
+    """Screen for updating an existing collaborator in the EpicEvents CRM.
+
+    Provides a form pre-filled with existing collaborator data for modification.
+    Allows updating personal details and department assignment.
+
+    :param collaborator_data: Dictionary containing all data of the collaborator to update.
+    :type collaborator_data: dict[str, Any]
+    :param departments: List of existing departments to choose from.
+    :type departments: list[Department]
+    """
 
     SUB_TITLE = "UPDATE COLLABORATOR"
     CSS_PATH = "../styles/update_collaborator_screen.tcss"
@@ -626,16 +828,30 @@ class UpdateCollaboratorScreen(Screen):
     is_form_valid: reactive[bool] = reactive(False)
 
     def __init__(
-        self, collaborator_data: dict, departments: list[Department]
-    ):
-        super().__init__()
-        self.collaborator_data = collaborator_data
-        self.updated_collaborator_data = {}
-        self.departments = departments
+        self,
+        collaborator_data: dict[str, Any],
+        departments: list[Department],
+    ) -> None:
+        """Initialize the UpdateCollaboratorScreen with collaborator data and options.
 
-    def compose(self):
+        :param collaborator_data: Dictionary containing all data of the collaborator to update.
+        :type collaborator_data: dict[str, Any]
+        :param departments: List of existing departments to choose from.
+        :type departments: list[Department]
         """
-        Compose the screen with a form to update collaborator data.
+        super().__init__()
+        self.collaborator_data: dict[str, Any] = collaborator_data
+        self.updated_collaborator_data: dict[str, Any] = {}
+        self.departments: list[Department] = departments
+
+    def compose(self) -> ComposeResult:
+        """Compose the screen UI components.
+
+        Creates the header, main container with form sections (personal data,
+        department selection), and footer with action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         yield Header(show_clock=True)
         with Container(classes="update-collaborator-main-container"):
@@ -717,9 +933,11 @@ class UpdateCollaboratorScreen(Screen):
                 )
         yield Footer(show_command_palette=False)
 
-    def _on_mount(self):
-        """Set container border title"""
+    def on_mount(self) -> None:
+        """Initialize the screen after mounting.
 
+        Sets border titles for personal data and department selection containers.
+        """
         collaborator_data_container = self.query_one(
             "#update-collaborator-data", Container
         )
@@ -735,13 +953,19 @@ class UpdateCollaboratorScreen(Screen):
         )
 
     def watch_is_form_valid(self, is_valid: bool) -> None:
-        """Disable/enable Update button based on form input validation."""
+        """Disable or enable Update button based on form validation.
+
+        :param is_valid: Whether the form is currently valid.
+        :type is_valid: bool
+        """
         update_button = self.query_one("#update", Button)
         update_button.disabled = not is_valid
 
     def _validate_form(self) -> None:
-        """Validates every input field of the form and
-        updates `is_form_valid` reactive variable
+        """Validates every input field of the form.
+
+        Updates the is_form_valid reactive variable based on validation results
+        of all input and select fields.
         """
         widget_inputs = [
             self.query_one("#collaborator_last_name", Input),
@@ -770,8 +994,11 @@ class UpdateCollaboratorScreen(Screen):
 
     @on(Input.Changed)
     def show_input_invalid_reasons(self, event: Input.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed input fields.
+
+        :param event: The input changed event.
+        :type event: Input.Changed
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -784,8 +1011,11 @@ class UpdateCollaboratorScreen(Screen):
 
     @on(Input.Blurred)
     def show_input_invalid_reasons_2(self, event: Input.Blurred) -> None:
-        """Activates on blurred (losing focus) input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for blurred input fields.
+
+        :param event: The input blurred event.
+        :type event: Input.Blurred
+        """
         self._validate_form()
         input_widget = event.input
 
@@ -798,8 +1028,11 @@ class UpdateCollaboratorScreen(Screen):
 
     @on(Select.Changed)
     def show_select_invalid_reasons(self, event: Select.Changed) -> None:
-        """Activates on changed input"""
-        # Updating the UI to show the reasons why validation failed
+        """Show validation error messages for changed select fields.
+
+        :param event: The select changed event.
+        :type event: Select.Changed
+        """
         self._validate_form()
         select_widget = event.select
         select_current = select_widget.query_one(SelectCurrent)
@@ -814,7 +1047,11 @@ class UpdateCollaboratorScreen(Screen):
 
     @on(DescendantBlur, "Select")
     def show_select_invalid_reasons_2(self, event: DescendantBlur) -> None:
-        """Activates on blurred select"""
+        """Show validation error messages for blurred select fields.
+
+        :param event: The descendant blur event.
+        :type event: DescendantBlur
+        """
         self._validate_form()
         select_widget = event.widget
         select_current = select_widget.query_one(SelectCurrent)
@@ -829,16 +1066,27 @@ class UpdateCollaboratorScreen(Screen):
 
     @on(Button.Pressed, "#update")
     def go_update(self) -> None:
+        """Handle Update button press.
+
+        Collects form data and dismisses screen with the updated collaborator data.
+        """
         self._collect_form_data()
         self.dismiss(self.updated_collaborator_data)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses screen without data.
+        """
         self.dismiss(None)
 
-    def _collect_form_data(self):
-        """."""
-        selected_department = self.query_one(
+    def _collect_form_data(self) -> None:
+        """Collect all form data into updated_collaborator_data dictionary.
+
+        Retrieves values from all form fields and stores them in updated_collaborator_data.
+        """
+        selected_department: Department | None = self.query_one(
             "#update-collaborator-department-select", Select
         ).value
 
@@ -855,24 +1103,48 @@ class UpdateCollaboratorScreen(Screen):
 
 
 class DeleteCollaboratorScreen(ModalScreen):
-    """."""
+    """Modal screen for confirming collaborator deletion.
+
+    Displays a confirmation dialog with the collaborator's name and
+    provides buttons to confirm or cancel the deletion.
+
+    :param collaborator_id: The ID of the collaborator to delete.
+    :type collaborator_id: int | None
+    :param collaborator_first_name: First name of the collaborator to delete.
+    :type collaborator_first_name: str | None
+    :param collaborator_last_name: Last name of the collaborator to delete.
+    :type collaborator_last_name: str | None
+    """
 
     CSS_PATH = "../styles/delete_collaborator_screen.tcss"
 
     def __init__(
         self,
-        collaborator_id,
-        collaborator_first_name,
-        collaborator_last_name,
-    ):
-        super().__init__()
-        self.collaborator_id = collaborator_id
-        self.collaborator_first_name = collaborator_first_name
-        self.collaborator_last_name = collaborator_last_name
+        collaborator_id: int | None,
+        collaborator_first_name: str | None,
+        collaborator_last_name: str | None,
+    ) -> None:
+        """Initialize the DeleteCollaboratorScreen with collaborator information.
 
-    def compose(self):
+        :param collaborator_id: The ID of the collaborator to delete.
+        :type collaborator_id: int | None
+        :param collaborator_first_name: First name of the collaborator to delete.
+        :type collaborator_first_name: str | None
+        :param collaborator_last_name: Last name of the collaborator to delete.
+        :type collaborator_last_name: str | None
         """
-        Compose the modal screen to confirm user choice to delete collaborator.
+        super().__init__()
+        self.collaborator_id: int | None = collaborator_id
+        self.collaborator_first_name: str | None = collaborator_first_name
+        self.collaborator_last_name: str | None = collaborator_last_name
+
+    def compose(self) -> ComposeResult:
+        """Compose the modal screen UI components.
+
+        Creates a container with confirmation message and action buttons.
+
+        :return: Generator yielding all UI widgets.
+        :rtype: ComposeResult
         """
         with Container(classes="delete-collaborator-main-container"):
             yield Label(
@@ -904,9 +1176,17 @@ class DeleteCollaboratorScreen(ModalScreen):
                 )
 
     @on(Button.Pressed, "#delete")
-    def go_update(self) -> None:
+    def go_delete(self) -> None:
+        """Handle Delete button press.
+
+        Dismisses the modal with the collaborator ID to confirm deletion.
+        """
         self.dismiss(self.collaborator_id)
 
     @on(Button.Pressed, "#cancel")
     def go_back(self) -> None:
+        """Handle Cancel button press.
+
+        Dismisses the modal without data (cancels deletion).
+        """
         self.dismiss(None)
