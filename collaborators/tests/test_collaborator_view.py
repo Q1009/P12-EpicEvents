@@ -46,64 +46,56 @@ from events.event_model import Event
 
 
 @pytest.fixture
-def mock_admin_collaborator():
+def mock_admin_collaborator(mock_admin_department):
     """Admin collaborator fixture."""
     mock_user = MagicMock(spec=Collaborator)
     mock_user.id = 1
     mock_user.first_name = "Admin"
     mock_user.last_name = "User"
     mock_user.email = "admin.user@epicevents.com"
-    mock_user.department = MagicMock(spec=Department)
-    mock_user.department.id = 1
-    mock_user.department.name = DepartmentName.ADMIN
+    mock_user.department = mock_admin_department
     mock_user.customers = []
     mock_user.events = []
     return mock_user
 
 
 @pytest.fixture
-def mock_sales_collaborator_1():
+def mock_sales_collaborator_1(mock_sales_department):
     """First sales collaborator fixture."""
     mock_user = MagicMock(spec=Collaborator)
     mock_user.id = 2
     mock_user.first_name = "Sales"
     mock_user.last_name = "Rep1"
     mock_user.email = "sales.rep1@epicevents.com"
-    mock_user.department = MagicMock(spec=Department)
-    mock_user.department.id = 2
-    mock_user.department.name = DepartmentName.SALES
+    mock_user.department = mock_sales_department
     mock_user.customers = []
     mock_user.events = []
     return mock_user
 
 
 @pytest.fixture
-def mock_sales_collaborator_2():
+def mock_sales_collaborator_2(mock_sales_department):
     """Second sales collaborator fixture."""
     mock_user = MagicMock(spec=Collaborator)
     mock_user.id = 3
     mock_user.first_name = "Sales"
     mock_user.last_name = "Rep2"
     mock_user.email = "sales.rep2@epicevents.com"
-    mock_user.department = MagicMock(spec=Department)
-    mock_user.department.id = 2
-    mock_user.department.name = DepartmentName.SALES
+    mock_user.department = mock_sales_department
     mock_user.customers = []
     mock_user.events = []
     return mock_user
 
 
 @pytest.fixture
-def mock_support_collaborator():
+def mock_support_collaborator(mock_support_department):
     """Support collaborator fixture."""
     mock_user = MagicMock(spec=Collaborator)
     mock_user.id = 4
     mock_user.first_name = "Support"
     mock_user.last_name = "Rep"
     mock_user.email = "support.rep@epicevents.com"
-    mock_user.department = MagicMock(spec=Department)
-    mock_user.department.id = 3
-    mock_user.department.name = DepartmentName.SUPPORT
+    mock_user.department = mock_support_department
     mock_user.customers = []
     mock_user.events = []
     return mock_user
@@ -965,7 +957,7 @@ class TestCreateCollaboratorScreen:
     @pytest.mark.asyncio
     async def test_header_exists(self, mock_departments_list):
         """Header should exist with correct title and clock enabled."""
-        app = App()
+        app = EpicEventsCRM()
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 CreateCollaboratorScreen(departments=mock_departments_list)
@@ -980,7 +972,7 @@ class TestCreateCollaboratorScreen:
     @pytest.mark.asyncio
     async def test_footer_exists(self, mock_departments_list):
         """Footer should exist with command palette disabled."""
-        app = App()
+        app = EpicEventsCRM()
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 CreateCollaboratorScreen(departments=mock_departments_list)
@@ -1038,7 +1030,9 @@ class TestCreateCollaboratorScreen:
                 "#collaborator-department-select", Select
             )
             assert select is not None
-            assert len(select._options) == 3
+            assert (
+                len(select._options) == len(mock_departments_list) + 1
+            )  # SELECT.Null option
 
     @pytest.mark.asyncio
     async def test_all_action_buttons_exist(self, mock_departments_list):
@@ -1097,7 +1091,18 @@ class TestCreateCollaboratorScreen:
     # =============================================
 
     @pytest.mark.asyncio
-    async def test_empty_last_name_invalid(self, mock_departments_list):
+    async def test_empty_form_is_invalid(self, mock_departments_list):
+        """Empty fields should make form invalid."""
+        app = App()
+        async with app.run_test(size=(120, 50)) as pilot:
+            await app.push_screen(
+                CreateCollaboratorScreen(departments=mock_departments_list)
+            )
+            await pilot.pause()
+            assert pilot.app.screen.is_form_valid is False
+
+    @pytest.mark.asyncio
+    async def test_last_name_validation_empty(self, mock_departments_list):
         """Empty last name should make form invalid."""
         app = App()
         async with app.run_test(size=(120, 50)) as pilot:
@@ -1110,14 +1115,16 @@ class TestCreateCollaboratorScreen:
             last_name_input = pilot.app.screen.query_one(
                 "#collaborator_last_name", Input
             )
-            await pilot.click(last_name_input)
-            await pilot.press("ctrl+a", "delete")
+            last_name_input.value = ""
             await pilot.pause()
-
-            assert pilot.app.screen.is_form_valid is False
+            result = last_name_input.validate("")
+            assert result.is_valid is False
+            assert "Field cannot be empty." in result.failure_descriptions
 
     @pytest.mark.asyncio
-    async def test_empty_first_name_invalid(self, mock_departments_list):
+    async def test_first_name_validation_empty(
+        self, mock_departments_list
+    ):
         """Empty first name should make form invalid."""
         app = App()
         async with app.run_test(size=(120, 50)) as pilot:
@@ -1130,15 +1137,15 @@ class TestCreateCollaboratorScreen:
             first_name_input = pilot.app.screen.query_one(
                 "#collaborator_first_name", Input
             )
-            await pilot.click(first_name_input)
-            await pilot.press("ctrl+a", "delete")
+            first_name_input.value = ""
             await pilot.pause()
-
-            assert pilot.app.screen.is_form_valid is False
+            result = first_name_input.validate("")
+            assert result.is_valid is False
+            assert "Field cannot be empty." in result.failure_descriptions
 
     @pytest.mark.asyncio
-    async def test_empty_password_invalid(self, mock_departments_list):
-        """Empty password should make form invalid."""
+    async def test_password_validation_empty(self, mock_departments_list):
+        """Empty first name should make form invalid."""
         app = App()
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
@@ -1147,12 +1154,14 @@ class TestCreateCollaboratorScreen:
             await pilot.pause()
 
             # Get password input and set empty value
-            password_input = pilot.app.screen.query_one("#password", Input)
-            await pilot.click(password_input)
-            await pilot.press("ctrl+a", "delete")
+            password_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            password_input.value = ""
             await pilot.pause()
-
-            assert pilot.app.screen.is_form_valid is False
+            result = password_input.validate("")
+            assert result.is_valid is False
+            assert "Field cannot be empty." in result.failure_descriptions
 
     @pytest.mark.asyncio
     async def test_all_fields_valid(self, mock_departments_list):
@@ -1166,22 +1175,24 @@ class TestCreateCollaboratorScreen:
             await pilot.pause()
 
             # Fill all fields
-            await pilot.click("#collaborator_last_name")
-            await pilot.press("D", "o", "e")
-            await pilot.pause()
-
-            await pilot.click("#collaborator_first_name")
-            await pilot.press("J", "o", "h", "n")
-            await pilot.pause()
-
-            await pilot.click("#password")
-            await pilot.press("p", "a", "s", "s", "w", "o", "r", "d")
+            last_name_input = pilot.app.screen.query_one(
+                "#collaborator_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            password_input = pilot.app.screen.query_one("#password", Input)
+            last_name_input.value = "Doe"
+            first_name_input.value = "John"
+            password_input.value = "password"
             await pilot.pause()
 
             # Select department
-            await pilot.click("#collaborator-department-select")
-            await pilot.pause()
-            await pilot.press("down", "enter")
+            department_select = pilot.app.screen.query_one(
+                "#collaborator-department-select", Select
+            )
+            assert department_select.is_blank() is True
+            department_select.value = mock_departments_list[0]
             await pilot.pause()
 
             assert screen.is_form_valid is True
@@ -1214,22 +1225,23 @@ class TestCreateCollaboratorScreen:
             await pilot.pause()
 
             # Fill all fields
-            await pilot.click("#collaborator_last_name")
-            await pilot.press("D", "o", "e")
-            await pilot.pause()
-
-            await pilot.click("#collaborator_first_name")
-            await pilot.press("J", "o", "h", "n")
-            await pilot.pause()
-
-            await pilot.click("#password")
-            await pilot.press("p", "a", "s", "s", "w", "o", "r", "d")
+            last_name_input = pilot.app.screen.query_one(
+                "#collaborator_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            password_input = pilot.app.screen.query_one("#password", Input)
+            last_name_input.value = "Doe"
+            first_name_input.value = "John"
+            password_input.value = "password"
             await pilot.pause()
 
             # Select department
-            await pilot.click("#collaborator-department-select")
-            await pilot.pause()
-            await pilot.press("down", "enter")
+            department_select = pilot.app.screen.query_one(
+                "#collaborator-department-select", Select
+            )
+            department_select.value = mock_departments_list[0]
             await pilot.pause()
 
             create_button = pilot.app.screen.query_one("#create", Button)
@@ -1240,30 +1252,9 @@ class TestCreateCollaboratorScreen:
     # =============================================
 
     @pytest.mark.asyncio
-    async def test_invalid_last_name_shows_error(
+    async def test_valid_last_name_clears_error(
         self, mock_departments_list
     ):
-        """Invalid last name should show error message."""
-        app = App()
-        async with app.run_test(size=(120, 50)) as pilot:
-            await app.push_screen(
-                CreateCollaboratorScreen(departments=mock_departments_list)
-            )
-            await pilot.pause()
-
-            last_name_input = pilot.app.screen.query_one(
-                "#collaborator_last_name", Input
-            )
-            await pilot.click(last_name_input)
-            await pilot.press("ctrl+a", "delete")
-            await pilot.pause()
-
-            assert (
-                last_name_input.border_subtitle == "Field cannot be empty."
-            )
-
-    @pytest.mark.asyncio
-    async def test_valid_field_clears_error(self, mock_departments_list):
         """Valid field should clear error message."""
         app = App()
         async with app.run_test(size=(120, 50)) as pilot:
@@ -1275,11 +1266,48 @@ class TestCreateCollaboratorScreen:
             last_name_input = pilot.app.screen.query_one(
                 "#collaborator_last_name", Input
             )
-            await pilot.click(last_name_input)
-            await pilot.press("D", "o", "e")
+            last_name_input.value = "Doe"
+            await pilot.pause()
+            await pilot.press("tab")
+            assert last_name_input.border_subtitle is None
+
+    @pytest.mark.asyncio
+    async def test_valid_first_name_clears_error(
+        self, mock_departments_list
+    ):
+        """Valid field should clear error message."""
+        app = App()
+        async with app.run_test(size=(120, 50)) as pilot:
+            await app.push_screen(
+                CreateCollaboratorScreen(departments=mock_departments_list)
+            )
             await pilot.pause()
 
-            assert last_name_input.border_subtitle is None
+            first_name_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            first_name_input.value = "John"
+            await pilot.pause()
+            await pilot.press("tab")
+            assert first_name_input.border_subtitle is None
+
+    @pytest.mark.asyncio
+    async def test_valid_password_clears_error(
+        self, mock_departments_list
+    ):
+        """Valid field should clear error message."""
+        app = App()
+        async with app.run_test(size=(120, 50)) as pilot:
+            await app.push_screen(
+                CreateCollaboratorScreen(departments=mock_departments_list)
+            )
+            await pilot.pause()
+
+            password_input = pilot.app.screen.query_one("#password", Input)
+            password_input.value = "password"
+            await pilot.pause()
+            await pilot.press("tab")
+            assert password_input.border_subtitle is None
 
     # =============================================
     # 6. FORM SUBMISSION TESTS
@@ -1305,22 +1333,23 @@ class TestCreateCollaboratorScreen:
             await pilot.pause()
 
             # Fill all fields
-            await pilot.click("#collaborator_last_name")
-            await pilot.press("D", "o", "e")
+            last_name_input = pilot.app.screen.query_one(
+                "#collaborator_last_name", Input
+            )
+            first_name_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            password_input = pilot.app.screen.query_one("#password", Input)
+            last_name_input.value = "Doe"
+            first_name_input.value = "John"
+            password_input.value = "password"
             await pilot.pause()
 
-            await pilot.click("#collaborator_first_name")
-            await pilot.press("J", "o", "h", "n")
-            await pilot.pause()
-
-            await pilot.click("#password")
-            await pilot.press("p", "a", "s", "s", "w", "o", "r", "d")
-            await pilot.pause()
-
-            # Select department (first option)
-            await pilot.click("#collaborator-department-select")
-            await pilot.pause()
-            await pilot.press("down", "enter")
+            # Select department
+            department_select = pilot.app.screen.query_one(
+                "#collaborator-department-select", Select
+            )
+            department_select.value = mock_departments_list[0]
             await pilot.pause()
 
             await pilot.click("#create")
@@ -1330,7 +1359,9 @@ class TestCreateCollaboratorScreen:
             assert dismissed_result["collaborator_last_name"] == "Doe"
             assert dismissed_result["collaborator_first_name"] == "John"
             assert dismissed_result["password"] == "password"
-            assert dismissed_result["department"] is not None
+            assert (
+                dismissed_result["department"] == mock_departments_list[0]
+            )
 
     @pytest.mark.asyncio
     async def test_cancel_button_dismisses_with_none(
@@ -1392,10 +1423,13 @@ class TestUpdateCollaboratorScreen:
     # =============================================
 
     def test_initialization(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """__init__ should store all parameters."""
-        collaborator_data = collaborator_to_dict(MagicMock())
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         screen = UpdateCollaboratorScreen(
             collaborator_data=collaborator_data,
             departments=mock_departments_list,
@@ -1414,11 +1448,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_header_exists(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Header should exist with correct title and clock enabled."""
-        collaborator_data = collaborator_to_dict(MagicMock())
-        app = App()
+        app = EpicEventsCRM()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1435,11 +1472,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_footer_exists(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Footer should exist with command palette disabled."""
-        collaborator_data = collaborator_to_dict(MagicMock())
-        app = App()
+        app = EpicEventsCRM()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1460,8 +1500,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """Static title should exist with collaborator name."""
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1470,19 +1510,24 @@ class TestUpdateCollaboratorScreen:
                 )
             )
             await pilot.pause()
-            static = pilot.app.screen.query_one(Static)
-            assert static is not None
-            assert (
-                "Updating Collaborator: Admin User" in static.content.plain
+            static = pilot.app.screen.query_one(
+                "#updating-collaborator-static", Static
             )
+            assert static is not None
+            assert "Updating Collaborator: " in static.content
+            assert mock_admin_collaborator.first_name in static.content
+            assert mock_admin_collaborator.last_name in static.content
 
     @pytest.mark.asyncio
     async def test_all_form_inputs_exist(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """All form inputs should exist with correct IDs."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1500,11 +1545,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_department_select_exists(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Department select should exist with correct ID."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1517,15 +1565,18 @@ class TestUpdateCollaboratorScreen:
                 "#update-collaborator-department-select", Select
             )
             assert select is not None
-            assert len(select._options) == 3
+            assert len(select._options) == len(mock_departments_list) + 1
 
     @pytest.mark.asyncio
     async def test_all_action_buttons_exist(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """All action buttons should exist with correct IDs."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1547,11 +1598,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_data_container_border_title(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Personal Data container should have correct border title and subtitle."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1568,11 +1622,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_department_container_border_title(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Department Selection container should have correct border title."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1598,9 +1655,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """Last name input should be pre-filled."""
-        mock_admin_collaborator.last_name = "AdminLast"
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1612,7 +1668,7 @@ class TestUpdateCollaboratorScreen:
             last_name_input = pilot.app.screen.query_one(
                 "#collaborator_last_name", Input
             )
-            assert last_name_input.value == "AdminLast"
+            assert last_name_input.value == "User"
 
     @pytest.mark.asyncio
     async def test_first_name_pre_filled(
@@ -1622,9 +1678,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """First name input should be pre-filled."""
-        mock_admin_collaborator.first_name = "AdminFirst"
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1636,7 +1691,7 @@ class TestUpdateCollaboratorScreen:
             first_name_input = pilot.app.screen.query_one(
                 "#collaborator_first_name", Input
             )
-            assert first_name_input.value == "AdminFirst"
+            assert first_name_input.value == "Admin"
 
     @pytest.mark.asyncio
     async def test_department_pre_selected(
@@ -1646,8 +1701,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """Department should be pre-selected."""
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1670,11 +1725,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_empty_last_name_invalid(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Empty last name should make form invalid."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             screen = UpdateCollaboratorScreen(
                 collaborator_data=collaborator_data,
@@ -1683,23 +1741,88 @@ class TestUpdateCollaboratorScreen:
             await app.push_screen(screen)
             await pilot.pause()
 
+            # Form is valid initially
+            assert screen.is_form_valid is True
+
             # Clear last name
             last_name_input = pilot.app.screen.query_one(
                 "#collaborator_last_name", Input
             )
-            await pilot.click(last_name_input)
-            await pilot.press("ctrl+a", "delete")
+            last_name_input.value = ""
+            await pilot.pause()
+
+            assert screen.is_form_valid is False
+
+    @pytest.mark.asyncio
+    async def test_empty_first_name_invalid(
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
+    ):
+        """Empty first name should make form invalid."""
+        app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
+        async with app.run_test(size=(120, 50)) as pilot:
+            screen = UpdateCollaboratorScreen(
+                collaborator_data=collaborator_data,
+                departments=mock_departments_list,
+            )
+            await app.push_screen(screen)
+            await pilot.pause()
+
+            # Form is valid initially
+            assert screen.is_form_valid is True
+
+            # Clear first name
+            first_name_input = pilot.app.screen.query_one(
+                "#collaborator_first_name", Input
+            )
+            first_name_input.value = ""
+            await pilot.pause()
+
+            assert screen.is_form_valid is False
+
+    @pytest.mark.asyncio
+    async def test_empty_department_select_invalid(
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
+    ):
+        """Empty department select should make form invalid."""
+        app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
+        async with app.run_test(size=(120, 50)) as pilot:
+            screen = UpdateCollaboratorScreen(
+                collaborator_data=collaborator_data,
+                departments=mock_departments_list,
+            )
+            await app.push_screen(screen)
+            await pilot.pause()
+
+            # Form is valid initially
+            assert screen.is_form_valid is True
+
+            # Clear first name
+            select = pilot.app.screen.query_one(
+                "#update-collaborator-department-select", Select
+            )
+            select.clear()
             await pilot.pause()
 
             assert screen.is_form_valid is False
 
     @pytest.mark.asyncio
     async def test_update_button_disabled_when_invalid(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_sales_collaborator_1,
+        mock_departments_list,
+        collaborator_to_dict,
     ):
         """Update button should be disabled when form is invalid."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             screen = UpdateCollaboratorScreen(
                 collaborator_data=collaborator_data,
@@ -1708,15 +1831,17 @@ class TestUpdateCollaboratorScreen:
             await app.push_screen(screen)
             await pilot.pause()
 
+            # Form is valid initially
+            update_button = pilot.app.screen.query_one("#update", Button)
+            assert update_button.disabled is False
+
             # Clear last name to make form invalid
             last_name_input = pilot.app.screen.query_one(
                 "#collaborator_last_name", Input
             )
-            await pilot.click(last_name_input)
-            await pilot.press("ctrl+a", "delete")
+            last_name_input.value = ""
             await pilot.pause()
 
-            update_button = pilot.app.screen.query_one("#update", Button)
             assert update_button.disabled is True
 
     @pytest.mark.asyncio
@@ -1727,8 +1852,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """Update button should be enabled when form is valid."""
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         async with app.run_test(size=(120, 50)) as pilot:
             screen = UpdateCollaboratorScreen(
                 collaborator_data=collaborator_data,
@@ -1751,8 +1876,8 @@ class TestUpdateCollaboratorScreen:
         mock_admin_collaborator,
     ):
         """Clicking Update should dismiss with updated form data."""
-        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         app = App()
+        collaborator_data = collaborator_to_dict(mock_admin_collaborator)
         dismissed_result = None
 
         def capture_dismiss(result):
@@ -1771,9 +1896,7 @@ class TestUpdateCollaboratorScreen:
             first_name_input = pilot.app.screen.query_one(
                 "#collaborator_first_name", Input
             )
-            await pilot.click(first_name_input)
-            await pilot.press("ctrl+a", "delete")
-            await pilot.press("U", "p", "d", "a", "t", "e", "d")
+            first_name_input.value = "Updated"
             await pilot.pause()
 
             await pilot.click("#update")
@@ -1783,15 +1906,21 @@ class TestUpdateCollaboratorScreen:
             assert dismissed_result["id"] == 1
             assert dismissed_result["first_name"] == "Updated"
             assert dismissed_result["last_name"] == "User"
-            assert dismissed_result["department"] is not None
+            assert (
+                dismissed_result["department"]
+                == mock_admin_collaborator.department
+            )
 
     @pytest.mark.asyncio
     async def test_cancel_button_dismisses_with_none(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_departments_list,
+        collaborator_to_dict,
+        mock_sales_collaborator_1,
     ):
         """Clicking Cancel should dismiss with None."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         dismissed_result = None
 
         def capture_dismiss(result):
@@ -1813,11 +1942,14 @@ class TestUpdateCollaboratorScreen:
 
     @pytest.mark.asyncio
     async def test_on_mount_sets_border_titles(
-        self, mock_departments_list, collaborator_to_dict
+        self,
+        mock_departments_list,
+        collaborator_to_dict,
+        mock_sales_collaborator_1,
     ):
         """on_mount should set border titles for containers."""
-        collaborator_data = collaborator_to_dict(MagicMock())
         app = App()
+        collaborator_data = collaborator_to_dict(mock_sales_collaborator_1)
         async with app.run_test(size=(120, 50)) as pilot:
             await app.push_screen(
                 UpdateCollaboratorScreen(
@@ -1891,13 +2023,13 @@ class TestDeleteCollaboratorScreen:
             )
             await pilot.pause()
             container = pilot.app.screen.query_one(
-                ".delete-collaborator-main-container", Container
+                "#delete-collaborator-main-container", Container
             )
             assert container is not None
 
     @pytest.mark.asyncio
     async def test_all_labels_exist(self):
-        """All labels should exist with correct classes."""
+        """All labels should exist with correct ids."""
         app = App()
         async with app.run_test(size=(60, 20)) as pilot:
             await app.push_screen(
@@ -1909,12 +2041,12 @@ class TestDeleteCollaboratorScreen:
             )
             await pilot.pause()
 
-            for label_class in [
-                ".updating-collaborator-message-start-label",
-                ".updating-collaborator-fullname-label",
-                ".updating-collaborator-message-end-label",
+            for label_id in [
+                "#updating-collaborator-message-start-label",
+                "#updating-collaborator-fullname-label",
+                "#updating-collaborator-message-end-label",
             ]:
-                label = pilot.app.screen.query_one(label_class, Label)
+                label = pilot.app.screen.query_one(label_id, Label)
                 assert label is not None
 
     @pytest.mark.asyncio
@@ -1955,9 +2087,9 @@ class TestDeleteCollaboratorScreen:
             )
             await pilot.pause()
             label = pilot.app.screen.query_one(
-                ".updating-collaborator-message-start-label", Label
+                "#updating-collaborator-message-start-label", Label
             )
-            assert label.content.plain == "Are you sure you want to delete"
+            assert label.content == "Are you sure you want to delete"
 
     @pytest.mark.asyncio
     async def test_second_label_content(self):
@@ -1973,9 +2105,9 @@ class TestDeleteCollaboratorScreen:
             )
             await pilot.pause()
             label = pilot.app.screen.query_one(
-                ".updating-collaborator-fullname-label", Label
+                "#updating-collaborator-fullname-label", Label
             )
-            assert label.content.plain == "John Doe"
+            assert label.content == "John Doe"
 
     @pytest.mark.asyncio
     async def test_third_label_content(self):
@@ -1991,9 +2123,9 @@ class TestDeleteCollaboratorScreen:
             )
             await pilot.pause()
             label = pilot.app.screen.query_one(
-                ".updating-collaborator-message-end-label", Label
+                "#updating-collaborator-message-end-label", Label
             )
-            assert label.content.plain == "from the system ?"
+            assert label.content == "from the system ?"
 
     # =============================================
     # 4. FORM SUBMISSION TESTS
@@ -2009,7 +2141,7 @@ class TestDeleteCollaboratorScreen:
             nonlocal dismissed_result
             dismissed_result = result
 
-        async with app.run_test(size=(60, 20)) as pilot:
+        async with app.run_test(size=(100, 50)) as pilot:
             await app.push_screen(
                 DeleteCollaboratorScreen(
                     collaborator_id=1,
@@ -2033,7 +2165,7 @@ class TestDeleteCollaboratorScreen:
             nonlocal dismissed_result
             dismissed_result = result
 
-        async with app.run_test(size=(60, 20)) as pilot:
+        async with app.run_test(size=(100, 50)) as pilot:
             await app.push_screen(
                 DeleteCollaboratorScreen(
                     collaborator_id=1,

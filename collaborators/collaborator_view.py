@@ -859,6 +859,7 @@ class UpdateCollaboratorScreen(Screen):
                 "Updating Collaborator: "
                 f"{self.collaborator_data['collaborator_first_name']} "
                 f"{self.collaborator_data['collaborator_last_name']}",
+                id="updating-collaborator-static",
                 classes="updating-collaborator-static",
             )
             with Container(
@@ -1146,21 +1147,28 @@ class DeleteCollaboratorScreen(ModalScreen):
         :return: Generator yielding all UI widgets.
         :rtype: ComposeResult
         """
-        with Container(classes="delete-collaborator-main-container"):
+        with Container(
+            id="delete-collaborator-main-container",
+            classes="delete-collaborator-main-container",
+        ):
             yield Label(
                 "Are you sure you want to delete",
+                id="updating-collaborator-message-start-label",
                 classes="updating-collaborator-message-start-label",
             )
             yield Label(
                 f"{self.collaborator_first_name} {self.collaborator_last_name}",
+                id="updating-collaborator-fullname-label",
                 classes="updating-collaborator-fullname-label",
             )
             yield Label(
                 "from the system ?",
+                id="updating-collaborator-message-end-label",
                 classes="updating-collaborator-message-end-label",
             )
             with Container(
-                classes="delete-collaborator-buttons-container"
+                id="delete-collaborator-buttons-container",
+                classes="delete-collaborator-buttons-container",
             ):
                 yield Button(
                     "Delete",
