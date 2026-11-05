@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import sentry_sdk
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from collaborators.collaborator_model import (
@@ -431,6 +432,9 @@ class CollaboratorController:
         Handles the collaborator deletion request. If deletion is cancelled,
         returns to the collaborator list. Otherwise, deletes the collaborator
         from the database and refreshes the list.
+        If the collaborator is referenced by foreign keys (e.g., as sales_representative
+        of a Customer or support_representative of an Event), the deletion is aborted
+        and the user is notified.
 
         :param collaborator_id: The ID of the collaborator to delete.
         :type collaborator_id: int | None
@@ -446,14 +450,25 @@ class CollaboratorController:
             )
             return
 
-        self.session.query(Collaborator).filter(
-            Collaborator.id == collaborator_id
-        ).delete()
+        try:
+            self.session.query(Collaborator).filter(
+                Collaborator.id == collaborator_id
+            ).delete()
 
-        self.session.commit()
-        self.epic_events_app.notify(
-            "Collaborator successfully deleted", severity="information"
-        )
+            self.session.commit()
+            self.epic_events_app.notify(
+                "Collaborator successfully deleted", severity="information"
+            )
+        except IntegrityError as e:
+            self.session.rollback()
+            self.epic_events_app.notify(
+                (
+                    f"Cannot delete collaborator: "
+                    f"{str(e.orig) if e.orig else 'FK constraint violation'}"
+                ),
+                severity="error",
+            )
+
         self.start(
             on_back=self.on_back_callback,
             on_consult_customer=self.on_consult_customer_callback,
