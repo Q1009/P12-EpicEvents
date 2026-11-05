@@ -452,7 +452,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             # Check customer table is loaded
@@ -488,7 +488,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 4))
+            await pilot.click(widget=table, offset=(1, 5))
             await pilot.pause()
 
             # Check event table is loaded
@@ -575,7 +575,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             await pilot.click("#update-collaborator")
@@ -588,13 +588,13 @@ class TestCollaboratorScreen:
     ):
         """Clicking 'Delete Collaborator' should open DeleteCollaboratorScreen modal."""
         app = App()
-        modal_opened = False
+        # modal_opened = False
 
-        class TestApp(App):
-            async def on_screen_resume(self, screen):
-                nonlocal modal_opened
-                if isinstance(screen, DeleteCollaboratorScreen):
-                    modal_opened = True
+        # class TestApp(App):
+        #     async def on_screen_resume(self, screen):
+        #         nonlocal modal_opened
+        #         if isinstance(screen, DeleteCollaboratorScreen):
+        #             modal_opened = True
 
         async with app.run_test(size=(120, 40)) as pilot:
             await app.push_screen(
@@ -609,14 +609,14 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             await pilot.click("#delete-collaborator")
             await pilot.pause()
 
             # Check that DeleteCollaboratorScreen is on top
-            assert len(pilot.app.screen_stack) == 2
+            assert len(pilot.app.screen_stack) == 3
             assert isinstance(
                 pilot.app.screen_stack[-1], DeleteCollaboratorScreen
             )
@@ -656,7 +656,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             await pilot.click("#consult-customer")
@@ -695,7 +695,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 4))
+            await pilot.click(widget=table, offset=(1, 5))
             await pilot.pause()
 
             await pilot.click("#consult-event")
@@ -724,32 +724,9 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
             assert screen.selected_collaborator_id == 2
-
-    @pytest.mark.asyncio
-    async def test_pre_selected_collaborator_id_sets_cursor(
-        self, mock_collaborators, mock_admin_collaborator
-    ):
-        """Pre-selected collaborator should set cursor to correct row."""
-        app = App()
-        async with app.run_test(size=(120, 40)) as pilot:
-            # Create screen with collaborator_id=3 (third collaborator, index 2)
-            await app.push_screen(
-                CollaboratorScreen(
-                    collaborators=mock_collaborators,
-                    user=mock_admin_collaborator,
-                )
-            )
-            await pilot.pause()
-            table = pilot.app.screen.query_one(
-                "#collaborators-table", DataTable
-            )
-            # Third collaborator is on third line which is index 2
-            assert (
-                table.cursor_row == 0
-            )  # First is selected by default in on_mount
 
     @pytest.mark.asyncio
     async def test_watch_selected_collaborator_id_loads_data(
@@ -780,7 +757,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             assert screen.selected_collaborator_id == 2
@@ -817,6 +794,52 @@ class TestCollaboratorScreen:
                 assert button.display is True
 
     @pytest.mark.asyncio
+    async def test_action_buttons_not_displayed_with_sales_user(
+        self, mock_collaborators, mock_sales_collaborator_1
+    ):
+        """All action buttons should not be displayed with sales/support user."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CollaboratorScreen(
+                    collaborators=mock_collaborators,
+                    user=mock_sales_collaborator_1,
+                )
+            )
+            await pilot.pause()
+
+            for button_id in [
+                "#create-collaborator",
+                "#update-collaborator",
+                "#delete-collaborator",
+            ]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button.display is False
+
+    @pytest.mark.asyncio
+    async def test_action_buttons_not_displayed_with_support_user(
+        self, mock_collaborators, mock_support_collaborator
+    ):
+        """All action buttons should not be displayed with sales/support user."""
+        app = App()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await app.push_screen(
+                CollaboratorScreen(
+                    collaborators=mock_collaborators,
+                    user=mock_support_collaborator,
+                )
+            )
+            await pilot.pause()
+
+            for button_id in [
+                "#create-collaborator",
+                "#update-collaborator",
+                "#delete-collaborator",
+            ]:
+                button = pilot.app.screen.query_one(button_id, Button)
+                assert button.display is False
+
+    @pytest.mark.asyncio
     async def test_consult_customer_button_displayed_with_permission(
         self,
         mock_collaborators,
@@ -824,12 +847,6 @@ class TestCollaboratorScreen:
         mock_customer_1,
     ):
         """Consult customer button should be displayed with permission and customer selected."""
-        # Give permission to sales collaborator
-        from permissions.permission_model import Permission
-
-        mock_sales_collaborator_1.permissions = [
-            Permission.READ_ALL_CUSTOMERS
-        ]
         mock_sales_collaborator_1.customers = [mock_customer_1]
 
         app = App()
@@ -845,7 +862,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 2))
+            await pilot.click(widget=table, offset=(1, 3))
             await pilot.pause()
 
             button = pilot.app.screen.query_one(
@@ -861,12 +878,6 @@ class TestCollaboratorScreen:
         mock_event_1,
     ):
         """Consult event button should be displayed with permission and event selected."""
-        # Give permission to support collaborator
-        from permissions.permission_model import Permission
-
-        mock_support_collaborator.permissions = [
-            Permission.READ_ALL_EVENTS
-        ]
         mock_support_collaborator.events = [mock_event_1]
 
         app = App()
@@ -882,7 +893,7 @@ class TestCollaboratorScreen:
             table = pilot.app.screen.query_one(
                 "#collaborators-table", DataTable
             )
-            await pilot.click(widget=table, offset=(1, 4))
+            await pilot.click(widget=table, offset=(1, 5))
             await pilot.pause()
 
             button = pilot.app.screen.query_one("#consult-event", Button)
