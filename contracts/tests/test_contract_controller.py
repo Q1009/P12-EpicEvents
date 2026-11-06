@@ -715,7 +715,9 @@ class TestContractControllerBusinessLogic:
         }
 
         controller = ContractController(mock_app, mock_session)
-        controller.update_contract(updated_contract_data)
+        ContractController.update_contract.__wrapped__(
+            controller, updated_contract_data
+        )
 
         # Verify the update was called with correct data
         update_call = (
@@ -769,7 +771,9 @@ class TestContractControllerBusinessLogic:
         }
 
         controller = ContractController(mock_app, mock_session)
-        controller.update_contract(updated_contract_data)
+        ContractController.update_contract.__wrapped__(
+            controller, updated_contract_data
+        )
 
         # Verify Sentry capture_event was called
         mock_capture_event.assert_called_once()

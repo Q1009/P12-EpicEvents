@@ -721,11 +721,15 @@ class TestCustomerControllerBusinessLogic:
         )
         mock_start.assert_called_once_with(on_back=None)
 
+    @patch(
+        "services.authentication_services.AuthenticationServices.get_user_info"
+    )
     @patch("customers.customer_controller.CustomerController.start")
     def test_create_customer_with_existing_contact(
-        self, mock_start, mock_app, mock_session
+        self, mock_start, mock_get_user, mock_app, mock_session
     ):
         """create_customer should use existing Contact without recreating it."""
+        # mock_get_user.return_value = mock_sales_collaborator
         existing_contact = Contact(
             first_name="Alice",
             last_name="Smith",
@@ -799,7 +803,9 @@ class TestCustomerControllerBusinessLogic:
         }
 
         controller = CustomerController(mock_app, mock_session)
-        controller.update_customer(updated_customer_data)
+        CustomerController.update_customer.__wrapped__(
+            controller, updated_customer_data
+        )
 
         # Verify the update was called with correct data
         update_call = (
@@ -932,7 +938,9 @@ class TestCustomerControllerBusinessLogic:
         }
 
         controller = CustomerController(mock_app, mock_session)
-        controller.update_contact(updated_contact_data)
+        CustomerController.update_contact.__wrapped__(
+            controller, updated_contact_data
+        )
 
         # Verify contact update
         update_call = (

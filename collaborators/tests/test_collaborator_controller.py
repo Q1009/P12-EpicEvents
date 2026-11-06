@@ -473,12 +473,16 @@ class TestCollaboratorControllerBusinessLogic:
 
     # --- Create Collaborator Tests ---
     @patch(
+        "services.authentication_services.AuthenticationServices.get_user_info"
+    )
+    @patch(
         "collaborators.collaborator_controller.CollaboratorController.start"
     )
     def test_create_collaborator_cancelled(
         self, mock_start, mock_app, mock_session
     ):
         """create_collaborator should notify and restart if cancelled."""
+        # Setup
         controller = CollaboratorController(mock_app, mock_session)
         CollaboratorController.create_collaborator.__wrapped__(
             controller, None
@@ -625,9 +629,9 @@ class TestCollaboratorControllerBusinessLogic:
         }
 
         controller = CollaboratorController(mock_app, mock_session)
-
-        # Execute
-        controller.update_collaborator(updated_collaborator_data)
+        CollaboratorController.update_collaborator.__wrapped__(
+            controller, updated_collaborator_data
+        )
 
         # Assert
         # Check update query
@@ -676,7 +680,9 @@ class TestCollaboratorControllerBusinessLogic:
     ):
         """delete_collaborator should notify and restart if cancelled."""
         controller = CollaboratorController(mock_app, mock_session)
-        controller.delete_collaborator(None)
+        CollaboratorController.delete_collaborator.__wrapped__(
+            controller, None
+        )
 
         mock_app.notify.assert_called_once_with(
             "Collaborator delete cancelled", severity="warning"
@@ -700,7 +706,9 @@ class TestCollaboratorControllerBusinessLogic:
         mock_session.query.return_value.filter.return_value = mock_filter
 
         controller = CollaboratorController(mock_app, mock_session)
-        controller.delete_collaborator(1)
+        CollaboratorController.delete_collaborator.__wrapped__(
+            controller, 1
+        )
 
         # Check delete query
         mock_session.query.return_value.filter.assert_called_once()
@@ -745,9 +753,9 @@ class TestCollaboratorControllerBusinessLogic:
         mock_session.rollback = MagicMock()
 
         controller = CollaboratorController(mock_app, mock_session)
-
-        # Execute
-        controller.delete_collaborator(1)
+        CollaboratorController.delete_collaborator.__wrapped__(
+            controller, 1
+        )
 
         # Assert
         # Should attempt to delete
