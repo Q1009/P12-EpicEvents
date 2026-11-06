@@ -1,14 +1,23 @@
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from models import Collaborator, Permission, RoleName, ROLE_PERMISSIONS
-from services import PermissionServices, PermissionError
+from sqlalchemy.orm import Session, sessionmaker
+
+from collaborators.collaborator_model import Collaborator
 from config.settings import settings
-from typing import Tuple
+from contracts.contract_model import Contract  # noqa: F401
+from customers.customer_model import Customer  # noqa: F401
+from events.event_model import Event  # noqa: F401
+from permissions.permission_model import Permission
+from permissions.role_model import ROLE_PERMISSIONS, RoleName
+from services.permission_services import (
+    PermissionError,
+    PermissionServices,
+)
 
 SALES_REP_ID = 1
 SUPPORT_REP_ID = 4
 ADMIN_REP_ID = 6
+
 
 @pytest.fixture(scope="module")  # Shared across all tests in this module
 def db_session():
@@ -41,8 +50,11 @@ def db_session():
     session.close()
     engine.dispose()
 
+
 @pytest.fixture(scope="module")
-def collab(db_session: Session) -> Tuple[Collaborator, Collaborator, Collaborator]:
+def collab(
+    db_session: Session,
+) -> tuple[Collaborator, Collaborator, Collaborator]:
     """
     Fixture that provides collaborator instances for testing.
 
@@ -58,16 +70,29 @@ def collab(db_session: Session) -> Tuple[Collaborator, Collaborator, Collaborato
     Raises:
         AssertionError: If any expected collaborator is not found in the database
     """
-    sales_rep = db_session.query(Collaborator).filter_by(id=SALES_REP_ID).first()
-    support_rep = db_session.query(Collaborator).filter_by(id=SUPPORT_REP_ID).first()
-    admin_rep = db_session.query(Collaborator).filter_by(id=ADMIN_REP_ID).first()
+    sales_rep = (
+        db_session.query(Collaborator).filter_by(id=SALES_REP_ID).first()
+    )
+    support_rep = (
+        db_session.query(Collaborator).filter_by(id=SUPPORT_REP_ID).first()
+    )
+    admin_rep = (
+        db_session.query(Collaborator).filter_by(id=ADMIN_REP_ID).first()
+    )
 
     # Verify all test subjects exist
-    assert sales_rep is not None, "Sales representative (ID=1) not found in database"
-    assert support_rep is not None, "Support representative (ID=4) not found in database"
-    assert admin_rep is not None, "Administrator (ID=6) not found in database"
+    assert sales_rep is not None, (
+        "Sales representative (ID=1) not found in database"
+    )
+    assert support_rep is not None, (
+        "Support representative (ID=4) not found in database"
+    )
+    assert admin_rep is not None, (
+        "Administrator (ID=6) not found in database"
+    )
 
     return sales_rep, support_rep, admin_rep
+
 
 class TestPermissionServices:
     """
@@ -79,7 +104,9 @@ class TestPermissionServices:
     - Proper permission checking for individual users
     """
 
-    def test_get_role(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
+    def test_get_role(
+        self, collab: tuple[Collaborator, Collaborator, Collaborator]
+    ):
         """
         Test that get_role returns the correct RoleName enum for each collaborator.
 
@@ -103,14 +130,19 @@ class TestPermissionServices:
         admin_role = PermissionServices.get_role(admin_rep)
 
         # Verify roles match expected enums
-        assert sales_role == RoleName.SALES, \
+        assert sales_role == RoleName.SALES, (
             f"Expected SALES role for sales rep, got {sales_role}"
-        assert support_role == RoleName.SUPPORT, \
+        )
+        assert support_role == RoleName.SUPPORT, (
             f"Expected SUPPORT role for support rep, got {support_role}"
-        assert admin_role == RoleName.ADMIN, \
+        )
+        assert admin_role == RoleName.ADMIN, (
             f"Expected ADMIN role for admin, got {admin_role}"
+        )
 
-    def test_get_permissions(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
+    def test_get_permissions(
+        self, collab: tuple[Collaborator, Collaborator, Collaborator]
+    ):
         """
         Test that get_permissions returns the correct permission set for each role.
 
@@ -132,42 +164,55 @@ class TestPermissionServices:
 
         # Get permissions for each role
         sales_permissions = PermissionServices.get_permissions(sales_rep)
-        support_permissions = PermissionServices.get_permissions(support_rep)
+        support_permissions = PermissionServices.get_permissions(
+            support_rep
+        )
         admin_permissions = PermissionServices.get_permissions(admin_rep)
 
         # Verify return types
-        assert isinstance(sales_permissions, set), \
+        assert isinstance(sales_permissions, set), (
             "get_permissions() should return a set"
-        assert isinstance(support_permissions, set), \
+        )
+        assert isinstance(support_permissions, set), (
             "get_permissions() should return a set"
-        assert isinstance(admin_permissions, set), \
+        )
+        assert isinstance(admin_permissions, set), (
             "get_permissions() should return a set"
+        )
 
         # Verify non-empty results
-        assert len(sales_permissions) > 0, \
+        assert len(sales_permissions) > 0, (
             "Sales role should have at least one permission"
-        assert len(support_permissions) > 0, \
+        )
+        assert len(support_permissions) > 0, (
             "Support role should have at least one permission"
-        assert len(admin_permissions) > 0, \
+        )
+        assert len(admin_permissions) > 0, (
             "Admin role should have at least one permission"
-        
+        )
+
         # Verify all expected permissions are present for each role
         expected_sales_perms = ROLE_PERMISSIONS[RoleName.SALES]
         for permission in expected_sales_perms:
-            assert permission in sales_permissions, \
+            assert permission in sales_permissions, (
                 f"Sales role missing permission: {permission.name}"
+            )
 
         expected_support_perms = ROLE_PERMISSIONS[RoleName.SUPPORT]
         for permission in expected_support_perms:
-            assert permission in support_permissions, \
+            assert permission in support_permissions, (
                 f"Support role missing permission: {permission.name}"
+            )
 
         expected_admin_perms = ROLE_PERMISSIONS[RoleName.ADMIN]
         for permission in expected_admin_perms:
-            assert permission in admin_permissions, \
+            assert permission in admin_permissions, (
                 f"Admin role missing permission: {permission.name}"
+            )
 
-    def test_has_permission(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
+    def test_has_permission(
+        self, collab: tuple[Collaborator, Collaborator, Collaborator]
+    ):
         """
         Test that has_permission correctly verifies if a user has a specific permission.
 
@@ -187,45 +232,62 @@ class TestPermissionServices:
 
         # --- Positive Tests: Users should have their role's permissions ---
         for permission in ROLE_PERMISSIONS[RoleName.SALES]:
-            assert PermissionServices.has_permission(sales_rep, permission), \
-                f"Sales rep should have {permission.name} permission"
+            assert PermissionServices.has_permission(
+                sales_rep, permission
+            ), f"Sales rep should have {permission.name} permission"
 
         for permission in ROLE_PERMISSIONS[RoleName.SUPPORT]:
-            assert PermissionServices.has_permission(support_rep, permission), \
-                f"Support rep should have {permission.name} permission"
+            assert PermissionServices.has_permission(
+                support_rep, permission
+            ), f"Support rep should have {permission.name} permission"
 
         for permission in ROLE_PERMISSIONS[RoleName.ADMIN]:
-            assert PermissionServices.has_permission(admin_rep, permission), \
-                f"Admin should have {permission.name} permission"
+            assert PermissionServices.has_permission(
+                admin_rep, permission
+            ), f"Admin should have {permission.name} permission"
 
         # --- Negative Tests: Users should NOT have other role-only's permissions ---
         # Test role-only permissions (e.g., CREATE_COLLABORATOR for admin)
-        sales_only_permissions = ROLE_PERMISSIONS[RoleName.SALES] - \
-                                (ROLE_PERMISSIONS[RoleName.ADMIN] | ROLE_PERMISSIONS[RoleName.SUPPORT])
-        support_only_permissions = ROLE_PERMISSIONS[RoleName.SUPPORT] - \
-                                (ROLE_PERMISSIONS[RoleName.SALES] | ROLE_PERMISSIONS[RoleName.ADMIN])
-        admin_only_permissions = ROLE_PERMISSIONS[RoleName.ADMIN] - \
-                                (ROLE_PERMISSIONS[RoleName.SALES] | ROLE_PERMISSIONS[RoleName.SUPPORT])
-        
+        sales_only_permissions = ROLE_PERMISSIONS[RoleName.SALES] - (
+            ROLE_PERMISSIONS[RoleName.ADMIN]
+            | ROLE_PERMISSIONS[RoleName.SUPPORT]
+        )
+        support_only_permissions = ROLE_PERMISSIONS[RoleName.SUPPORT] - (
+            ROLE_PERMISSIONS[RoleName.SALES]
+            | ROLE_PERMISSIONS[RoleName.ADMIN]
+        )
+        admin_only_permissions = ROLE_PERMISSIONS[RoleName.ADMIN] - (
+            ROLE_PERMISSIONS[RoleName.SALES]
+            | ROLE_PERMISSIONS[RoleName.SUPPORT]
+        )
+
         for permission in sales_only_permissions:
-            assert not PermissionServices.has_permission(support_rep, permission), \
-                f"Support rep should NOT have {permission.name} permission"
-            assert not PermissionServices.has_permission(admin_rep, permission), \
-                f"Admin rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                support_rep, permission
+            ), f"Support rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                admin_rep, permission
+            ), f"Admin rep should NOT have {permission.name} permission"
 
         for permission in support_only_permissions:
-            assert not PermissionServices.has_permission(sales_rep, permission), \
-                f"Sales rep should NOT have {permission.name} permission"
-            assert not PermissionServices.has_permission(admin_rep, permission), \
-                f"Admin rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                sales_rep, permission
+            ), f"Sales rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                admin_rep, permission
+            ), f"Admin rep should NOT have {permission.name} permission"
 
         for permission in admin_only_permissions:
-            assert not PermissionServices.has_permission(sales_rep, permission), \
-                f"Sales rep should NOT have {permission.name} permission"
-            assert not PermissionServices.has_permission(support_rep, permission), \
-                f"Support rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                sales_rep, permission
+            ), f"Sales rep should NOT have {permission.name} permission"
+            assert not PermissionServices.has_permission(
+                support_rep, permission
+            ), f"Support rep should NOT have {permission.name} permission"
 
-    def test_check_permission_decorator(self, collab: Tuple[Collaborator, Collaborator, Collaborator]):
+    def test_check_permission_decorator(
+        self, collab: tuple[Collaborator, Collaborator, Collaborator]
+    ):
         """
         Test that the check_permission decorator properly enforces permissions.
 
@@ -234,23 +296,20 @@ class TestPermissionServices:
             - Raises PermissionError when user lacks the permission
             - Works with both global and resource-specific permissions
         """
-        sales_rep, support_rep, admin_rep = collab
+        sales_rep, support_rep, admin_rep = collab  # noqa: RUF059
 
         @PermissionServices.check_permission(Permission.READ_ALL_CUSTOMERS)
         def function_protected_by_one_permission(user: Collaborator):
             return "User has the required permission"
 
         @PermissionServices.check_permission(
-            Permission.READ_ALL_CUSTOMERS,
-            Permission.CREATE_CUSTOMER
+            Permission.READ_ALL_CUSTOMERS, Permission.CREATE_CUSTOMER
         )
         def function_protected_by_multiple_permission(user: Collaborator):
             return "User has all required permissions"
 
         # Sales rep should have READ_ALL_CUSTOMERS and CREATE_CUSTOMER
-        can_access = function_protected_by_one_permission(
-            user=sales_rep
-        )
+        can_access = function_protected_by_one_permission(user=sales_rep)
         assert can_access == "User has the required permission"
         can_access = function_protected_by_multiple_permission(
             user=sales_rep
@@ -258,15 +317,11 @@ class TestPermissionServices:
         assert can_access == "User has all required permissions"
 
         # Support rep should have READ_ALL_CUSTOMERS but NOT have CREATE_CUSTOMER
-        can_access = function_protected_by_one_permission(
-            user=support_rep
-        )
+        can_access = function_protected_by_one_permission(user=support_rep)
         assert can_access == "User has the required permission"
 
         with pytest.raises(PermissionError) as exc_info:
-            function_protected_by_multiple_permission(
-                user=support_rep
-            )
+            function_protected_by_multiple_permission(user=support_rep)
 
         assert "lacks permissions" in str(exc_info.value)
         assert "CREATE_CUSTOMER" in str(exc_info.value)

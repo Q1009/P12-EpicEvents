@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Table
+
 from config.settings import settings
+from main.base_model import Table
+
 
 def test_db_connection():
     """Basic test: verifies database connection and access to the Test table."""
@@ -21,7 +23,9 @@ def test_db_connection():
         result = session.query(Table).all()
 
         assert result is not None, "No records found in database"
-        assert result[0].name == "pytest_connection_ok", "Name does not match"
+        assert result[0].name == "pytest_connection_ok", (
+            "Name does not match"
+        )
 
         # 5. Clean up (delete the test record)
         for entry in result:
