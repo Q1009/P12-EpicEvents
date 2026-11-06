@@ -12,3 +12,4 @@ poetry.md
 .pytest_cache/
 keys/keys/*.pem
 tokens.json
+.ruff_cache/
