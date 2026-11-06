@@ -1,0 +1,11 @@
+[run]
+source = .
+omit = 
+    */tests/*
+    */venv/*
+    */.venv/*
+    */migrations/*
+    */__init__.py
+
+[html]
+directory = htmlcov

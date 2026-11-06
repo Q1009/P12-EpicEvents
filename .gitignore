@@ -13,3 +13,5 @@ poetry.md
 keys/keys/*.pem
 tokens.json
 .ruff_cache/
+.coverage
+htmlcov/
