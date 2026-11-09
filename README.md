@@ -1,109 +1,88 @@
-# EpicEvents CRM
+# 🎟️ EpicEvents CRM
 
-## Event Management CRM - OpenClassrooms Project 12
+## 📜 Event Management CRM - OpenClassrooms Project 12
 
-EpicEvents CRM is a command-line interface (CLI) application developed in Python for comprehensive management of customers, contracts, and events. Built on the **Textual** library, it provides a rich and interactive interface directly in the terminal.
+EpicEvents CRM is a **command-line interface (CLI)** application developed in **Python** for comprehensive management of **customers, contracts, and events**.
+Built on the **⚡ Textual** library, it provides a **rich and interactive interface** directly in the terminal.
 
-This project implements an MVC (Model-View-Controller) architecture with a secure authentication system using **JWT (JSON Web Tokens)** and **RSA keys**, along with a RBAC (Role-Based Access Control) permission system to control access to various features.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Installation and Configuration](#installation-and-configuration)
-- [Database Initialization](#database-initialization)
-- [Error Tracking with Sentry](#error-tracking-with-sentry)
-- [Running the Application](#running-the-application)
-- [Features](#features)
-- [Technical Architecture](#technical-architecture)
-- [Testing and Coverage](#testing-and-coverage)
-- [Authentication System](#authentication-system)
-- [RBAC Permission System](#rbac-permission-system)
-- [Resources](#resources)
-- [License](#license)
-- [Authors](#authors)
-- [Acknowledgments](#acknowledgments)
+This project implements an **MVC (Model-View-Controller)** architecture with a **🔒 secure authentication system** using **JWT (JSON Web Tokens)** and **🔑 RSA keys**, along with a **🛡️ RBAC (Role-Based Access Control)** permission system.
 
 ---
 
-## Overview
+## 📚 Table of Contents
 
-EpicEvents CRM enables EpicEvents company collaborators to efficiently manage:
+- [🏔️ Overview](#overview)
+- [📋 Prerequisites](#prerequisites)
+- [⚙️ Installation and Configuration](#installation-and-configuration)
+- [🗃️ Database Initialization](#database-initialization)
+- [🛠️ Error Tracking with Sentry](#error-tracking-with-sentry)
+- [▶️ Running the Application](#running-the-application)
+- [✨ Features](#features)
+- [🏗️ Technical Architecture](#technical-architecture)
+- [🧪 Testing and Coverage](#testing-and-coverage)
+- [🔐 Authentication System](#authentication-system)
+- [👥 RBAC Permission System](#rbac-permission-system)
+- [📖 Resources](#resources)
+- [📜 License](#license)
+- [👤 Authors](#authors)
+- [🙏 Acknowledgments](#acknowledgments)
 
-- **Customers**: Create, view, and update customer information and their contacts
-- **Contracts**: Track contracts, their status (signed, pending, cancelled), and amounts
-- **Events**: Plan and manage events with support representative assignment
-- **Collaborators**: Manage the internal team (restricted to administrators)
+---
 
-The application is designed to meet the specific needs of three departments:
-- **ADMIN**: Collaborator and contract management
-- **SALES**: Customer and contract management
+## 🏔️ Overview
+
+EpicEvents CRM enables **EpicEvents** company collaborators to efficiently manage:
+
+| Feature          | Description                                      | Icon  |
+|------------------|--------------------------------------------------|-------|
+| **👥 Customers**  | Create, view, and update customer information     |       |
+| **📄 Contracts** | Track contracts, status, and amounts               |       |
+| **🎉 Events**    | Plan and manage events with support assignment    |       |
+| **👥 Collaborators** | Manage the internal team (ADMIN only)        |       |
+
+The application is designed for **three departments**:
+- **ADMIN**: Collaborator & contract management
+- **SALES**: Customer & contract management
 - **SUPPORT**: Event management
 
 ---
 
-## Prerequisites
+## 📋 Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+Before you begin, ensure you have the following installed:
 
-### Required Software
-- **Python**: Version 3.13 or higher
-- **MySQL**: Version 8.0 or higher
-- **Git**: For version control
-- **Poetry**: Python dependency manager
+| Requirement       | Version       | Check Command               |
+|-------------------|---------------|-----------------------------|
+| **Python**     | 3.13+         | `python --version`         |
+| **MySQL**      | 8.0+          | `mysql --version`          |
+| **Git**        | Latest        | `git --version`            |
+| **Poetry**     | Latest        | `poetry --version`        |
 
-### Verify Prerequisites
-
+### ⚡ Quick Verification
 ```bash
-# Check Python version
-python --version
-# or
-python3 --version
-
-# Check MySQL version
-mysql --version
-
-# Check Git is installed
-git --version
-
-# Check Poetry is installed
-poetry --version
+# Check all prerequisites at once
+python --version && mysql --version && git --version && poetry --version
 ```
 
 ---
 
-## Installation and Configuration
+## ⚙️ Installation and Configuration
 
-### 1. Clone the Repository
-
+### 1️⃣ Clone the Repository
 ```bash
 cd /path/to/your/projects
 git clone https://github.com/Q1009/P12-EpicEvents.git
 ```
 
-> **Note**: Replace the repository URL with your own fork if you have one.
-
-### 2. Create and Activate Virtual Environment
-
-#### With Poetry
-
+### 2️⃣ Setup Virtual Environment
 ```bash
-# Navigate to the project directory
 cd P12-EpicEvents
-
-# Install dependencies with Poetry
 poetry install
-
-# Activate the virtual environment
 poetry shell
 ```
 
-### 3. Configure Environment Variables
-
-Create an `.env` file and edit it with your MySQL connection information:
-
+### 3️⃣ Configure Environment Variables
+Create an `.env` file:
 ```env
 # ===== Database =====
 DB_HOST=localhost
@@ -115,12 +94,11 @@ DB_NAME=epicevents
 # ===== Sentry =====
 # SENTRY_DSN=https://xxx@sentry.io/xxx
 
-# ===== Safety =====
-# Generate a new secret key with: python -c "import secrets; print(secrets.token_hex(32))"
+# ===== Security =====
 SECRET_KEY=your_64_character_hex_secret_key
 
 # ===== Environment =====
-ENVIRONMENT=development  # development|staging|production
+ENVIRONMENT=development
 
 # ===== JWT Configuration =====
 JWT_ALGORITHM=RS256
@@ -128,213 +106,124 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 JWT_PRIVATE_KEY_PATH=keys/keys/jwt_private_key.pem
 JWT_PUBLIC_KEY_PATH=keys/keys/jwt_public_key.pem
-
-# ===== Passwords (for initial database seeding) =====
-COLLAB_PASSWORD_1=password1
-COLLAB_PASSWORD_2=password2
-COLLAB_PASSWORD_3=password3
-COLLAB_PASSWORD_4=password4
-COLLAB_PASSWORD_5=password5
-COLLAB_PASSWORD_6=password6
-COLLAB_PASSWORD_7=password7
-COLLAB_PASSWORD_8=password8
-COLLAB_PASSWORD_9=password9
-COLLAB_PASSWORD_10=password10
 ```
 
-> **Important**:
-> - Collaborator passwords are used for initial database seeding
-> - Modify them before running the seed script
-> - In production, use strong and unique passwords
+> ⚠️ **Important**:
+> - **Never commit secrets** to version control
+> - The `keys/keys/` directory is in `.gitignore`
+> - In production, **encrypt** the private key
 
 ---
 
-## Database Initialization
+## 🗃️ Database Initialization
 
-### 1. Create MySQL Database
-
-Connect to MySQL and create the database:
-
+### 1️⃣ Create MySQL Database
 ```bash
-# Connect to MySQL (with root or admin user)
 mysql -u root -p
 ```
-
 ```sql
--- Create the database
 CREATE DATABASE IF NOT EXISTS epicevents;
-
--- Create a dedicated user
 CREATE USER IF NOT EXISTS 'epic_events_user'@'localhost' IDENTIFIED BY 'MyPassword123!';
-
--- Grant all privileges on the database to the user
 GRANT ALL PRIVILEGES ON epicevents.* TO 'epic_events_user'@'localhost';
-
--- Apply changes
 FLUSH PRIVILEGES;
-
--- Exit MySQL
 EXIT;
 ```
 
-### 2. Generate RSA Keys for JWT
-
-RSA keys are required for signing and verifying JWT tokens. Run:
-
+### 2️⃣ Generate RSA Keys
 ```bash
-# From the project root
 poetry run python -m keys.generate_keys
 ```
+> 📁 Files generated: `keys/keys/jwt_private_key.pem`, `keys/keys/jwt_public_key.pem`
 
-This will generate two files in `keys/keys/`:
-- `jwt_private_key.pem`: Private key for signing tokens (MUST be protected)
-- `jwt_public_key.pem`: Public key for verifying tokens
-
-> **Important Security Notes**:
-> - The private key must NEVER be shared or committed to version control
-> - The `keys/keys/` directory is already in `.gitignore`
-> - In production, consider encrypting the private key with a password
-
-### 3. Apply Migrations
-
+### 3️⃣ Apply Migrations
 ```bash
-# Apply all migrations to create the database schema
 poetry run alembic upgrade head
 ```
 
-### 4. Seed the Database
-
-The seed script creates:
-- 3 departments (ADMIN, SALES, SUPPORT)
-- 6 collaborators (3 Sales, 2 Support, 1 Admin)
-- 10 customers with different types of contacts
-- 10 locations
-- 8 contracts (5 signed, 2 pending, 1 cancelled)
-- 5 events
-- Phone numbers associated with contacts
-
+### 4️⃣ Seed the Database
 ```bash
-# Run the seeding script
 poetry run python -m database.seed
 ```
-
-> **Note**: The script completely resets the database (downgrade then upgrade) before seeding.
+> 🌱 **Seeded data includes**:
+> - 3 departments (ADMIN, SALES, SUPPORT)
+> - 6 collaborators
+> - 10 customers with contacts
+> - 10 locations
+> - 8 contracts
+> - 5 events
 
 ---
 
-## Error Tracking with Sentry
+## 🛠️ Error Tracking with Sentry
 
-EpicEvents CRM uses **Sentry** for real-time error tracking and monitoring, providing visibility into application errors, performance issues, and exceptions in production environments.
+**🎯 Purpose**: Real-time error tracking and monitoring
 
-### Configuration
-
-Sentry is configured via environment variables in your `.env` file:
-
+### 📝 Configuration
+Add to `.env`:
 ```env
-# ===== Sentry =====
 SENTRY_DSN=https://your-public-key@sentry.io/your-project-id
 ```
 
-### Setup Instructions
-
-1. **Create a Sentry account** at [sentry.io](https://sentry.io) or log in to your existing account
-2. **Create a new project** for EpicEvents CRM
-3. **Copy the DSN** from your project settings
-4. **Add the DSN** to your `.env` file:
-
-```env
-SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o0.ingest.sentry.io/0
-```
-
-5. **Restart the application** for changes to take effect
-
-### Use Cases
-
-| Scenario | What Gets Logged | Benefits |
-|----------|------------------|----------|
-| **Collaborator Creation & Update** | Main data regarding the collaborator | Monitor collaborator management |
-| **Contract Signature** | Main data regarding the contract | Keep track of contract history |
-| **Any Unhandled Exception** | Unhandled exceptions, critical errors | Immediate alerts for production issues |
-
-### Viewing Errors
-
-Once configured, all errors will be visible in your Sentry dashboard.
+### 📊 Use Cases
+| Scenario | Logged Data | Benefit |
+|----------|-------------|---------|
+| Collaborator actions | Main data | Monitor management |
+| Contract signature | Contract info | Track history |
+| Unhandled exceptions | Error details | Immediate alerts |
 
 ---
-
-## Running the Application
-
-### Normal Launch
+---
+## ▶️ Running the Application
 
 ```bash
-# From the project root
 poetry run python main.py
 ```
 
 ---
 
-## Features
+## ✨ Features
 
-### Authentication
-
-| Feature | Description |
-|---------|-------------|
-| **Login** | Email/password authentication with JWT |
-| **Logout** | Invalidate local tokens |
-| **Auto-refresh** | Access tokens are automatically refreshed when expired |
-| **Persistent Session** | Tokens are securely stored in `~/.epicevents/tokens.json` |
-
-### Customer Management
-
-| Feature | Description | Allowed Roles |
-|---------|-------------|---------------|
-| **List all customers** | Display all customers in the CRM | ADMIN, SALES, SUPPORT |
-| **Create customer** | Add a new customer with contacts | ADMIN, SALES |
-| **Update customer** | Update customer information | ADMIN, SALES (only their own customers) |
-| **View customer** | View complete customer details | ADMIN, SALES, SUPPORT |
-
-### Contract Management
-
-| Feature | Description | Allowed Roles |
-|---------|-------------|---------------|
-| **List all contracts** | Display all contracts | ADMIN, SALES, SUPPORT |
-| **Create contract** | Create a new contract for a customer | ADMIN, SALES |
-| **Update contract** | Update contract information | ADMIN, SALES (only their own contracts) |
-| **Change status** | Change contract status (pending -> signed -> cancelled) | ADMIN, SALES |
-
-### Event Management
-
-| Feature | Description | Allowed Roles |
-|---------|-------------|---------------|
-| **List all events** | Display all events | ADMIN, SALES, SUPPORT |
-| **Create event** | Create an event linked to a contract | ADMIN, SALES |
-| **Update event** | Update event information | ADMIN, SUPPORT (only their own events) |
-| **Assign support** | Assign a support representative to an event | ADMIN |
-
-### Collaborator Management
-
-| Feature | Description | Allowed Roles |
-|---------|-------------|---------------|
-| **List all collaborators** | Display all collaborators | ADMIN |
-| **Create collaborator** | Add a new collaborator | ADMIN |
-| **Update collaborator** | Update collaborator information | ADMIN |
-| **Delete collaborator** | Remove a collaborator | ADMIN |
-
-### Interface and Navigation
-
-The application uses **Textual** to provide a rich interface with:
-
-- **Interactive menus** with cursor selection or keyboard shortcuts
-- **Formatted display** with colors and custom styles
-- **Notifications** for error and success messages
-- **Real-time clock** in the header
-- **Nord theme** for a pleasant visual experience
+### 🔐 Authentication
+| Feature | Description | Icon |
+|---------|-------------|------|
+| **Login** | Email/password auth with JWT | |
+| **Logout** | Invalidate local tokens | |
+| **Auto-refresh** | Automatic token refresh | |
+| **Persistent Session** | Secure local token storage | |
 
 ---
 
-## Technical Architecture
+### 👥 Customer Management
+| Feature | Description | Allowed Roles |
+|---------|-------------|---------------|
+| **List** | View all customers | ADMIN, SALES, SUPPORT |
+| **Create** | Add new customer | ADMIN, SALES |
+| **Update** | Modify customer info | ADMIN, SALES |
+| **View** | Detailed customer view | ADMIN, SALES, SUPPORT |
 
-### Technology Stack
+---
+
+### 📄 Contract Management
+| Feature | Description | Allowed Roles |
+|---------|-------------|---------------|
+| **List** | View all contracts | ADMIN, SALES, SUPPORT |
+| **Create** | Add new contract | ADMIN, SALES |
+| **Update** | Modify contract | ADMIN, SALES |
+| **Change Status** | Update status | ADMIN, SALES |
+
+---
+
+### 🎉 Event Management
+| Feature | Description | Allowed Roles |
+|---------|-------------|---------------|
+| **List** | View all events | ADMIN, SALES, SUPPORT |
+| **Create** | Add new event | ADMIN, SALES |
+| **Update** | Modify event | ADMIN, SUPPORT |
+| **Assign Support** | Assign representative | ADMIN |
+
+---
+---
+## 🏗️ Technical Architecture
 
 | Component | Technology | Version |
 |-----------|------------|---------|
@@ -345,138 +234,75 @@ The application uses **Textual** to provide a rich interface with:
 | **Migrations** | Alembic | 1.18.5+ |
 | **Authentication** | PyJWT + Cryptography | 2.8.0+ |
 | **Hashing** | bcrypt | 5.0.0+ |
-| **Environment Variables** | python-dotenv | 1.2.2+ |
+| **Environment** | python-dotenv | 1.2.2+ |
 | **Logging** | Sentry | 2.66.0+ |
 | **Testing** | pytest | 9.1.1+ |
 | **Formatting** | Ruff | 0.16.10 |
 
 ---
 
-## Testing and Coverage
+## 🧪 Testing and Coverage
 
-### Tests Summary
-
-To run the test suite:
-
+### 🚀 Run Tests
 ```bash
-# Run all tests
+# All tests
 poetry run pytest -vv
 
-# Run specific test file
+# Specific test file
 poetry run pytest feature/tests/test_module.py -vv
+
+# With coverage
+poetry run coverage run -m pytest && poetry run coverage html
 ```
 
-#### 📊 Test Results
+> 📊 **View coverage report**:
+> ```bash
+> open htmlcov/index.html  # macOS
+> start htmlcov/index.html   # Windows
+> xdg-open htmlcov/index.html # Linux
+> ```
 
-Here are the pytest testing results:
+---
+---
+## 🔐 Authentication System
 
-![Pytest Test Results](./reports/tests_results_screenshot.png)
+**🔑 JWT (JSON Web Tokens)** with **RS256** algorithm
 
-### Test Coverage Summary
-
-To run the test suite and generate a coverage report:
-
-```bash
-# Run all tests with coverage and generate html report
-poetry run coverage run -m pytest && poetry run coverage html 
-
-# Open report
-open htmlcov/index.html # macOS
-start htmlcov/index.html # Windows
-xdg-open htmlcov/index.html # Linux
-```
-
-The coverage report will be generated in the `htmlcov/` directory. Open `htmlcov/index.html` in your browser to view detailed coverage information.
-
-#### 📊 Coverage Test Results
-
-Here are the coverage results of the pytest tests in the current state of the project:
-
-![Coverage Test Results](./reports/coverage_test_results_screenshot_1.png)
-![Coverage Test Results](./reports/coverage_test_results_screenshot_2.png)
-
-> **Note**: Coverage percentages are based on the latest test run.
-
-## Authentication System
-
-### How It Works
-
-EpicEvents CRM uses a **JWT (JSON Web Tokens)** based authentication system with the **RS256** algorithm (RSA + SHA-256).
-
-### System Components
-
+### 🏗️ Components
 | Component | File | Role |
 |-----------|------|------|
-| **AuthController** | `authentication/authentication_controller.py` | Manages login/logout flow |
-| **AuthView** | `authentication/authentication_view.py` | Credential input interface |
-| **AuthService** | `services/authentication_services.py` | Authentication business logic |
-| **TokenService** | `services/authentication_services.py` | Token generation and verification |
-| **TokenManagement** | `tokens/token_management.py` | Secure token storage and access|
-| **RSA Key Management** | `keys/rsa_key_management.py` | RSA key storage and access |
+| **AuthController** | `authentication/authentication_controller.py` | Login/logout flow |
+| **AuthView** | `authentication/authentication_view.py` | Credential UI |
+| **AuthService** | `services/authentication_services.py` | Business logic |
+| **TokenService** | `services/authentication_services.py` | Token management |
+| **TokenManagement** | `tokens/token_management.py` | Secure storage |
+| **RSA Key Management** | `keys/rsa_key_management.py` | Key storage |
 
-### Token Payload Structure
-
+### Token Payload
 ```json
 {
   "sub": "1",           // User ID
-  "jti": "uuid",        // Unique token identifier
-  "type": "access",     // Token type (access or refresh)
-  "exp": 1234567890,    // Expiration timestamp
-  "iat": 1234567800     // Issued at timestamp
+  "jti": "uuid",        // Token ID
+  "type": "access",     // Token type
+  "exp": 1234567890,    // Expiration
+  "iat": 1234567800     // Issued at
 }
 ```
 
 ---
+---
+## 👥 RBAC Permission System
 
-## RBAC Permission System
-
-### RBAC Model (Role-Based Access Control)
-
-EpicEvents CRM implements a Role-Based Access Control (RBAC) system with three main roles:
-
-| Role | Primary Responsibilities | Access Scope | Key Permissions |
-|------|--------------------------|--------------|-----------------|
-| **ADMIN** | Team and contract management | Collaborators & Contracts | Create/read/update/delete collaborators, all contract management, assign support to events |
-| **SALES** | Customer and contract lifecycle | Customers & Contracts | Create/read/update customers, create/update contracts, view events (read-only) |
-| **SUPPORT** | Event planning and execution | Events | Create/read/update events, view customers/contracts (read-only), update their own assigned events |
-
-### Key Permission Files
-
-| File | Description |
-|------|-------------|
-| `permissions/permission_model.py` | Definition of all available permissions |
-| `permissions/role_model.py` | Role to permissions mapping |
-| `services/permission_services.py` | Permission verification services |
+### 🎯 Roles & Permissions
+| Role | 🎯 Responsibilities | 🔑 Key Permissions |
+|------|--------------------|-------------------|
+| **ADMIN** | Team & contract management | Full CRUD on collaborators, contracts, events |
+| **SALES** | Customer & contract lifecycle | CRUD customers, contracts, read-only events |
+| **SUPPORT** | Event planning | CRUD events, read-only customers/contracts |
 
 ---
-
-## 🔍 Code Quality & Linting
-
-This project uses **Flake8** to ensure code compliance with [PEP 8](https://peps.python.org/pep-0008/) style guidelines.
-
-### Generate an HTML Report
-
-To generate and visualize Flake8 results in a browser:
-
-```bash
-# Generate a detailed HTML report
-poetry run flake8
-
-# Open the report in your browser
-open flake8-report/index.html  # macOS
-start flake8-report/index.html   # Windows
-xdg-open flake8-report/index.html # Linux
-```
-
-### 📊 Flake8 Report
-
-Here are the Flake8 results of the current state of the project:
-
-![Flake8 Compliance Results](./reports/flake8_report_screenshot.png)
-
 ---
-
-## Resources
+## 📖 Resources
 
 - [Textual Documentation](https://textual.textualize.io/)
 - [SQLAlchemy Documentation](https://www.sqlalchemy.org/)
@@ -486,44 +312,35 @@ Here are the Flake8 results of the current state of the project:
 - [Cryptography Library](https://cryptography.io/)
 
 ---
+---
+## 📜 License
 
-## License
+This project is **educational** and licensed under a **custom OpenClassrooms license**.
 
-This project is licensed under a **custom Educational License** specifically designed for OpenClassrooms portfolio projects.
+### ✅ Allowed
+- 📚 Personal learning
+- 🎨 Portfolio demonstration
+- 💼 Job interviews
+- 🔍 Code study
 
-This project is developed as part of **Project 12** of the **Python Application Developer** path at OpenClassrooms. It is intended for **educational, portfolio, and professional demonstration purposes only**.
+### ❌ Not Allowed
+- 💰 Commercial use without permission
+- ❌ Remove copyright notices
+- 👑 Claim ownership
 
-For full license details, see the [LICENSE](LICENSE) file.
-
-### Quick Summary
-
-**You are free to:**
-- Use this code for personal learning and study
-- Reference it in your portfolio or resume
-- Demonstrate the application during job interviews
-- Study, modify, and understand the codebase for educational purposes
-
-**You may NOT:**
-- Sell this code or use it in commercial products without explicit permission
-- Remove or alter copyright notices
-- Claim authorship or ownership of this software
-- Distribute modified versions without maintaining the original license
-
-**Copyright (c) 2026 Quentin Tellier** - All rights reserved.
+**© 2026 Quentin Tellier**
 
 ---
-
-## Authors
+---
+## 👤 Authors
 
 - **Quentin Tellier** - Developer
-  - Email: quentin.tellier@outlook.com
+  - Email: [quentin.tellier@outlook.com](mailto:quentin.tellier@outlook.com)
 
 ---
-
-## Acknowledgments
-
-- Textual
-- The Python community for the many open source libraries used
-- Future contributors who will improve this project
-
 ---
+## 🙏 Acknowledgments
+
+- ⚡ [Textual](https://textual.textualize.io/) - CLI Framework
+- 🐍 The Python community
+- 🌟 All open-source contributors
