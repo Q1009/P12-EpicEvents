@@ -370,8 +370,8 @@ class CustomerController:
 
         Handles the customer creation form submission. If creation is
         cancelled, returns to the customer list. Otherwise, processes the form
-        data, creates the contact, phone number, and customer objects, and saves
-        them to the database.
+        data, creates the contact, phone number, and customer objects,
+        and saves them to the database.
 
         :param new_customer_data: Dictionary containing customer and contact
             data from the form, or None if creation was cancelled.

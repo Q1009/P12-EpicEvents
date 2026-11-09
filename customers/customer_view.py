@@ -76,7 +76,8 @@ class CustomerScreen(Screen):
         :type customers: list[Customer]
         :param user: The currently authenticated collaborator.
         :type user: Collaborator
-        :param customer_id: Optional ID of a customer to pre-select in the table.
+        :param customer_id: Optional ID of a customer to
+        pre-select in the table.
         :type customer_id: int | None
         """
         super().__init__()
@@ -87,8 +88,9 @@ class CustomerScreen(Screen):
     def compose(self) -> ComposeResult:
         """Compose the screen UI components.
 
-        Creates the header, main container with data tables (customers, contacts,
-        phone numbers), action buttons, and footer.
+        Creates the header, main container with data tables
+        (customers, contacts, phone numbers), action buttons,
+        and footer.
 
         :return: Generator yielding all UI widgets.
         :rtype: ComposeResult
@@ -259,7 +261,8 @@ class CustomerScreen(Screen):
     def build_phone_numbers_table(self) -> None:
         """Build and configure the phone numbers data table.
 
-        Sets up column headers for displaying associated phone number information.
+        Sets up column headers for displaying associated
+        phone number information.
         """
         table = self.query_one("#contact-phone-numbers-table", DataTable)
         table.border_title = "Phone Numbers"
@@ -449,8 +452,9 @@ class CustomerScreen(Screen):
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Save highlighted customer id.
 
-        Updates the selected_customer_id reactive variable when a row is highlighted
-        in the customers table, which triggers the watcher to update related tables.
+        Updates the selected_customer_id reactive variable when
+        a row is highlighted in the customers table, which triggers
+        the watcher to update related tables.
 
         :param event: The row highlighted event.
         :type event: DataTable.RowHighlighted
@@ -469,8 +473,9 @@ class CustomerScreen(Screen):
     ) -> None:
         """Save highlighted contact id.
 
-        Updates the selected_contact_id reactive variable when a row is highlighted
-        in the contacts table, which triggers the watcher to update phone numbers table.
+        Updates the selected_contact_id reactive variable when
+        a row is highlighted in the contacts table, which triggers
+        the watcher to update phone numbers table.
 
         :param event: The row highlighted event.
         :type event: DataTable.RowHighlighted
@@ -526,7 +531,8 @@ class CreateCustomerScreen(Screen):
     """Screen for creating a new customer in the EpicEvents CRM.
 
     Provides a form for entering customer details and associated contact
-    information. Allows selection of an existing contact or creation of a new one.
+    information. Allows selection of an existing contact or creation
+    of a new one.
 
     :param contacts: List of existing contacts to choose from.
     :type contacts: list[Contact]
@@ -952,7 +958,8 @@ class UpdateCustomerScreen(Screen):
     Allows updating personal details, company name, assigned contacts, and
     sales representative.
 
-    :param customer_data: Dictionary containing all data of the customer to update.
+    :param customer_data: Dictionary containing all data of
+    the customer to update.
     :type customer_data: dict[str, Any]
     :param contacts: List of existing contacts to choose from.
     :type contacts: list[Contact]
@@ -974,11 +981,13 @@ class UpdateCustomerScreen(Screen):
     ) -> None:
         """Initialize the UpdateCustomerScreen with customer data and options.
 
-        :param customer_data: Dictionary containing all data of the customer to update.
+        :param customer_data: Dictionary containing all data of
+        the customer to update.
         :type customer_data: dict[str, Any]
         :param contacts: List of existing contacts to choose from.
         :type contacts: list[Contact]
-        :param sales_representatives: List of sales representatives to choose from.
+        :param sales_representatives: List of sales representatives
+        to choose from.
         :type sales_representatives: list[Collaborator]
         """
         super().__init__()
@@ -1322,7 +1331,8 @@ class UpdateCustomerScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_customer_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_customer_data.
+        Retrieves values from all form fields and stores them
+        in updated_customer_data.
         """
         selected_sales_representative: Collaborator | None = (
             self.query_one(
@@ -1490,8 +1500,9 @@ class CreateContactScreen(Screen):
     def on_add_phone_number(self) -> None:
         """Add a new phone number input field.
 
-        Dynamically adds a new label and input field for an additional phone number
-        before the phone number buttons container, and increments the counter.
+        Dynamically adds a new label and input field for an additional
+        phone number before the phone number buttons container,
+        and increments the counter.
         """
         container = self.query_one("#phone-number", Container)
         # New label
@@ -1652,7 +1663,8 @@ class UpdateContactScreen(Screen):
     Allows updating personal details and phone numbers, with the ability to
     add additional phone number fields dynamically.
 
-    :param contact_data: Dictionary containing all data of the contact to update.
+    :param contact_data: Dictionary containing all data
+    of the contact to update.
     :type contact_data: dict[str, Any]
     """
 
@@ -1665,7 +1677,8 @@ class UpdateContactScreen(Screen):
     def __init__(self, contact_data: dict[str, Any]) -> None:
         """Initialize the UpdateContactScreen with contact data.
 
-        :param contact_data: Dictionary containing all data of the contact to update.
+        :param contact_data: Dictionary containing all data
+        of the contact to update.
         :type contact_data: dict[str, Any]
         """
         super().__init__()
@@ -1688,7 +1701,8 @@ class UpdateContactScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="update-contact-main-container"):
             yield Static(
-                f"Updating Contact: {self.contact_data['contact_first_name']} {self.contact_data['contact_last_name']}",
+                f"Updating Contact: {self.contact_data['contact_first_name']} "
+                f"{self.contact_data['contact_last_name']}",
                 id="updating-contact-static",
                 classes="updating-contact-static",
             )
@@ -1794,7 +1808,8 @@ class UpdateContactScreen(Screen):
     def on_mount(self) -> None:
         """Initialize the screen after mounting.
 
-        Sets border titles and subtitles for personal data and phone number sections.
+        Sets border titles and subtitles for personal data and
+        phone number sections.
         """
         self.query_one(
             "#update-contact-data", Container
@@ -1813,8 +1828,9 @@ class UpdateContactScreen(Screen):
     def on_add_phone_number(self) -> None:
         """Add a new phone number input field.
 
-        Dynamically adds a new label and input field for an additional phone number
-        before the phone number buttons container, and increments the counter.
+        Dynamically adds a new label and input field for an additional
+        phone number before the phone number buttons container,
+        and increments the counter.
         """
         container = self.query_one("#update-phone-number", Container)
         buttons_container = self.query_one(
@@ -1940,8 +1956,9 @@ class UpdateContactScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_contact_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_contact_data,
-        including all phone numbers from dynamically added fields.
+        Retrieves values from all form fields and stores them in
+        updated_contact_data, including all phone numbers from
+        dynamically added fields.
         """
         all_inputs = self.query(Input)
         phone_numbers: list[str] = []

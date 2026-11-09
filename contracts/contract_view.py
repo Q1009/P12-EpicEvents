@@ -41,9 +41,11 @@ class ContractScreen(Screen):
     :type user: Collaborator
     :param contract_id: Optional ID of a contract to pre-select in the table.
     :type contract_id: int | None
-    :param filtered_table_signature: Flag indicating if table shows only unsigned contracts.
+    :param filtered_table_signature: Flag indicating if table shows only
+    unsigned contracts.
     :type filtered_table_signature: bool
-    :param filtered_table_payment: Flag indicating if table shows only unpaid contracts.
+    :param filtered_table_payment: Flag indicating if table shows only
+    unpaid contracts.
     :type filtered_table_payment: bool
     """
 
@@ -84,7 +86,8 @@ class ContractScreen(Screen):
         :type contracts: list[Contract]
         :param user: The currently authenticated collaborator.
         :type user: Collaborator
-        :param contract_id: Optional ID of a contract to pre-select in the table.
+        :param contract_id: Optional ID of a contract to pre-select
+        in the table.
         :type contract_id: int | None
         :param filtered_table_signature: Flag for unsigned contracts filter.
         :type filtered_table_signature: bool
@@ -103,8 +106,9 @@ class ContractScreen(Screen):
     def compose(self) -> ComposeResult:
         """Compose the screen UI components.
 
-        Creates the header, main container with data tables (contracts, customer,
-        event) and progress bar, action buttons, and footer.
+        Creates the header, main container with data tables
+        (contracts, customer, event) and progress bar, action buttons,
+        and footer.
 
         :return: Generator yielding all UI widgets.
         :rtype: ComposeResult
@@ -368,8 +372,9 @@ class ContractScreen(Screen):
     def watch_selected_contract_id(self, new_id: int | None) -> None:
         """Watcher that loads associated data based on the selected contract.
 
-        Updates customer table, event table, payment progress bar, and button states
-        when a new contract is selected in the contracts table.
+        Updates customer table, event table, payment progress bar,
+        and button states when a new contract is selected in the
+        contracts table.
 
         :param new_id: The ID of the newly selected contract.
         :type new_id: int | None
@@ -425,7 +430,8 @@ class ContractScreen(Screen):
         self.update_update_contract_button_state(selected_contract)
 
     def update_consult_customer_button_state(self) -> None:
-        """Update the state of the consult customer button based on permissions.
+        """Update the state of the consult customer button based
+        on permissions.
 
         Checks if the current user has permission to read all customers and
         if a customer is selected, then updates button visibility.
@@ -560,14 +566,16 @@ class ContractScreen(Screen):
     def action_filter_unsigned_contracts(self) -> None:
         """Filter DataTable to show unsigned contracts.
 
-        Dismisses the screen with a tuple indicating to show only unsigned contracts.
+        Dismisses the screen with a tuple indicating to show only
+        unsigned contracts.
         """
         self.dismiss(("filter_unsigned_contracts", True))
 
     def action_filter_unpaid_contracts(self) -> None:
         """Filter DataTable to show unpaid contracts.
 
-        Dismisses the screen with a tuple indicating to show only unpaid contracts.
+        Dismisses the screen with a tuple indicating to show only
+        unpaid contracts.
         """
         self.dismiss(("filter_unpaid_contracts", True))
 
@@ -589,8 +597,9 @@ class ContractScreen(Screen):
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Save highlighted contract id.
 
-        Updates the selected_contract_id reactive variable when a row is highlighted
-        in the contracts table, which triggers the watcher to update related tables.
+        Updates the selected_contract_id reactive variable when
+        a row is highlighted in the contracts table, which triggers
+        the watcher to update related tables.
 
         :param event: The row highlighted event.
         :type event: DataTable.RowHighlighted
@@ -925,7 +934,8 @@ class UpdateContractScreen(Screen):
     Provides a form pre-filled with existing contract data for modification.
     Allows updating contract details, customer, and status.
 
-    :param contract_data: Dictionary containing all data of the contract to update.
+    :param contract_data: Dictionary containing all data
+    of the contract to update.
     :type contract_data: dict[str, Any]
     :param customers: List of existing customers to choose from.
     :type customers: list[Customer]
@@ -942,7 +952,8 @@ class UpdateContractScreen(Screen):
     ) -> None:
         """Initialize the UpdateContractScreen with contract data and options.
 
-        :param contract_data: Dictionary containing all data of the contract to update.
+        :param contract_data: Dictionary containing all data of
+        the contract to update.
         :type contract_data: dict[str, Any]
         :param customers: List of existing customers to choose from.
         :type customers: list[Customer]
@@ -1257,7 +1268,8 @@ class UpdateContractScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_contract_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_contract_data.
+        Retrieves values from all form fields and stores them
+        in updated_contract_data.
         """
         selected_customer = self.query_one(
             "#update-contract-customer-select", Select

@@ -28,8 +28,8 @@ class CollaboratorScreen(Screen):
     """Screen for displaying and managing collaborators in the EpicEvents CRM.
 
     Provides a comprehensive view of all collaborators with their associated
-    customers and events. Allows navigation to create, update, delete collaborators,
-    and consult related customer or event information.
+    customers and events. Allows navigation to create, update,
+    delete collaborators, and consult related customer or event information.
 
     :param collaborators: List of Collaborator objects to display in the table.
     :type collaborators: list[Collaborator]
@@ -61,7 +61,8 @@ class CollaboratorScreen(Screen):
     ) -> None:
         """Initialize the CollaboratorScreen with collaborators and user data.
 
-        :param collaborators: List of Collaborator objects to display in the table.
+        :param collaborators: List of Collaborator objects to display
+        in the table.
         :type collaborators: list[Collaborator]
         :param user: The currently authenticated collaborator.
         :type user: Collaborator
@@ -290,7 +291,8 @@ class CollaboratorScreen(Screen):
             self.query_one(f"#{button_id}", Button).display = True
 
     def watch_selected_collaborator_id(self, new_id: int | None) -> None:
-        """Watcher that loads associated data based on the selected collaborator.
+        """Watcher that loads associated data based on
+        the selected collaborator.
 
         Updates customer and event tables, and selected IDs when a new
         collaborator is selected in the collaborators table. Also updates
@@ -353,7 +355,8 @@ class CollaboratorScreen(Screen):
         self.update_consult_event_button_state()
 
     def update_consult_customer_button_state(self) -> None:
-        """Update the state of the consult customer button based on permissions.
+        """Update the state of the consult customer button based
+        on permissions.
 
         Checks if the current user has permission to read all customers and
         if a customer is selected, then updates button visibility.
@@ -483,7 +486,8 @@ class CollaboratorScreen(Screen):
     def go_update_collaborator(self) -> None:
         """Navigate to update collaborator screen for selected collaborator.
 
-        Dismisses the screen with a tuple containing action and collaborator ID.
+        Dismisses the screen with a tuple containing action and
+        collaborator ID.
         """
         self.dismiss(
             ("update_collaborator", self.selected_collaborator_id)
@@ -649,7 +653,8 @@ class CreateCollaboratorScreen(Screen):
     def on_mount(self) -> None:
         """Initialize the screen after mounting.
 
-        Sets border titles for personal data and department selection containers.
+        Sets border titles for personal data and department
+        selection containers.
         """
         collaborator_data_container = self.query_one(
             "#collaborator-data", Container
@@ -793,7 +798,8 @@ class CreateCollaboratorScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into collaborator_data dictionary.
 
-        Retrieves values from all form fields and stores them in collaborator_data.
+        Retrieves values from all form fields and stores them
+        in collaborator_data.
         """
         self.collaborator_data = {
             "collaborator_last_name": self.query_one(
@@ -812,10 +818,12 @@ class CreateCollaboratorScreen(Screen):
 class UpdateCollaboratorScreen(Screen):
     """Screen for updating an existing collaborator in the EpicEvents CRM.
 
-    Provides a form pre-filled with existing collaborator data for modification.
+    Provides a form pre-filled with existing collaborator
+    data for modification.
     Allows updating personal details and department assignment.
 
-    :param collaborator_data: Dictionary containing all data of the collaborator to update.
+    :param collaborator_data: Dictionary containing all data
+    of the collaborator to update.
     :type collaborator_data: dict[str, Any]
     :param departments: List of existing departments to choose from.
     :type departments: list[Department]
@@ -832,9 +840,11 @@ class UpdateCollaboratorScreen(Screen):
         collaborator_data: dict[str, Any],
         departments: list[Department],
     ) -> None:
-        """Initialize the UpdateCollaboratorScreen with collaborator data and options.
+        """Initialize the UpdateCollaboratorScreen with
+        collaborator data and options.
 
-        :param collaborator_data: Dictionary containing all data of the collaborator to update.
+        :param collaborator_data: Dictionary containing all data
+        of the collaborator to update.
         :type collaborator_data: dict[str, Any]
         :param departments: List of existing departments to choose from.
         :type departments: list[Department]
@@ -937,7 +947,8 @@ class UpdateCollaboratorScreen(Screen):
     def on_mount(self) -> None:
         """Initialize the screen after mounting.
 
-        Sets border titles for personal data and department selection containers.
+        Sets border titles for personal data and department
+        selection containers.
         """
         collaborator_data_container = self.query_one(
             "#update-collaborator-data", Container
@@ -1069,7 +1080,8 @@ class UpdateCollaboratorScreen(Screen):
     def go_update(self) -> None:
         """Handle Update button press.
 
-        Collects form data and dismisses screen with the updated collaborator data.
+        Collects form data and dismisses screen with
+        the updated collaborator data.
         """
         self._collect_form_data()
         self.dismiss(self.updated_collaborator_data)
@@ -1085,7 +1097,8 @@ class UpdateCollaboratorScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_collaborator_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_collaborator_data.
+        Retrieves values from all form fields and stores them
+        in updated_collaborator_data.
         """
         selected_department: Department | None = self.query_one(
             "#update-collaborator-department-select", Select
@@ -1125,11 +1138,13 @@ class DeleteCollaboratorScreen(ModalScreen):
         collaborator_first_name: str | None,
         collaborator_last_name: str | None,
     ) -> None:
-        """Initialize the DeleteCollaboratorScreen with collaborator information.
+        """Initialize the DeleteCollaboratorScreen with
+        collaborator information.
 
         :param collaborator_id: The ID of the collaborator to delete.
         :type collaborator_id: int | None
-        :param collaborator_first_name: First name of the collaborator to delete.
+        :param collaborator_first_name: First name of
+        the collaborator to delete.
         :type collaborator_first_name: str | None
         :param collaborator_last_name: Last name of the collaborator to delete.
         :type collaborator_last_name: str | None
@@ -1157,7 +1172,8 @@ class DeleteCollaboratorScreen(ModalScreen):
                 classes="updating-collaborator-message-start-label",
             )
             yield Label(
-                f"{self.collaborator_first_name} {self.collaborator_last_name}",
+                f"{self.collaborator_first_name} "
+                f"{self.collaborator_last_name}",
                 id="updating-collaborator-fullname-label",
                 classes="updating-collaborator-fullname-label",
             )
