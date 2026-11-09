@@ -32,29 +32,31 @@ if TYPE_CHECKING:
 class EventController:
     """Controller for managing events and locations in the EpicEvents CRM.
 
-    Handles all event-related operations including listing, creating, updating,
-    and filtering events. Also manages location CRUD operations. Coordinates
-    between the database (via SQLAlchemy session), the views, and other controllers.
+    Handles all event-related operations including listing, creating,
+    updating, and filtering events. Also manages location CRUD operations.
+    Coordinates between the database (via SQLAlchemy session), the views,
+    and other controllers.
 
-    :param epic_events_app: The main Textual application instance for screen management.
+    :param epic_events_app: The main Textual application instance.
     :type epic_events_app: textual.app.App
-    :param session: The SQLAlchemy database session for database operations.
+    :param session: The SQLAlchemy database session.
     :type session: sqlalchemy.orm.Session
 
     .. note::
-        This controller uses the MVC pattern, receiving user input from views
-        and updating both the model (database) and views accordingly.
+        This controller uses the MVC pattern, receiving user input from
+        views and updating both the model (database) and views accordingly.
     """
 
     def __init__(self, epic_events_app: "App", session: Session) -> None:
-        """Initialize the EventController with application and database session.
+        """Initialize the EventController with application and
+        database session.
 
         Stores references to the main application and database session, and
         initializes callback attributes for navigation.
 
         :param epic_events_app: The main Textual application instance.
         :type epic_events_app: textual.app.App
-        :param session: SQLAlchemy database session for database operations.
+        :param session: SQLAlchemy database session for operations.
         :type session: sqlalchemy.orm.Session
         """
         self.session: Session = session
@@ -80,17 +82,17 @@ class EventController:
         Stores callback references for navigation and either pushes the create
         event screen (if contract_id is provided) or the event list screen.
 
-        :param event_id: Optional ID of an event to pre-select in the list.
+        :param event_id: Optional ID of an event to pre-select.
         :type event_id: int | None
-        :param contract_id: Optional contract ID to pre-select in creation form.
+        :param contract_id: Optional contract ID for creation form.
             If provided, immediately pushes create event screen.
         :type contract_id: int | None
-        :param on_back: Callback function to execute when user returns to previous screen.
+        :param on_back: Callback to execute on back navigation.
         :type on_back: Callable[[], None] | None
-        :param on_consult_customer: Callback for navigating to customer screen.
+        :param on_consult_customer: Callback for navigating to customer.
             Called with customer ID.
         :type on_consult_customer: Callable[[int], None] | None
-        :param on_consult_contract: Callback for navigating to contract screen.
+        :param on_consult_contract: Callback for navigating to contract.
             Called with contract ID.
         :type on_consult_contract: Callable[[int], None] | None
         """
@@ -113,13 +115,14 @@ class EventController:
         Routes the user's menu choice to the appropriate action or screen.
         Handles navigation between screens, filtering, and application exit.
 
-        :param user_choice: The user's selected menu option, which can be a simple
-            string or a tuple containing the action and additional parameters.
+        :param user_choice: The user's selected menu option, which can be
+            a simple string or a tuple with action and additional parameters.
         :type user_choice: str | tuple[str, Any]
 
         .. note::
-            Available choices include: create_event, update_event, create_location,
-            update_location, consult_customer, consult_contract, filter_unsupported_events,
+            Available choices include: create_event, update_event,
+            create_location, update_location, consult_customer,
+            consult_contract, filter_unsupported_events,
             filter_user_events_as_support, filter_reset, back, and quit.
         """
         match user_choice:
@@ -205,7 +208,8 @@ class EventController:
         )
 
     def get_events_by_support_representative_as_user(self) -> list[Event]:
-        """Retrieve all events assigned to the current user as support representative.
+        """Retrieve all events assigned to current user as
+        support representative.
 
         Gets the current authenticated user and returns all events where
         they are assigned as the support representative.
@@ -250,7 +254,7 @@ class EventController:
     def get_support_representatives(self) -> list[Collaborator]:
         """Retrieve all collaborators from the support department.
 
-        :return: List of Collaborator objects who are in the support department.
+        :return: List of Collaborator objects in the support department.
         :rtype: list[Collaborator]
         """
         return (
@@ -268,7 +272,7 @@ class EventController:
 
         :param event_id: The ID of the event to load.
         :type event_id: int
-        :return: Dictionary containing all event fields for the update form.
+        :return: Dictionary containing all event fields for update form.
         :rtype: dict[str, Any]
         """
         event: Event | None = (
@@ -297,7 +301,7 @@ class EventController:
 
         :param location_id: The ID of the location to load.
         :type location_id: int
-        :return: Dictionary containing all location fields for the update form.
+        :return: Dictionary containing all location fields for update form.
         :rtype: dict[str, Any]
         """
         location: Location | None = (
@@ -327,18 +331,17 @@ class EventController:
 
         Instantiates an :class:`EventScreen` with the provided events, optional
         pre-selected event ID, and filter states, then pushes it onto the
-        application's screen stack with a callback to :meth:`handle_user_choice`.
+        application's screen stack with a callback.
 
-        :param events: List of :class:`Event` objects to display in the screen table.
+        :param events: List of :class:`Event` objects to display.
         :type events: list[Event]
         :param event_id: Optional ID of an event to pre-select in the table.
-            If provided, the corresponding event will be highlighted. Defaults to None.
         :type event_id: int | None
-        :param filtered_table_supported: Flag indicating whether the table is filtered
-            to show only unsupported events. Defaults to False.
+        :param filtered_table_supported: Flag if table is filtered to show
+            only unsupported events. Defaults to False.
         :type filtered_table_supported: bool
-        :param filtered_table_ownership: Flag indicating whether the table is filtered
-            to show only events assigned to the current user. Defaults to False.
+        :param filtered_table_ownership: Flag if table is filtered to show
+            only events assigned to the current user. Defaults to False.
         :type filtered_table_ownership: bool
         """
         current_user: Collaborator | None = (
@@ -363,10 +366,10 @@ class EventController:
 
         Instantiates a :class:`CreateEventScreen` with all available locations
         and signed contracts without an associated event, then pushes it onto
-        the application's screen stack with a callback to :meth:`create_event`.
+        the application's screen stack with a callback.
 
-        :param contract_id: Optional contract ID to pre-select in the creation form.
-            If provided, the corresponding contract will be pre-selected. Defaults to None.
+        :param contract_id: Optional contract ID to pre-select in creation.
+            If provided, the corresponding contract will be pre-selected.
         :type contract_id: int | None
         """
         all_locations: list[Location] = self.get_all_locations()
@@ -387,13 +390,13 @@ class EventController:
     def push_update_event_screen(self, event_id: int) -> None:
         """Push the update event screen onto the application screen stack.
 
-        Instantiates an :class:`UpdateEventScreen` with the event data to update,
-        all available locations, support representatives, and signed contracts without
-        an associated event, then pushes it onto the application's screen stack
-        with a callback to :meth:`update_event`.
+        Instantiates an :class:`UpdateEventScreen` with the event data to
+        update, all available locations, support representatives, and signed
+        contracts without an associated event, then pushes it onto the
+        application's screen stack with a callback.
 
-        :param event_id: The ID of the event to update. The corresponding event data
-            will be loaded and pre-filled in the update form.
+        :param event_id: The ID of the event to update.
+            The corresponding event data will be loaded and pre-filled.
         :type event_id: int
         """
         all_locations: list[Location] = self.get_all_locations()
@@ -422,7 +425,7 @@ class EventController:
         """Push the create location screen onto the application screen stack.
 
         Instantiates a :class:`CreateLocationScreen` and pushes it onto
-        the application's screen stack with a callback to :meth:`create_location`.
+        the application's screen stack with a callback.
         """
         create_location_screen = CreateLocationScreen()
         self.epic_events_app.push_screen(
@@ -436,10 +439,10 @@ class EventController:
 
         Loads the data for the location to update, instantiates an
         :class:`UpdateLocationScreen` with this data, and pushes it onto
-        the application's screen stack with a callback to :meth:`update_location`.
+        the application's screen stack with a callback.
 
-        :param location_id: The ID of the location to update. The corresponding
-            location data will be loaded and pre-filled in the update form.
+        :param location_id: The ID of the location to update.
+            The corresponding location data will be loaded and pre-filled.
         :type location_id: int
         """
         location_to_update: dict[str, Any] = (
@@ -534,8 +537,8 @@ class EventController:
         returns to the event list. Otherwise, processes the form data and
         updates the corresponding event in the database.
 
-        :param updated_event_data: Dictionary containing updated event data from
-            the form, or None if update was cancelled.
+        :param updated_event_data: Dictionary containing updated event data
+            from the form, or None if update was cancelled.
         :type updated_event_data: dict[str, Any] | None
         """
         if not updated_event_data:
@@ -590,12 +593,12 @@ class EventController:
     ) -> None:
         """Create a new location in the database.
 
-        Handles the location creation form submission. If creation is cancelled,
-        returns to the event list. Otherwise, processes the form data, creates
-        the location object, and saves it to the database.
+        Handles the location creation form submission. If creation is
+        cancelled, returns to the event list. Otherwise, processes the form
+        data, creates the location object, and saves it to the database.
 
-        :param new_location_data: Dictionary containing location data from the form,
-            or None if creation was cancelled.
+        :param new_location_data: Dictionary containing location data from
+            the form, or None if creation was cancelled.
         :type new_location_data: dict[str, Any] | None
         """
         # If creation is cancelled
@@ -637,12 +640,12 @@ class EventController:
     ) -> None:
         """Update an existing location in the database.
 
-        Handles the location update form submission. If update is cancelled,
-        returns to the event list. Otherwise, processes the form data and
-        updates the corresponding location in the database.
+        Handles the location update form submission. If update is
+        cancelled, returns to the event list. Otherwise, processes the form
+        data and updates the corresponding location in the database.
 
-        :param updated_location_data: Dictionary containing updated location data
-            from the form, or None if update was cancelled.
+        :param updated_location_data: Dictionary containing updated location
+            data from the form, or None if update was cancelled.
         :type updated_location_data: dict[str, Any] | None
         """
         if not updated_location_data:
@@ -687,8 +690,8 @@ class EventController:
     ) -> None:
         """Handle authentication failure scenarios.
 
-        Called when authentication fails. Currently delegates to the back callback
-        to return to the previous screen.
+        Called when authentication fails. Currently delegates to the back
+        callback to return to the previous screen.
 
         :param error: The authentication error that occurred, if any.
         :type error: AuthenticationError | None

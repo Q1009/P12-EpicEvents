@@ -348,7 +348,7 @@ The application uses **Textual** to provide a rich interface with:
 | **Environment Variables** | python-dotenv | 1.2.2+ |
 | **Logging** | Sentry | 2.66.0+ |
 | **Testing** | pytest | 9.1.1+ |
-| **Formatting** | Ruff | ? |
+| **Formatting** | Ruff | 0.16.10 |
 
 ---
 
@@ -381,7 +381,9 @@ To run the test suite and generate a coverage report:
 poetry run coverage run -m pytest && poetry run coverage html 
 
 # Open report
-open htmlcov/index.html
+open htmlcov/index.html # macOS
+start htmlcov/index.html # Windows
+xdg-open htmlcov/index.html # Linux
 ```
 
 The coverage report will be generated in the `htmlcov/` directory. Open `htmlcov/index.html` in your browser to view detailed coverage information.

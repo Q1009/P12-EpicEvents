@@ -31,7 +31,8 @@ class CollaboratorController:
     updating, and deleting collaborators. Coordinates between the database
     (via SQLAlchemy session), the views, and other controllers.
 
-    :param epic_events_app: The main Textual application instance for screen management.
+    :param epic_events_app: The main Textual application instance
+    for screen management.
     :type epic_events_app: textual.app.App
     :param session: The SQLAlchemy database session for database operations.
     :type session: sqlalchemy.orm.Session
@@ -43,7 +44,8 @@ class CollaboratorController:
     """
 
     def __init__(self, epic_events_app: "App", session: Session) -> None:
-        """Initialize the CollaboratorController with application and database session.
+        """Initialize the CollaboratorController with application and
+        database session.
 
         Stores references to the main application and database session, and
         initializes callback attributes for navigation between screens.
@@ -72,7 +74,8 @@ class CollaboratorController:
         Stores callback references for navigation and pushes the collaborator
         list screen with all collaborators.
 
-        :param on_back: Callback function to execute when user returns to previous screen.
+        :param on_back: Callback function to execute when user returns
+        to previous screen.
         :type on_back: Callable[[], None] | None
         :param on_consult_customer: Callback for navigating to customer screen.
             Called with customer ID.
@@ -93,16 +96,18 @@ class CollaboratorController:
         """Process user selection from the collaborator menu.
 
         Routes the user's menu choice to the appropriate action or screen.
-        Handles navigation between screens, creating/updating/deleting collaborators,
-        and application exit.
+        Handles navigation between screens, creating/updating/deleting
+        collaborators, and application exit.
 
-        :param user_choice: The user's selected menu option, which can be a simple
-            string or a tuple containing the action and additional parameters.
+        :param user_choice: The user's selected menu option,
+            which can be a simple string or a tuple containing the action
+            and additional parameters.
         :type user_choice: str | tuple[str, Any]
 
         .. note::
-            Available choices include: create_collaborator, update_collaborator,
-            delete_collaborator, consult_customer, consult_event, back, and quit.
+            Available choices include: create_collaborator,
+            update_collaborator, delete_collaborator, consult_customer,
+            consult_event, back, and quit.
         """
         match user_choice:
             case "create_collaborator":
@@ -162,7 +167,8 @@ class CollaboratorController:
 
         :param collaborator_id: The ID of the collaborator to load.
         :type collaborator_id: int
-        :return: Dictionary containing all collaborator fields for the update form.
+        :return: Dictionary containing all collaborator fields
+        for the update form.
         :rtype: dict[str, Any]
         """
         collaborator: Collaborator | None = (
@@ -186,15 +192,18 @@ class CollaboratorController:
     ) -> None:
         """Push the collaborator list screen onto the application screen stack.
 
-        Instantiates a :class:`CollaboratorScreen` with the provided collaborators
-        and pushes it onto the application's screen stack with a callback
+        Instantiates a :class:`CollaboratorScreen` with the provided
+        collaborators and pushes it onto the application's screen stack
+        with a callback
         to :meth:`handle_user_choice`.
 
         :param collaborators: List of :class:`Collaborator` objects to display
             in the screen table.
         :type collaborators: list[Collaborator]
-        :param collaborator_id: Optional ID of a collaborator to pre-select in the table.
-            Currently not used in screen instantiation but available for future use.
+        :param collaborator_id: Optional ID of a collaborator to pre-select
+        in the table.
+            Currently not used in screen instantiation but available
+            for future use.
         :type collaborator_id: int | None
         """
         current_user: Collaborator | None = (
@@ -210,10 +219,13 @@ class CollaboratorController:
 
     @AuthenticationServices.check_authentication
     def push_create_collaborator_screen(self) -> None:
-        """Push the create collaborator screen onto the application screen stack.
+        """Push the create collaborator screen onto
+        the application screen stack.
 
-        Retrieves all departments and instantiates a :class:`CreateCollaboratorScreen`
-        with them, then pushes it onto the application's screen stack with a callback
+        Retrieves all departments and instantiates
+        a :class:`CreateCollaboratorScreen` with them,
+        then pushes it onto the application's screen stack
+        with a callback
         to :meth:`create_collaborator`.
         """
         all_departments: list[Department] = self.get_all_departments()
@@ -229,14 +241,18 @@ class CollaboratorController:
     def push_update_collaborator_screen(
         self, collaborator_id: int
     ) -> None:
-        """Push the update collaborator screen onto the application screen stack.
+        """Push the update collaborator screen onto
+        the application screen stack.
 
-        Retrieves all departments, loads the data for the collaborator to update,
-        instantiates an :class:`UpdateCollaboratorScreen` with this data, and pushes
-        it onto the application's screen stack with a callback to :meth:`update_collaborator`.
+        Retrieves all departments, loads the data for
+        the collaborator to update, instantiates
+        an :class:`UpdateCollaboratorScreen` with this data,
+        and pushes it onto the application's screen stack with
+        a callback to :meth:`update_collaborator`.
 
-        :param collaborator_id: The ID of the collaborator to update. The corresponding
-            collaborator data will be loaded and pre-filled in the update form.
+        :param collaborator_id: The ID of the collaborator to update.
+            The corresponding collaborator data will be loaded
+            and pre-filled in the update form.
         :type collaborator_id: int
         """
         all_departments: list[Department] = self.get_all_departments()
@@ -257,16 +273,17 @@ class CollaboratorController:
     ) -> None:
         """Create a new collaborator in the database.
 
-        Handles the collaborator creation form submission. If creation is cancelled,
-        returns to the collaborator list. Otherwise, processes the form data:
+        Handles the collaborator creation form submission.
+        If creation is cancelled, returns to the collaborator list.
+        Otherwise, processes the form data:
         - Generates email from first and last name
         - Hashes the password
         - Creates the collaborator object
         - Saves to database
         - Logs the event to Sentry
 
-        :param new_collaborator_data: Dictionary containing collaborator data from
-            the form, or None if creation was cancelled.
+        :param new_collaborator_data: Dictionary containing collaborator
+            data from the form, or None if creation was cancelled.
         :type new_collaborator_data: dict[str, Any] | None
         """
         current_user: Collaborator | None = (
@@ -312,7 +329,10 @@ class CollaboratorController:
             sentry_sdk.capture_event(
                 {
                     "level": "info",
-                    "message": f"Collaborator created: {collaborator.first_name} {collaborator.last_name}",
+                    "message": (
+                        f"Collaborator created: {collaborator.first_name} "
+                        f"{collaborator.last_name}"
+                    ),
                     "extra": {
                         "action": "create",
                         "collaborator_id": collaborator.id,
@@ -321,7 +341,10 @@ class CollaboratorController:
                         "email": collaborator.email,
                         "department": collaborator.department.name.value,
                         "created_by_id": current_user.id,
-                        "created_by_name": f"{current_user.first_name} {current_user.last_name}",
+                        "created_by_name": (
+                            f"{current_user.first_name} "
+                            f"{current_user.last_name}"
+                        ),
                     },
                     "tags": {
                         "module": "collaborators",
@@ -345,14 +368,16 @@ class CollaboratorController:
     ) -> None:
         """Update an existing collaborator in the database.
 
-        Handles the collaborator update form submission. If update is cancelled,
-        returns to the collaborator list. Otherwise, processes the form data:
+        Handles the collaborator update form submission.
+        If update is cancelled, returns to the collaborator list.
+        Otherwise, processes the form data:
         - Generates new email from updated first and last name
         - Updates the collaborator in database
         - Logs the event to Sentry
 
-        :param updated_collaborator_data: Dictionary containing updated collaborator
-            data from the form, or None if update was cancelled.
+        :param updated_collaborator_data: Dictionary containing
+            updated collaborator data from the form,
+            or None if update was cancelled.
         :type updated_collaborator_data: dict[str, Any] | None
         """
         if not updated_collaborator_data:
@@ -402,12 +427,17 @@ class CollaboratorController:
             sentry_sdk.capture_event(
                 {
                     "level": "info",
-                    "message": f"Collaborator updated: ID {updated_collaborator.id}",
+                    "message": (
+                        f"Collaborator updated: ID {updated_collaborator.id}"
+                    ),
                     "extra": {
                         "action": "update",
                         "collaborator_id": updated_collaborator.id,
                         "updated_by_id": current_user.id,
-                        "updated_by_name": f"{current_user.first_name} {current_user.last_name}",
+                        "updated_by_name": (
+                            f"{current_user.first_name} "
+                            f"{current_user.last_name}"
+                        ),
                     },
                     "tags": {
                         "module": "collaborators",
@@ -432,8 +462,9 @@ class CollaboratorController:
         Handles the collaborator deletion request. If deletion is cancelled,
         returns to the collaborator list. Otherwise, deletes the collaborator
         from the database and refreshes the list.
-        If the collaborator is referenced by foreign keys (e.g., as sales_representative
-        of a Customer or support_representative of an Event), the deletion is aborted
+        If the collaborator is referenced by foreign keys
+        (e.g., as sales_representative of a Customer or
+        support_representative of an Event), the deletion is aborted
         and the user is notified.
 
         :param collaborator_id: The ID of the collaborator to delete.
@@ -481,7 +512,8 @@ class CollaboratorController:
         """Handle authentication failure scenarios.
 
         Called when authentication fails. Displays an error notification if
-        an error occurred and returns to the previous screen via the back callback.
+        an error occurred and returns to the previous screen
+        via the back callback.
 
         :param error: The authentication error that occurred, if any.
         :type error: AuthenticationError | None

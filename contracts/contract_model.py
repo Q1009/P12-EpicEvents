@@ -11,7 +11,8 @@ from main.base_model import Base
 class ContractStatus(PyEnum):
     """Enumeration of possible contract statuses in the EpicEvents CRM.
 
-    Defines the three possible states a contract can be in during its lifecycle.
+    Defines the three possible states a contract can be in during its
+    lifecycle.
 
     :cvar SIGNED: Contract has been signed by all parties and is active.
     :vartype SIGNED: str
