@@ -27,19 +27,20 @@ if TYPE_CHECKING:
 class ContractController:
     """Controller for managing contracts in the EpicEvents CRM.
 
-    Handles all contract-related operations including listing, creating, updating,
-    and filtering contracts. Coordinates between the database (via SQLAlchemy session),
-    the views, and other controllers.
+    Handles all contract-related operations including listing, creating,
+    updating, and filtering contracts. Coordinates between the database
+    (via SQLAlchemy session), the views, and other controllers.
 
-    :param epic_events_app: The main Textual application instance for screen management.
+    :param epic_events_app: The main Textual application instance.
     :type epic_events_app: textual.app.App
-    :param session: The SQLAlchemy database session for database operations.
+    :param session: The SQLAlchemy database session for operations.
     :type session: sqlalchemy.orm.Session
 
     .. note::
-        This controller uses the MVC pattern, receiving user input from views
-        and updating both the model (database) and views accordingly. It also
-        integrates with Sentry for logging important contract events like signing.
+        This controller uses the MVC pattern, receiving user input from
+        views and updating both the model (database) and views accordingly.
+        It also integrates with Sentry for logging important contract events
+        like signing.
     """
 
     def __init__(self, epic_events_app: "App", session: Session) -> None:
@@ -50,7 +51,7 @@ class ContractController:
 
         :param epic_events_app: The main Textual application instance.
         :type epic_events_app: textual.app.App
-        :param session: SQLAlchemy database session for database operations.
+        :param session: SQLAlchemy database session for operations.
         :type session: sqlalchemy.orm.Session
         """
         self.session: Session = session
@@ -72,20 +73,20 @@ class ContractController:
     ) -> None:
         """Start the contract management workflow.
 
-        Stores callback references for navigation and pushes the contract list screen
-        with all contracts, optionally pre-selecting a specific contract.
+        Stores callback references for navigation and pushes the contract
+        list screen with all contracts, optionally pre-selecting a contract.
 
-        :param contract_id: Optional ID of a contract to pre-select in the list.
+        :param contract_id: Optional ID of a contract to pre-select.
         :type contract_id: int | None
-        :param on_back: Callback function to execute when user returns to previous screen.
+        :param on_back: Callback to execute on return to previous screen.
         :type on_back: Callable[[], None] | None
-        :param on_consult_customer: Callback for navigating to customer screen.
+        :param on_consult_customer: Callback for navigating to customer.
             Called with customer ID.
         :type on_consult_customer: Callable[[int], None] | None
-        :param on_consult_event: Callback for navigating to event screen.
+        :param on_consult_event: Callback for navigating to event.
             Called with event ID.
         :type on_consult_event: Callable[[int], None] | None
-        :param on_create_event: Callback for creating an event from a contract.
+        :param on_create_event: Callback for creating an event from contract.
             Called with contract ID.
         :type on_create_event: Callable[[int], None] | None
         """
@@ -104,17 +105,18 @@ class ContractController:
         """Process user selection from the contract menu.
 
         Routes the user's menu choice to the appropriate action or screen.
-        Handles navigation between screens, filtering, creating events from contracts,
-        and application exit.
+        Handles navigation between screens, filtering, creating events from
+        contracts, and application exit.
 
-        :param user_choice: The user's selected menu option, which can be a simple
-            string or a tuple containing the action and additional parameters.
+        :param user_choice: The user's selected menu option, which can be
+            a simple string or a tuple with action and parameters.
         :type user_choice: str | tuple[str, Any]
 
         .. note::
-            Available choices include: create_contract, update_contract, create_event,
-            consult_customer, consult_event, filter_unsigned_contracts,
-            filter_unpaid_contracts, filter_reset, back, and quit.
+            Available choices include: create_contract, update_contract,
+            create_event, consult_customer, consult_event,
+            filter_unsigned_contracts, filter_unpaid_contracts,
+            filter_reset, back, and quit.
         """
         match user_choice:
             case "create_contract":
@@ -230,7 +232,7 @@ class ContractController:
 
         :param contract_id: The ID of the contract to load.
         :type contract_id: int
-        :return: Dictionary containing all contract fields for the update form.
+        :return: Dictionary containing all contract fields for update.
         :rtype: dict[str, Any]
         """
         contract: Contract | None = (
@@ -257,20 +259,21 @@ class ContractController:
     ) -> None:
         """Push the contract list screen onto the application screen stack.
 
-        Instantiates a :class:`ContractScreen` with the provided contracts, optional
-        pre-selected contract ID, and filter states, then pushes it onto the
-        application's screen stack with a callback to :meth:`handle_user_choice`.
+        Instantiates a :class:`ContractScreen` with the provided contracts,
+        optional pre-selected contract ID, and filter states, then pushes it
+        onto the application's screen stack with a callback.
 
-        :param contracts: List of :class:`Contract` objects to display in the screen table.
+        :param contracts: List of :class:`Contract` objects to display.
         :type contracts: list[Contract]
-        :param contract_id: Optional ID of a contract to pre-select in the table.
-            If provided, the corresponding contract will be highlighted. Defaults to None.
+        :param contract_id: Optional ID of a contract to pre-select.
+            If provided, the corresponding contract will be highlighted.
+            Defaults to None.
         :type contract_id: int | None
-        :param filtered_table_signature: Flag indicating whether the table is filtered
-            to show only unsigned contracts. Defaults to False.
+        :param filtered_table_signature: Flag if table is filtered to show
+            only unsigned contracts. Defaults to False.
         :type filtered_table_signature: bool
-        :param filtered_table_payment: Flag indicating whether the table is filtered
-            to show only unpaid contracts. Defaults to False.
+        :param filtered_table_payment: Flag if table is filtered to show
+            only unpaid contracts. Defaults to False.
         :type filtered_table_payment: bool
         """
         current_user: Collaborator | None = (
@@ -291,9 +294,9 @@ class ContractController:
     def push_create_contract_screen(self) -> None:
         """Push the create contract screen onto the application screen stack.
 
-        Retrieves all customers and instantiates a :class:`CreateContractScreen`
-        with them, then pushes it onto the application's screen stack with a callback
-        to :meth:`create_contract`.
+        Retrieves all customers and instantiates a
+        :class:`CreateContractScreen` with them, then pushes it onto the
+        application's screen stack with a callback to :meth:`create_contract`.
         """
         all_customers: list[Customer] = self.get_all_customers()
         create_contract_screen = CreateContractScreen(all_customers)
@@ -307,11 +310,11 @@ class ContractController:
         """Push the update contract screen onto the application screen stack.
 
         Retrieves all customers and loads the data for the contract to update,
-        instantiates an :class:`UpdateContractScreen` with this data, and pushes
-        it onto the application's screen stack with a callback to :meth:`update_contract`.
+        instantiates an :class:`UpdateContractScreen` with this data, and
+        pushes it onto the application's screen stack with a callback.
 
-        :param contract_id: The ID of the contract to update. The corresponding
-            contract data will be loaded and pre-filled in the update form.
+        :param contract_id: The ID of the contract to update.
+            The corresponding contract data will be loaded and pre-filled.
         :type contract_id: int
         """
         all_customers: list[Customer] = self.get_all_customers()
@@ -332,12 +335,13 @@ class ContractController:
     ) -> None:
         """Create a new contract in the database.
 
-        Handles the contract creation form submission. If creation is cancelled,
-        returns to the contract list. Otherwise, processes the form data, creates
-        the contract object with PENDING status, and saves it to the database.
+        Handles the contract creation form submission. If creation is
+        cancelled, returns to the contract list. Otherwise, processes the
+        form data, creates the contract object with PENDING status, and
+        saves it to the database.
 
-        :param new_contract_data: Dictionary containing contract data from the form,
-            or None if creation was cancelled.
+        :param new_contract_data: Dictionary containing contract data from
+            the form, or None if creation was cancelled.
         :type new_contract_data: dict[str, Any] | None
         """
         # If creation is cancelled
@@ -382,13 +386,13 @@ class ContractController:
     ) -> None:
         """Update an existing contract in the database.
 
-        Handles the contract update form submission. If update is cancelled,
-        returns to the contract list. Otherwise, processes the form data and
-        updates the corresponding contract in the database. Logs signed contracts
-        to Sentry for audit purposes.
+        Handles the contract update form submission. If update is
+        cancelled, returns to the contract list. Otherwise, processes the
+        form data and updates the corresponding contract in the database.
+        Logs signed contracts to Sentry for audit purposes.
 
-        :param updated_contract_data: Dictionary containing updated contract data
-            from the form, or None if update was cancelled.
+        :param updated_contract_data: Dictionary containing updated contract
+            data from the form, or None if update was cancelled.
         :type updated_contract_data: dict[str, Any] | None
         """
         current_user: Collaborator | None = (

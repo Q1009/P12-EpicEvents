@@ -34,9 +34,10 @@ from services.permission_services import PermissionServices
 class EventScreen(Screen):
     """Screen for displaying and managing events in the EpicEvents CRM.
 
-    Provides a comprehensive view of all events with filtering capabilities,
-    detailed information display for selected events, and navigation options
-    for creating, updating, and consulting related entities.
+    Provides a comprehensive view of all events with filtering
+    capabilities, detailed information display for selected events,
+    and navigation options for creating, updating, and consulting
+    related entities.
 
     :param events: List of Event objects to display in the table.
     :type events: list[Event]
@@ -44,9 +45,11 @@ class EventScreen(Screen):
     :type user: Collaborator
     :param event_id: Optional ID of an event to pre-select in the table.
     :type event_id: int | None
-    :param filtered_table_supported: Flag indicating if table shows only unsupported events.
+    :param filtered_table_supported: Flag indicating if table shows
+        only unsupported events.
     :type filtered_table_supported: bool
-    :param filtered_table_ownership: Flag indicating if table shows only user's events.
+    :param filtered_table_ownership: Flag indicating if table shows
+        only user's events.
     :type filtered_table_ownership: bool
     """
 
@@ -425,8 +428,9 @@ class EventScreen(Screen):
     def watch_selected_event_id(self, new_id: int | None) -> None:
         """Watcher that loads associated tables based on the selected event.
 
-        Updates all related tables (customer, location, contract, notes) when
-        a new event is selected in the events table. Also updates button states.
+        Updates all related tables (customer, location, contract, notes)
+        when a new event is selected in the events table. Also updates
+        button states.
 
         :param new_id: The ID of the newly selected event.
         :type new_id: int | None
@@ -567,14 +571,17 @@ class EventScreen(Screen):
     def action_filter_unsupported_events(self) -> None:
         """Filter DataTable to show unsupported events.
 
-        Dismisses the screen with a tuple indicating to show only unsupported events.
+        Dismisses the screen with a tuple indicating to show only
+        unsupported events.
         """
         self.dismiss(("filter_unsupported_events", True))
 
     def action_filter_user_events_as_support(self) -> None:
-        """Filter DataTable to show user events if user is a support representative.
+        """Filter DataTable to show user events if user is a support
+        representative.
 
-        Dismisses the screen with a tuple indicating to show only user's events.
+        Dismisses the screen with a tuple indicating to show only
+        user's events.
         """
         self.dismiss(("filter_user_events_as_support", True))
 
@@ -596,8 +603,9 @@ class EventScreen(Screen):
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Save highlighted event id.
 
-        Updates the selected_event_id reactive variable when a row is highlighted
-        in the events table, which triggers the watcher to update related tables.
+        Updates the selected_event_id reactive variable when a row is
+        highlighted in the events table, which triggers the watcher to
+        update related tables.
 
         :param event: The row highlighted event.
         :type event: DataTable.RowHighlighted
@@ -660,12 +668,14 @@ class EventScreen(Screen):
 class CreateEventScreen(Screen):
     """Screen for creating a new event in the EpicEvents CRM.
 
-    Provides a comprehensive form for entering all event details including
-    basic information, location (existing or new), and associated contract.
+    Provides a comprehensive form for entering all event details
+    including basic information, location (existing or new), and
+    associated contract.
 
     :param locations: List of existing locations to choose from.
     :type locations: list[Location]
-    :param signed_contracts: List of signed contracts without associated events.
+    :param signed_contracts: List of signed contracts without
+        associated events.
     :type signed_contracts: list[Contract]
     :param contract_id: Optional ID of a contract to pre-select.
     :type contract_id: int | None
@@ -683,11 +693,12 @@ class CreateEventScreen(Screen):
         signed_contracts: list[Contract],
         contract_id: int | None = None,
     ) -> None:
-        """Initialize the CreateEventScreen with available locations and contracts.
+        """Initialize the CreateEventScreen with available locations.
 
         :param locations: List of existing locations to choose from.
         :type locations: list[Location]
-        :param signed_contracts: List of signed contracts without associated events.
+        :param signed_contracts: List of signed contracts without
+            associated events.
         :type signed_contracts: list[Contract]
         :param contract_id: Optional ID of a contract to pre-select.
         :type contract_id: int | None
@@ -701,8 +712,9 @@ class CreateEventScreen(Screen):
     def compose(self) -> ComposeResult:
         """Compose the screen UI components.
 
-        Creates the header, main container with form sections (event data,
-        location selection, contract selection), and footer with action buttons.
+        Creates the header, main container with form sections
+        (event data, location selection, contract selection), and
+        footer with action buttons.
 
         :return: Generator yielding all UI widgets.
         :rtype: ComposeResult
@@ -753,7 +765,9 @@ class CreateEventScreen(Screen):
                             failure_description="Field cannot be empty.",
                         ),
                         Integer(
-                            failure_description="Must be a valid number of guests."
+                            failure_description=(
+                                "Must be a valid number of guests."
+                            )
                         ),
                     ],
                 )
@@ -1205,16 +1219,20 @@ class CreateEventScreen(Screen):
 class UpdateEventScreen(Screen):
     """Screen for updating an existing event in the EpicEvents CRM.
 
-    Provides a form pre-filled with existing event data for modification.
-    Allows updating event details, location, contract, and support representative.
+    Provides a form pre-filled with existing event data for
+    modification. Allows updating event details, location,
+    contract, and support representative.
 
-    :param event_data: Dictionary containing all data of the event to update.
+    :param event_data: Dictionary containing all data of the event
+        to update.
     :type event_data: dict[str, Any]
     :param locations: List of existing locations to choose from.
     :type locations: list[Location]
-    :param support_representatives: List of collaborators who can be support representatives.
+    :param support_representatives: List of collaborators who can
+        be support representatives.
     :type support_representatives: list[Collaborator]
-    :param signed_contracts: List of signed contracts (including current contract).
+    :param signed_contracts: List of signed contracts (including
+        current contract).
     :type signed_contracts: list[Contract]
     """
 
@@ -1233,11 +1251,13 @@ class UpdateEventScreen(Screen):
     ) -> None:
         """Initialize the UpdateEventScreen with event data and options.
 
-        :param event_data: Dictionary containing all data of the event to update.
+        :param event_data: Dictionary containing all data of the
+            event to update.
         :type event_data: dict[str, Any]
         :param locations: List of existing locations to choose from.
         :type locations: list[Location]
-        :param support_representatives: List of collaborators who can be support representatives.
+        :param support_representatives: List of collaborators who can
+            be support representatives.
         :type support_representatives: list[Collaborator]
         :param signed_contracts: List of signed contracts.
         :type signed_contracts: list[Contract]
@@ -1254,9 +1274,10 @@ class UpdateEventScreen(Screen):
     def compose(self) -> ComposeResult:
         """Compose the screen UI components.
 
-        Creates the header, main container with form sections (event data,
-        contract selection, location selection, support representative selection),
-        and footer with action buttons.
+        Creates the header, main container with form sections
+        (event data, contract selection, location selection,
+        support representative selection), and footer with action
+        buttons.
 
         :return: Generator yielding all UI widgets.
         :rtype: ComposeResult
@@ -1316,7 +1337,9 @@ class UpdateEventScreen(Screen):
                             failure_description="Field cannot be empty.",
                         ),
                         Integer(
-                            failure_description="Must be a valid number of guests."
+                            failure_description=(
+                                "Must be a valid number of guests."
+                            )
                         ),
                     ],
                 )
@@ -1384,12 +1407,16 @@ class UpdateEventScreen(Screen):
                         ),
                         support_representative,
                     )
-                    for support_representative in self.support_representatives
+                    for support_representative in (
+                        self.support_representatives
+                    )
                 ]
                 selected_support_representative = next(
                     (
                         support_representative
-                        for support_representative in self.support_representatives
+                        for support_representative in (
+                            self.support_representatives
+                        )
                         if support_representative
                         == self.event_data.get(
                             "event_support_representative"
@@ -1652,7 +1679,8 @@ class UpdateEventScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_event_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_event_data.
+        Retrieves values from all form fields and stores them in
+        updated_event_data.
         """
         selected_contract = self.query_one(
             "#update-event-contract-select", Select
@@ -1963,9 +1991,11 @@ class CreateLocationScreen(Screen):
 class UpdateLocationScreen(Screen):
     """Screen for updating an existing location in the EpicEvents CRM.
 
-    Provides a form pre-filled with existing location data for modification.
+    Provides a form pre-filled with existing location data for
+    modification.
 
-    :param location_data: Dictionary containing all data of the location to update.
+    :param location_data: Dictionary containing all data of the
+        location to update.
     :type location_data: dict[str, str]
     """
 
@@ -1978,7 +2008,8 @@ class UpdateLocationScreen(Screen):
     def __init__(self, location_data: dict[str, str]) -> None:
         """Initialize the UpdateLocationScreen with location data.
 
-        :param location_data: Dictionary containing all data of the location to update.
+        :param location_data: Dictionary containing all data of the
+            location to update.
         :type location_data: dict[str, str]
         """
         super().__init__()
@@ -2227,7 +2258,8 @@ class UpdateLocationScreen(Screen):
     def _collect_form_data(self) -> None:
         """Collect all form data into updated_location_data dictionary.
 
-        Retrieves values from all form fields and stores them in updated_location_data.
+        Retrieves values from all form fields and stores them in
+        updated_location_data.
         """
         self.updated_location_data = {
             "location_id": self.location_data["location_id"],
