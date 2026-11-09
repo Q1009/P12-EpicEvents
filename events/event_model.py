@@ -8,7 +8,8 @@ class Event(Base):
     """Represents an event in the EpicEvents CRM database.
 
     Stores comprehensive information about events including scheduling details,
-    attendance, location, associated contract, and assigned support representative.
+    attendance, location, associated contract, and assigned support
+    representative.
 
     :cvar id: Unique identifier for the event, auto-incremented.
     :vartype id: int
@@ -30,7 +31,8 @@ class Event(Base):
     :cvar support_representative_id: Foreign key reference to the assigned
         support representative. Can be null if no representative is assigned.
     :vartype support_representative_id: int | None
-    :cvar support_representative: Many-to-one relationship with Collaborator model.
+    :cvar support_representative: Many-to-one relationship with
+        Collaborator model.
         Represents the collaborator assigned as support for this event.
     :vartype support_representative: Collaborator | None
     :cvar contract_id: Foreign key reference to the associated contract.

@@ -6,7 +6,8 @@ class Permission(Enum):
     Enum of all possible permissions in the Epic Event CRM.
     Naming convention:
     - {ACTION}_{RESSOURCE} for global permissions (ex: READ_CUSTOMER)
-    - {ACTION}_OWN_{RESSOURCE} for permissions limited to one's own resources (ex: READ_OWN_CUSTOMERS)
+    - {ACTION}_OWN_{RESSOURCE} for permissions limited to one's
+    own resources (ex: READ_OWN_CUSTOMERS)
     """
 
     # ===== Global permissions =====

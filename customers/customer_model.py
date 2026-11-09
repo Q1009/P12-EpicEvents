@@ -11,7 +11,8 @@ class Customer(Base):
     """Represents a customer in the EpicEvents CRM database.
 
     Stores information about customers including personal details, company
-    information, and relationships to sales representatives, contacts, and contracts.
+    information, and relationships to sales representatives, contacts,
+    and contracts.
 
     :cvar id: Unique identifier for the customer, auto-incremented.
     :vartype id: int
@@ -22,16 +23,19 @@ class Customer(Base):
     :cvar company_name: Name of the customer's company or organization.
         Can be null for individual customers.
     :vartype company_name: str | None
-    :cvar created_at: Date and time when the customer record was created (UTC).
+    :cvar created_at: Date and time when the customer record was
+        created (UTC).
         Automatically set to current time on creation.
     :vartype created_at: datetime
-    :cvar updated_at: Date and time when the customer record was last updated (UTC).
+    :cvar updated_at: Date and time when the customer record was
+        last updated (UTC).
         Automatically set to current time on update.
     :vartype updated_at: datetime
     :cvar sales_representative_id: Foreign key reference to the assigned
         sales representative. Can be null if no representative is assigned.
     :vartype sales_representative_id: int | None
-    :cvar sales_representative: Many-to-one relationship with Collaborator model.
+    :cvar sales_representative: Many-to-one relationship with
+        Collaborator model.
         Represents the sales representative assigned to this customer.
     :vartype sales_representative: Collaborator | None
     :cvar contacts: Many-to-many relationship with Contact model.
@@ -43,9 +47,9 @@ class Customer(Base):
     :vartype contracts: list[Contract]
 
     .. note::
-        The contracts relationship uses cascade="all, delete-orphan" which means
-        that if a customer is deleted, all their associated contracts will also
-        be automatically deleted.
+        The contracts relationship uses cascade="all, delete-orphan" which
+        means that if a customer is deleted, all their associated contracts
+        will also be automatically deleted.
     """
 
     __tablename__ = "customers"
@@ -81,7 +85,8 @@ class Customer(Base):
 
 
 class Contact(Base):
-    """Represents a contact associated with a customer in the EpicEvents CRM database.
+    """Represents a contact associated with a customer in the
+    EpicEvents CRM database.
 
     Stores contact information including name and email, and maintains
     relationships to customers and phone numbers.
@@ -92,7 +97,8 @@ class Contact(Base):
     :vartype first_name: str
     :cvar last_name: Last name of the contact person.
     :vartype last_name: str
-    :cvar email: Email address of the contact. Must be unique across all contacts.
+    :cvar email: Email address of the contact. Must be unique
+        across all contacts.
     :vartype email: str
     :cvar customers: Many-to-many relationship with Customer model.
         A contact can be associated with multiple customers.
@@ -127,7 +133,8 @@ class Contact(Base):
 
 
 class PhoneNumber(Base):
-    """Represents a phone number associated with a contact in the EpicEvents CRM database.
+    """Represents a phone number associated with a contact in the
+    EpicEvents CRM database.
 
     Stores phone number information and maintains a relationship to the
     associated contact.

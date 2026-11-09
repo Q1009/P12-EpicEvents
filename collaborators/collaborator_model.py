@@ -44,7 +44,7 @@ class Collaborator(Base):
     :vartype email: str
     :cvar password: Hashed password for authentication.
     :vartype password: str
-    :cvar department_id: Foreign key reference to the collaborator's department.
+    :cvar department_id: FK reference to the collaborator's department.
     :vartype department_id: int
     :cvar department: Many-to-one relationship with Department model.
         Each collaborator belongs to exactly one department.

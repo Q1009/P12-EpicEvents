@@ -15,10 +15,12 @@ class EpicEventsCRM(App):
 
     This application serves as the entry point for the EpicEvents CRM system,
     providing a Textual-based user interface for managing customers, contracts,
-    and events. It initializes the database connection, sets up the MVC architecture,
+    and events.
+    It initializes the database connection, sets up the MVC architecture,
     and manages the application lifecycle.
 
-    :param: Inherits from Textual's App class; no additional parameters required.
+    :param: Inherits from Textual's App class; no additional
+    parameters required.
     :type: textual.app.App
 
     .. note::

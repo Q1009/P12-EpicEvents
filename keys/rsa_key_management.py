@@ -1,8 +1,8 @@
 """
 Module for loading and managing RSA keys for JWT signing/verification.
 
-This module provides functions to load RSA private and public keys from PEM files,
-with security checks (file existence).
+This module provides functions to load RSA private and public keys
+from PEM files, with security checks (file existence).
 
 Example:
     from keys import get_private_key, get_public_key
@@ -27,7 +27,7 @@ def _load_private_key() -> bytes:
 
     Raises:
         FileNotFoundError: If the private key file does not exist.
-        PermissionError: If the file permissions are too permissive (should be 600).
+        PermissionError: If the file permissions are too permissive.
     """
     key_path = Path(settings.JWT_PRIVATE_KEY_PATH)
 
@@ -37,6 +37,7 @@ def _load_private_key() -> bytes:
 
     with open(key_path, "rb") as key_file:
         return key_file.read()
+
 
 def _load_public_key() -> bytes:
     """Load the public key from PEM file.
@@ -55,6 +56,7 @@ def _load_public_key() -> bytes:
     with open(key_path, "rb") as key_file:
         return key_file.read()
 
+
 def get_private_key():
     """Get the RSA private key for signing JWT tokens.
 
@@ -62,15 +64,15 @@ def get_private_key():
         AsymmetricKey: A private key object ready for JWT signing.
 
     Note:
-        The key is loaded lazily and not cached. For high-performance applications,
+        The key is loaded lazily and not cached.
+        For high-performance applications,
         consider adding caching (with thread-safety).
     """
     pem = _load_private_key()
     return serialization.load_pem_private_key(
-        pem,
-        password=None,
-        backend=default_backend()
+        pem, password=None, backend=default_backend()
     )
+
 
 def get_public_key():
     """Get the RSA public key for verifying JWT tokens.
@@ -80,6 +82,5 @@ def get_public_key():
     """
     pem = _load_public_key()
     return serialization.load_pem_public_key(
-        pem,
-        backend=default_backend()
+        pem, backend=default_backend()
     )

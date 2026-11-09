@@ -412,7 +412,9 @@ class CustomerController:
             last_name=new_customer_data["customer_last_name"],
             first_name=new_customer_data["customer_first_name"],
             company_name=new_customer_data["company_name"],
-            sales_representative=self.authentication_controller.get_user_info(),
+            sales_representative=(
+                self.authentication_controller.get_user_info()
+            ),
         )
         customer.contacts.append(new_customer_contact)
         self.session.add(customer)

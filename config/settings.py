@@ -10,8 +10,9 @@ load_dotenv()
 class Settings:
     """Central configuration class for the EpicEvents CRM application.
 
-    Aggregates all application settings from environment variables and provides
-    them as class attributes. Settings are organized into logical sections:
+    Aggregates all application settings from environment variables and
+    provides them as class attributes. Settings are organized into logical
+    sections:
 
     **Database Configuration**
         - Host, port, credentials, and database name for MySQL connection
@@ -24,16 +25,19 @@ class Settings:
         - Secret key for cryptographic operations
 
     **JWT Configuration**
-        - Algorithm, token expiration times, and key paths for JWT authentication
+        - Algorithm, token expiration times, and key paths for JWT
+          authentication
 
     **Environment Configuration**
-        - Current deployment environment (development, staging, production)
+        - Current deployment environment
+          (development, staging, production)
 
     **Collaborator Passwords**
         - Default passwords for collaborator seeding during development
 
-    All settings can be configured via environment variables or use sensible defaults
-    for development. The class provides a secure __repr__ that hides sensitive data.
+    All settings can be configured via environment variables or use
+    sensible defaults for development. The class provides a secure __repr__
+    that hides sensitive data.
 
     Example:
         >>> from config.settings import settings
@@ -84,7 +88,11 @@ class Settings:
             >>> settings.DB_URL
             'mysql+mysqlconnector://user:password@localhost:3306/mydatabase'
         """
-        return f"mysql+mysqlconnector://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return (
+            f"mysql+mysqlconnector://{self.DB_USER}:"
+            f"{self.DB_PASSWORD}@{self.DB_HOST}:"
+            f"{self.DB_PORT}/{self.DB_NAME}"
+        )
 
     # --- Sentry (error logs) ---
     SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
@@ -165,8 +173,9 @@ class Settings:
     def __repr__(self) -> str:
         """Return a secure string representation of the Settings object.
 
-        Intentionally excludes sensitive information like passwords and secret keys
-        from the representation to prevent accidental exposure in logs or debug output.
+        Intentionally excludes sensitive information like passwords and
+        secret keys from the representation to prevent accidental exposure
+        in logs or debug output.
 
         :return: String representation with non-sensitive settings only.
         :rtype: str

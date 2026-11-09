@@ -44,7 +44,8 @@ class ContractController:
     """
 
     def __init__(self, epic_events_app: "App", session: Session) -> None:
-        """Initialize the ContractController with application and database session.
+        """Initialize the ContractController with application
+        and database session.
 
         Stores references to the main application and database session, and
         initializes callback attributes for navigation between screens.
@@ -440,12 +441,19 @@ class ContractController:
             sentry_sdk.capture_event(
                 {
                     "level": "info",
-                    "message": f"Contract signed: ID {updated_contract.id} (Customer: {updated_contract.customer.first_name} {updated_contract.customer.last_name})",
+                    "message": (
+                        f"Contract signed: ID {updated_contract.id} "
+                        f"(Customer: {updated_contract.customer.first_name} "
+                        f"{updated_contract.customer.last_name})"
+                    ),
                     "extra": {
                         "action": "sign",
                         "contract_id": updated_contract.id,
                         "signed_by_id": current_user.id,
-                        "signed_by_name": f"{current_user.first_name} {current_user.last_name}",
+                        "signed_by_name": (
+                            f"{current_user.first_name} "
+                            f"{current_user.last_name}"
+                        ),
                     },
                     "tags": {
                         "module": "contracts",

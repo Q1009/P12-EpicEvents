@@ -27,30 +27,33 @@ class MainController:
 
     Coordinates between all feature controllers (authentication, customers,
     contracts, events, collaborators) and manages the application flow.
-    Handles user navigation between different screens based on authentication
-    status and user choices.
+    Handles user navigation between different screens based on
+    authentication status and user choices.
 
-    :param epic_events_app: The main Textual application instance for screen management.
+    :param epic_events_app: The main Textual application instance for
+        screen management.
     :type epic_events_app: textual.app.App
-    :param session: The SQLAlchemy database session for database operations.
+    :param session: The SQLAlchemy database session for database
+        operations.
     :type session: sqlalchemy.orm.Session
 
     .. note::
         This controller implements the MVC pattern by delegating specific
-        functionalities to dedicated controllers while maintaining the overall
-        application state and navigation flow.
+        functionalities to dedicated controllers while maintaining the
+        overall application state and navigation flow.
     """
 
     def __init__(self, epic_events_app: "App", session: "Session") -> None:
         """Initialize the MainController with application and database session.
 
-        Creates instances of all feature controllers (authentication, customers,
-        contracts, events, collaborators) and stores references to the main
-        application and database session.
+        Creates instances of all feature controllers
+        (authentication, customers, contracts, events, collaborators)
+        and stores references to the main application and database session.
 
         :param epic_events_app: The main Textual application instance.
         :type epic_events_app: textual.app.App
-        :param session: SQLAlchemy database session for database operations.
+        :param session: SQLAlchemy database session for database
+            operations.
         :type session: sqlalchemy.orm.Session
         """
         self.epic_events_app: App = epic_events_app
@@ -75,8 +78,8 @@ class MainController:
         """Start the main application flow.
 
         Determines which main menu to display based on the current
-        authentication status. If the user is authenticated, displays
-        the authenticated menu; otherwise, displays the unauthenticated menu.
+        authentication status. If the user is authenticated, displays the
+        authenticated menu; otherwise, displays the unauthenticated menu.
         """
         if self.authentication_controller.is_authenticated():
             self.display_authenticated_main_menu()
@@ -128,7 +131,8 @@ class MainController:
         main screen onto the application stack with a callback for handling
         user choices.
 
-        :raises AuthenticationError: If the user's authentication token is invalid.
+        :raises AuthenticationError: If the user's authentication token
+            is invalid.
         """
         user: Collaborator | None = (
             self.authentication_controller.get_user_info()
@@ -183,8 +187,8 @@ class MainController:
     def push_contract_screen(self, contract_id: int | None = None) -> None:
         """Display the contract management screen.
 
-        Delegates to the contract controller to start the contract management
-        interface with an optional contract ID for pre-loading.
+        Delegates to the contract controller to start the contract
+        management interface with an optional contract ID for pre-loading.
 
         :param contract_id: Optional ID of the contract to display or edit.
         :type contract_id: int | None
@@ -202,8 +206,8 @@ class MainController:
     def push_customer_screen(self, customer_id: int | None = None) -> None:
         """Display the customer management screen.
 
-        Delegates to the customer controller to start the customer management
-        interface with an optional customer ID for pre-loading.
+        Delegates to the customer controller to start the customer
+        management interface with an optional customer ID for pre-loading.
 
         :param customer_id: Optional ID of the customer to display or edit.
         :type customer_id: int | None

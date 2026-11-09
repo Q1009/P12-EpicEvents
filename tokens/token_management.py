@@ -24,6 +24,7 @@ def _ensure_directory() -> None:
     # Restrict directory to owner only (700 = rwx------)
     os.chmod(CONFIG_DIR, 0o700)
 
+
 def save_tokens(access_token: str, refresh_token: str) -> None:
     """
     Save tokens to disk with secure permissions.
@@ -37,7 +38,7 @@ def save_tokens(access_token: str, refresh_token: str) -> None:
     data = {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "created_at": datetime.now(UTC).isoformat()
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     # Write to a temporary file first (atomic operation)
@@ -49,6 +50,7 @@ def save_tokens(access_token: str, refresh_token: str) -> None:
     temp_file.replace(TOKEN_FILE)
     # Set file permissions to owner read/write only (600 = rw-------)
     os.chmod(TOKEN_FILE, 0o600)
+
 
 def load_tokens() -> dict[str, Any] | None:
     """
@@ -74,10 +76,12 @@ def load_tokens() -> dict[str, Any] | None:
     except (OSError, json.JSONDecodeError):
         return None
 
+
 def clear_tokens() -> None:
     """Delete the token file if it exists."""
     if TOKEN_FILE.exists():
         TOKEN_FILE.unlink()
+
 
 def tokens_exist() -> bool:
     """Check if format valid tokens are stored."""

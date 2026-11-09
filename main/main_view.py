@@ -37,8 +37,8 @@ class AuthenticatedMainScreen(Screen[str]):
         and navigation options, and footer. The navigation menu includes
         options for all CRM modules.
 
-        :return: Generator yielding Header, Container with Label and OptionList,
-            and Footer widgets.
+        :return: Generator yielding Header, Container with Label
+            and OptionList, and Footer widgets.
         :rtype: ComposeResult
         """
         yield Header(show_clock=True)
@@ -104,8 +104,8 @@ class UnauthenticatedMainScreen(Screen[str]):
         and basic navigation options, and footer. The menu provides
         Login and Quit options for unauthenticated users.
 
-        :return: Generator yielding Header, Container with Label and OptionList,
-            and Footer widgets.
+        :return: Generator yielding Header, Container with Label
+            and OptionList, and Footer widgets.
         :rtype: ComposeResult
         """
         yield Header(show_clock=True)
