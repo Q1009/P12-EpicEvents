@@ -1,0 +1,15 @@
+[flake8]
+exclude =
+    .git,
+    .pytest_cache,
+    .ruff_cache,
+    __pycache__,
+    .venv,
+    .vscode,
+    keys/keys,
+    htmlcov,
+    */tests/*,
+    migrations
+
+format = html
+htmldir = flake8-report

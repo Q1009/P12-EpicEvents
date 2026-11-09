@@ -448,6 +448,32 @@ EpicEvents CRM implements a Role-Based Access Control (RBAC) system with three m
 
 ---
 
+## 🔍 Code Quality & Linting
+
+This project uses **Flake8** to ensure code compliance with [PEP 8](https://peps.python.org/pep-0008/) style guidelines.
+
+### Generate an HTML Report
+
+To generate and visualize Flake8 results in a browser:
+
+```bash
+# Generate a detailed HTML report
+poetry run flake8
+
+# Open the report in your browser
+open flake8-report/index.html  # macOS
+start flake8-report/index.html   # Windows
+xdg-open flake8-report/index.html # Linux
+```
+
+### 📊 Flake8 Report
+
+Here are the Flake8 results of the current state of the project:
+
+![Flake8 Compliance Results](./reports/flake8_report_screenshot.png)
+
+---
+
 ## Resources
 
 - [Textual Documentation](https://textual.textualize.io/)
