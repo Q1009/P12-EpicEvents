@@ -38,6 +38,7 @@ class PermissionError(Exception):
         self.message = message
         super().__init__(self.message)
 
+
 class PermissionServices:
     """Centralized service for managing and verifying user permissions.
 
@@ -55,7 +56,7 @@ class PermissionServices:
     def get_role(user: Collaborator) -> RoleName:
         """
         Get the role of a user based on their department.
-        Accesses the department name via the relationship (user.department.name).
+        Accesses the department name via the relationship.
 
         Args:
             user: Collaborator instance from the database
@@ -78,10 +79,11 @@ class PermissionServices:
 
         # Only raise if no role matched (after checking all roles)
         raise ValueError(
-            f"Unknown department name for role mapping: {user_department_name}. "
+            f"Unknown department name for role mapping: "
+            f"{user_department_name}. "
             f"Valid roles are: {[role.value for role in RoleName]}"
         )
-    
+
     @staticmethod
     def get_permissions(user: Collaborator) -> set[Permission]:
         """
@@ -92,7 +94,7 @@ class PermissionServices:
 
         Returns:
             Set[Permission]: Set of all permissions granted to the user's role.
-                            Returns an empty set if the role has no defined permissions.
+                Returns an empty set if the role has no defined permissions.
         """
 
         user_role = PermissionServices.get_role(user)
@@ -113,7 +115,7 @@ class PermissionServices:
         """
 
         return permission in PermissionServices.get_permissions(user)
-    
+
     @staticmethod
     def check_permission(*required_permissions: Permission) -> Callable:
         """
@@ -146,19 +148,22 @@ class PermissionServices:
         """
 
         def decorator(func: Callable) -> Callable:
-            @wraps(func) # Preserves the metadata of the original function (useful for debugging)
+            @wraps(func)  # Preserves the metadata of the original function
             def wrapper(*args, **kwargs):
                 # Extract user from kwargs or args (first positional arg)
-                user = kwargs.get('user')
+                user = kwargs.get("user")
                 if not user and len(args) >= 1:
                     user = args[0]  # Assume user is first argument
 
                 if not user:
-                    raise PermissionError("Authentication required: no user provided")
+                    raise PermissionError(
+                        "Authentication required: no user provided"
+                    )
 
                 # Check ALL required permissions
                 missing_permissions = [
-                    perm for perm in required_permissions
+                    perm
+                    for perm in required_permissions
                     if not PermissionServices.has_permission(user, perm)
                 ]
 
@@ -169,5 +174,7 @@ class PermissionServices:
                     )
 
                 return func(*args, **kwargs)
+
             return wrapper
+
         return decorator

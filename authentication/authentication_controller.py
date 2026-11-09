@@ -1,8 +1,10 @@
 """
 Authentication Controller
 
-Controller module that handles user authentication workflows (login, logout, session state).
-Coordinates between the Textual UI, authentication views, and authentication services.
+Controller module that handles user authentication workflows
+(login, logout, session state).
+Coordinates between the Textual UI, authentication views,
+and authentication services.
 """
 
 from authentication.authentication_view import AuthenticationScreen
@@ -16,20 +18,23 @@ class AuthenticationController:
     """Handles authentication workflows for the CLI application.
 
     This controller manages the authentication flow by coordinating between
-    the Textual application, authentication views, and authentication services.
-    It provides methods for user login, logout, authentication status checks,
-    and user information retrieval.
+    the Textual application, authentication views, and authentication
+    services.
+    It provides methods for user login, logout, authentication status
+    checks, and user information retrieval.
 
-    :param epic_events_app: The main Textual application instance for screen management
-        and user notifications.
+    :param epic_events_app: The main Textual application instance for
+        screen management and user notifications.
     :type epic_events_app: textual.app.App
-    :param session: The SQLAlchemy database session for database operations.
+    :param session: The SQLAlchemy database session for database
+        operations.
     :type session: sqlalchemy.orm.Session
 
     .. note::
-        The controller uses callback-based flow for login. When a user initiates
-        login, an :class:`AuthenticationScreen` is pushed with a callback that
-        processes the credentials upon submission or cancellation.
+        The controller uses callback-based flow for login. When a user
+        initiates login, an :class:`AuthenticationScreen` is pushed with a
+        callback that processes the credentials upon submission or
+        cancellation.
     """
 
     def __init__(self, epic_events_app, session):
@@ -48,22 +53,24 @@ class AuthenticationController:
     def login(self, on_success=None, on_cancel=None):
         """Initiate the login workflow.
 
-        Pushes an :class:`AuthenticationScreen` onto the application stack and
-        registers a callback to handle the user's credentials upon form submission.
+        Pushes an :class:`AuthenticationScreen` onto the application stack
+        and registers a callback to handle the user's credentials upon form
+        submission.
 
-        :param on_success: Optional callback function to execute after successful login.
-            Called with no arguments.
+        :param on_success: Optional callback function to execute after
+            successful login. Called with no arguments.
         :type on_success: Optional[Callable[[], None]]
-        :param on_cancel: Optional callback function to execute when login is cancelled.
-            Called with no arguments.
+        :param on_cancel: Optional callback function to execute when login
+            is cancelled. Called with no arguments.
         :type on_cancel: Optional[Callable[[], None]]
         :return: None
         :rtype: None
 
         .. note::
-            This method does not block; it pushes a screen and returns immediately.
-            The actual authentication happens asynchronously when the user submits
-            the form, triggering the ``handle_credentials`` callback.
+            This method does not block; it pushes a screen and returns
+            immediately.
+            The actual authentication happens asynchronously when the user
+            submits the form, triggering the ``handle_credentials`` callback.
         """
         self.on_success_callback = on_success
         self.on_cancel_callback = on_cancel
@@ -78,13 +85,14 @@ class AuthenticationController:
         cancels the login process. It handles validation, authentication,
         and appropriate user feedback.
 
-        :param credentials: A tuple containing (email, password) if submitted, or None
-            if the user cancelled the login.
+        :param credentials: A tuple containing (email, password) if
+            submitted, or None if the user cancelled the login.
         :type credentials: tuple[str, str] | None
         :return: None
         :rtype: None
-        :raises AuthenticationError: Never raised; authentication errors are caught and
-            handled by displaying an error notification and retrying the login.
+        :raises AuthenticationError: Never raised; authentication errors are
+            caught and handled by displaying an error notification and
+            retrying the login.
         """
         if credentials is None:
             self.epic_events_app.notify(
@@ -130,8 +138,8 @@ class AuthenticationController:
         :rtype: None
 
         .. note::
-            This method does not require confirmation and immediately logs out
-            the user by clearing all authentication tokens.
+            This method does not require confirmation and immediately logs
+            out the user by clearing all authentication tokens.
         """
         AuthenticationServices.logout()
         self.epic_events_app.notify(
@@ -157,8 +165,8 @@ class AuthenticationController:
         Fetches the user's collaborator record from the database using the
         user ID extracted from the stored access token.
 
-        :return: The :class:`Collaborator` object if authenticated and user exists,
-            otherwise None.
+        :return: The :class:`Collaborator` object if authenticated and user
+            exists, otherwise None.
         :rtype: Collaborator | None
         """
         return AuthenticationServices.get_user_info(self.session)

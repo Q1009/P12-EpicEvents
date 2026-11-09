@@ -9,9 +9,11 @@ class RoleName(Enum):
     Enum of user roles in the Epic Events CRM.
     Each role corresponds to a department in the database (via DepartmentName).
     """
+
     ADMIN = DepartmentName.ADMIN.value
     SALES = DepartmentName.SALES.value
     SUPPORT = DepartmentName.SUPPORT.value
+
 
 # Mapping of roles to their associated permissions.
 # Each role gets a set of permissions it is authorized to perform.
@@ -22,19 +24,15 @@ ROLE_PERMISSIONS = {
         # === Global ===
         Permission.READ_OWN_PROFILE,
         Permission.UPDATE_OWN_PROFILE,
-
         # === Customers ===
         Permission.READ_ALL_CUSTOMERS,
-
         # === Contracts ===
         Permission.READ_ALL_CONTRACTS,
         Permission.CREATE_CONTRACT,
         Permission.UPDATE_ALL_CONTRACTS,
-
         # === Events ===
         Permission.READ_ALL_EVENTS,
-        Permission.UPDATE_ALL_EVENTS,  # Custom permission to add support to an event
-
+        Permission.UPDATE_ALL_EVENTS,
         # === Collaborators ===
         Permission.READ_ALL_COLLABORATORS,
         Permission.CREATE_COLLABORATOR,
@@ -47,38 +45,33 @@ ROLE_PERMISSIONS = {
         # === Global ===
         Permission.READ_OWN_PROFILE,
         Permission.UPDATE_OWN_PROFILE,
-
         # === Customers ===
-        Permission.READ_ALL_CUSTOMERS,    # Can view all customers for sales purposes
+        Permission.READ_ALL_CUSTOMERS,
         Permission.CREATE_CUSTOMER,
-        Permission.UPDATE_OWN_CUSTOMERS,  # Can only update their own customers
+        Permission.UPDATE_OWN_CUSTOMERS,
         Permission.CREATE_CONTACT,
         Permission.UPDATE_CONTACT,
-
         # === Contracts ===
-        Permission.READ_ALL_CONTRACTS,     # Can view all contracts for context
-        Permission.UPDATE_OWN_CONTRACTS,   # Can only update their own contracts
-
+        Permission.READ_ALL_CONTRACTS,
+        Permission.UPDATE_OWN_CONTRACTS,
         # === Events ===
-        Permission.READ_ALL_EVENTS,        # Can view all events for context
-        Permission.CREATE_EVENT,           # Can create events for their own contracts
+        Permission.READ_ALL_EVENTS,
+        Permission.CREATE_EVENT,
     },
     RoleName.SUPPORT: {
-        # Support team can manage events and view related customer/contract data.
+        # Support team can manage events
+        # and view related customer/contract data.
         # === Global ===
         Permission.READ_OWN_PROFILE,
         Permission.UPDATE_OWN_PROFILE,
-
         # === Customers ===
-        Permission.READ_ALL_CUSTOMERS,    # Can view all customers for sales purposes
-
+        Permission.READ_ALL_CUSTOMERS,
         # === Contracts ===
-        Permission.READ_ALL_CONTRACTS,     # Can view all contracts for context
-
+        Permission.READ_ALL_CONTRACTS,
         # === Events ===
         Permission.READ_ALL_EVENTS,
-        Permission.UPDATE_OWN_EVENTS,      # Can only update events assigned to them
+        Permission.UPDATE_OWN_EVENTS,
         Permission.CREATE_LOCATION,
         Permission.UPDATE_LOCATION,
-    }
+    },
 }

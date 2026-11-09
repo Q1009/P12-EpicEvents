@@ -40,7 +40,9 @@ def get_password(index):
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt and return the hashed password as a string."""
+    """Hash a password using bcrypt
+    and return the hashed password as a string.
+    """
     return hashpw(password.encode(), gensalt()).decode()
 
 
@@ -72,7 +74,8 @@ def seed():
     session.add_all(departments)
     session.flush()  # To get IDs for departments
 
-    # ===== Step 3 : Create collaborators (5 : 3 Sales, 2 Support, 1 Admin) =====
+    # ===== Step 3 : Create collaborators
+    # (5 : 3 Sales, 2 Support, 1 Admin) =====
     collaborator_data = [
         {
             "first_name": "Jean",
@@ -139,8 +142,10 @@ def seed():
     ]
 
     # ===== Step 4 : Create 5 contacts and 5 contacts_customers =====
-    contacts = []  # List of contacts who are the clients
-    contacts_customers = []  # List of contacts who are different from the clients
+    # List of contacts who are the clients
+    contacts = []
+    # List of contacts who are different from the clients
+    contacts_customers = []
     for _ in range(5):
         contact = Contact(
             first_name=fake.first_name(),
@@ -223,7 +228,8 @@ def seed():
         session.add(location)
     session.flush()
 
-    # ===== Step 7 : Create 8 contracts (5 signed, 2 pending, 1 cancelled) =====
+    # ===== Step 7 : Create 8 contracts
+    # (5 signed, 2 pending, 1 cancelled) =====
     contracts = []
     status_distribution = (
         [ContractStatus.SIGNED] * 5
@@ -237,7 +243,8 @@ def seed():
             # Random amount due for signed contracts
             amount_due = round(random.uniform(0, total_amount), 2)
         else:
-            amount_due = total_amount  # Amount due equal to total for unsigned contracts
+            # Amount due equal to total for unsigned contracts
+            amount_due = total_amount
         contract = Contract(
             total_amount=total_amount,
             amount_due=amount_due,
@@ -251,7 +258,8 @@ def seed():
         session.add(contract)
     session.flush()
 
-    # ===== Step 8 : Create as many events as there are signed contracts and associate them (1:1) =====
+    # ===== Step 8 : Create as many events as there are
+    # signed contracts and associate them (1:1) =====
     events = []
     signed_contracts = [
         c for c in contracts if c.status == ContractStatus.SIGNED.value
@@ -294,11 +302,13 @@ def seed():
     print("✅ Database seeded successfully with the following data:")
     print(f"   - {len(departments)} departments")
     print(
-        f"   - {len(collaborators)} collaborators (3 Sales, 2 Support, 1 Admin)"
+        f"   - {len(collaborators)} collaborators "
+        "(3 Sales, 2 Support, 1 Admin)"
     )
     print(f"   - {len(contacts) + len(contacts_customers)} contacts")
     print(
-        f"   - {len(clients)} customers (5 with self-contact, 3 with unique contact, 2 with 2 contacts each)"
+        f"   - {len(clients)} customers (5 self-contact, "
+        f"3 unique contact, 2 with 2 contacts each)"
     )
     print(f"   - {len(locations)} locations")
     print(

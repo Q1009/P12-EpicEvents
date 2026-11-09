@@ -102,26 +102,30 @@ class TokenServices:
         """Verify and decode a JWT token.
 
         Decodes and validates a JWT token using the application's public key.
-        Optionally validates the token type claim against the provided parameter.
-        Returns the decoded payload.
+        Optionally validates the token type claim against the provided
+        parameter. Returns the decoded payload.
         Raises AuthenticationError if verification fails.
 
         :param token: The JWT token string to verify and decode
         :type token: str
         :param token_type: Optional expected token type to validate against.
-            If provided, the token's 'type' claim must match this value (e.g., 'access' or 'refresh').
+            If provided, the token's 'type' claim must match this value
+            (e.g., 'access' or 'refresh').
             If None, type validation is skipped.
         :type token_type: Optional[str]
-        :return: The decoded token payload containing all JWT claims such as:
+        :return: The decoded token payload containing all JWT claims
+            such as:
             - ``sub``: User ID
             - ``jti``: Unique token identifier
             - ``type``: Token type
             - ``exp``: Expiration timestamp
             - ``iat``: Issued at timestamp
         :rtype: dict
-        :raises AuthenticationError: If token verification fails due to:
+        :raises AuthenticationError: If token verification fails due
+            to:
             - Token has expired (:exc:`jwt.ExpiredSignatureError`)
-            - Invalid token signature or format (:exc:`jwt.InvalidTokenError`)
+            - Invalid token signature or format
+              (:exc:`jwt.InvalidTokenError`)
             - Token type mismatch (if ``token_type`` is provided)
         """
         public_key = get_public_key()
@@ -147,17 +151,22 @@ class TokenServices:
     def refresh_access_token(refresh_token: str) -> tuple[str, str]:
         """Refresh an access token using a valid refresh token.
 
-        Performs token rotation by generating a new access token and a new refresh token
-        using the provided refresh token. The old refresh token remains valid until its
-        expiration, but the new tokens should be used for subsequent requests.
+        Performs token rotation by generating a new access token
+        and a new refresh token using the provided refresh token.
+        The old refresh token remains valid until its expiration,
+        but the new tokens should be used for subsequent requests.
 
-        :param refresh_token: A valid JWT refresh token used to generate new tokens
+        :param refresh_token: A valid JWT refresh token used to
+            generate new tokens
         :type refresh_token: str
         :return: A tuple containing:
-            - **new_access_token** (str): Newly generated access token with fresh expiration
-            - **new_refresh_token** (str): Newly generated refresh token for future rotations
+            - **new_access_token** (str): Newly generated access token
+              with fresh expiration
+            - **new_refresh_token** (str): Newly generated refresh token
+              for future rotations
         :rtype: Tuple[str, str]
-        :raises AuthenticationError: If the refresh token verification fails due to:
+        :raises AuthenticationError: If the refresh token verification
+            fails due to:
             - Token has expired
             - Invalid token signature or format
             - Token is not of type 'refresh'
@@ -183,8 +192,8 @@ class TokenServices:
         Invalidate a refresh token.
 
         Note: JWTs are stateless, so invalidation typically requires
-        maintaining a blacklist or revocation list. This method is a placeholder
-        for implementing such logic if needed.
+        maintaining a blacklist or revocation list. This method is a
+        placeholder for implementing such logic if needed.
 
         :param refresh_token: The refresh token to invalidate
         :type refresh_token: str
@@ -203,19 +212,23 @@ class AuthenticationServices:
     ) -> tuple[str, str]:
         """Authenticate a user and generate authentication tokens.
 
-        Validates user credentials against the database and generates JWT tokens
-        for subsequent authenticated requests. Tokens are automatically saved to
-        local storage for persistence across sessions.
+        Validates user credentials against the database
+        and generates JWT tokens for subsequent authenticated requests.
+        Tokens are automatically saved to local storage
+        for persistence across sessions.
 
-        :param session: SQLAlchemy database session for querying user information
+        :param session: SQLAlchemy database session for querying
+            user information
         :type session: Session
         :param email: User's email address for authentication
         :type email: str
         :param password: User's password for verification
         :type password: str
         :return: A tuple containing:
-            - **access_token** (str): JWT access token with short expiration
-            - **refresh_token** (str): JWT refresh token for obtaining new access tokens
+            - **access_token** (str): JWT access token
+              with short expiration
+            - **refresh_token** (str): JWT refresh token for
+              obtaining new access tokens
         :rtype: Tuple[str, str]
         :raises AuthenticationError: If authentication fails due to:
             - User not found with provided email
@@ -244,7 +257,8 @@ class AuthenticationServices:
         Clear stored authentication tokens.
 
         Removes the locally stored access and refresh tokens by deleting
-        the token file, effectively logging out the current authenticated user.
+        the token file, effectively logging out the current authenticated
+        user.
 
         :rtype: None
         """
@@ -255,8 +269,9 @@ class AuthenticationServices:
         """
         Extract user ID from a verified access token.
 
-        Verifies the provided token and extracts the user ID from its payload.
-        If the token is invalid or expired, an AuthenticationError is raised.
+        Verifies the provided token and extracts the user ID from its
+        payload. If the token is invalid or expired, an
+        AuthenticationError is raised.
 
         :param token: The access token string to verify
         :type token: str
@@ -266,17 +281,19 @@ class AuthenticationServices:
         payload = TokenServices.verify_token(token, "access")
         return int(payload["sub"])
 
+    @staticmethod
     def get_user_info(session: Session):
         """
         Retrieve the authenticated user's information from the database.
 
-        Fetches the user ID from the stored access token and queries the database
-        to return the corresponding collaborator. Returns ``None`` if no tokens are found
-        or if the user does not exist.
+        Fetches the user ID from the stored access token
+        and queries the database to return the corresponding collaborator.
+        Returns ``None`` if no tokens are found or if the user does not exist.
 
         :param session: SQLAlchemy database session for querying
         :type session: Session
-        :return: The :class:`Collaborator` object if found, otherwise ``None``
+        :return: The :class:`Collaborator` object if found,
+            otherwise ``None``
         :rtype: Collaborator | None
         """
         tokens = load_tokens()
@@ -294,8 +311,10 @@ class AuthenticationServices:
 
     @staticmethod
     def is_user_authenticated() -> bool:
-        """Check if user is authenticated
-        Refresh tokens if access is expired but refresh is valid."""
+        """Check if user is authenticated.
+
+        Refresh tokens if access is expired but refresh is valid.
+        """
         tokens = load_tokens()
         if not tokens:
             return False
@@ -318,31 +337,35 @@ class AuthenticationServices:
         """
         Decorator to ensure user authentication before executing a command.
 
-        This decorator validates JWT authentication tokens and automatically handles
-        token refresh when access tokens are expired. If authentication fails, it
-        calls the instance's ``_handle_auth_failure`` method (if available) to manage
-        the error response (e.g., redirect to login screen with error notification).
+        This decorator validates JWT authentication tokens and automatically
+        handles token refresh when access tokens are expired. If
+        authentication fails, it calls the instance's
+        ``_handle_auth_failure`` method (if available) to manage the error
+        response (e.g., redirect to login screen with error notification).
 
-        :param func: The instance method to be decorated. Must accept ``self`` as
-            first parameter.
+        :param func: The instance method to be decorated.
+            Must accept ``self`` as first parameter.
         :type func: Callable
-        :return: A wrapped method that performs authentication checks before
-            executing the original method.
+        :return: A wrapped method that performs authentication checks
+            before executing the original method.
         :rtype: Callable
 
-        :raises AuthenticationError: If authentication fails and the instance does
-            not implement ``_handle_auth_failure`` method.
+        :raises AuthenticationError: If authentication fails and the
+            instance does not implement ``_handle_auth_failure`` method.
 
         .. Behavior
 
         **Token Validation:**
             - Checks for existing local tokens
             - Validates access token signature and expiration
-            - Automatically refreshes expired access tokens using refresh token
+            - Automatically refreshes expired access tokens using
+              refresh token
 
         **Error Handling:**
-            - On authentication failure, calls ``self._handle_auth_failure(error)`` if available
-            - Falls back to raising :exc:`AuthenticationError` if no handler exists
+            - On authentication failure, calls
+              ``self._handle_auth_failure(error)`` if available
+            - Falls back to raising :exc:`AuthenticationError` if no
+              handler exists
 
         .. Workflow
 
@@ -353,8 +376,9 @@ class AuthenticationServices:
         5. If refresh fails: trigger error handler or raise exception
 
         .. note::
-            The class using this decorator **must** implement ``_handle_auth_failure``
-            to properly handle authentication failures. This method should typically:
+            The class using this decorator **must** implement
+            ``_handle_auth_failure`` to properly handle authentication
+            failures. This method should typically:
             - Display an error notification to the user
             - Redirect to the unauthenticated menu
         """
