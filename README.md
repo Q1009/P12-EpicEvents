@@ -14,15 +14,13 @@ This project implements an MVC (Model-View-Controller) architecture with a secur
 - [Prerequisites](#prerequisites)
 - [Installation and Configuration](#installation-and-configuration)
 - [Database Initialization](#database-initialization)
+- [Error Tracking with Sentry](#error-tracking-with-sentry)
 - [Running the Application](#running-the-application)
 - [Features](#features)
 - [Technical Architecture](#technical-architecture)
+- [Testing and Coverage](#testing-and-coverage)
 - [Authentication System](#authentication-system)
 - [RBAC Permission System](#rbac-permission-system)
-- [Project Structure](#project-structure)
-- [Advanced Configuration](#advanced-configuration)
-- [Development](#development)
-- [Troubleshooting](#troubleshooting)
 - [Resources](#resources)
 - [License](#license)
 - [Authors](#authors)
@@ -40,7 +38,7 @@ EpicEvents CRM enables EpicEvents company collaborators to efficiently manage:
 - **Collaborators**: Manage the internal team (restricted to administrators)
 
 The application is designed to meet the specific needs of three departments:
-- **ADMIN**: Full application and collaborator management
+- **ADMIN**: Collaborator and contract management
 - **SALES**: Customer and contract management
 - **SUPPORT**: Event management
 
@@ -50,16 +48,11 @@ The application is designed to meet the specific needs of three departments:
 
 Before you begin, ensure you have the following installed on your system:
 
-### Operating System
-- Linux (recommended)
-- macOS
-- Windows (with WSL recommended)
-
 ### Required Software
 - **Python**: Version 3.13 or higher
 - **MySQL**: Version 8.0 or higher
 - **Git**: For version control
-- **Poetry**: Python dependency manager (recommended)
+- **Poetry**: Python dependency manager
 
 ### Verify Prerequisites
 
@@ -75,7 +68,7 @@ mysql --version
 # Check Git is installed
 git --version
 
-# Check Poetry is installed (optional but recommended)
+# Check Poetry is installed
 poetry --version
 ```
 
@@ -87,15 +80,14 @@ poetry --version
 
 ```bash
 cd /path/to/your/projects
-git clone https://github.com/QuentinTellier/P12-EpicEvents.git
-git checkout develop
+git clone https://github.com/Q1009/P12-EpicEvents.git
 ```
 
 > **Note**: Replace the repository URL with your own fork if you have one.
 
 ### 2. Create and Activate Virtual Environment
 
-#### With Poetry (Recommended)
+#### With Poetry
 
 ```bash
 # Navigate to the project directory
@@ -108,26 +100,9 @@ poetry install
 poetry shell
 ```
 
-#### Without Poetry (with venv)
-
-```bash
-# Create a virtual environment
-python -m venv .venv
-
-# Activate the virtual environment
-# On Linux/macOS
-source .venv/bin/activate
-
-# On Windows
-.\.venv\Scripts\activate
-
-# Install dependencies
-pip install -r pyproject.toml
-```
-
 ### 3. Configure Environment Variables
 
-Edit the `.env` file with your MySQL connection information:
+Create an `.env` file and edit it with your MySQL connection information:
 
 ```env
 # ===== Database =====
@@ -137,7 +112,7 @@ DB_USER=epic_events_user
 DB_PASSWORD=YourSecurePassword123!
 DB_NAME=epicevents
 
-# ===== Sentry (optional) =====
+# ===== Sentry =====
 # SENTRY_DSN=https://xxx@sentry.io/xxx
 
 # ===== Safety =====
@@ -189,7 +164,7 @@ mysql -u root -p
 -- Create the database
 CREATE DATABASE IF NOT EXISTS epicevents CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Create a dedicated user (optional but recommended)
+-- Create a dedicated user
 CREATE USER IF NOT EXISTS 'epic_events_user'@'localhost' IDENTIFIED BY 'MyPassword123!';
 
 -- Grant all privileges on the database to the user
@@ -247,20 +222,53 @@ poetry run python -m database.seed
 
 ---
 
+## Error Tracking with Sentry
+
+EpicEvents CRM uses **Sentry** for real-time error tracking and monitoring, providing visibility into application errors, performance issues, and exceptions in production environments.
+
+### Configuration
+
+Sentry is configured via environment variables in your `.env` file:
+
+```env
+# ===== Sentry =====
+SENTRY_DSN=https://your-public-key@sentry.io/your-project-id
+```
+
+### Setup Instructions
+
+1. **Create a Sentry account** at [sentry.io](https://sentry.io) or log in to your existing account
+2. **Create a new project** for EpicEvents CRM
+3. **Copy the DSN** from your project settings
+4. **Add the DSN** to your `.env` file:
+
+```env
+SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o0.ingest.sentry.io/0
+```
+
+5. **Restart the application** for changes to take effect
+
+### Use Cases
+
+| Scenario | What Gets Logged | Benefits |
+|----------|------------------|----------|
+| **Creation & Update of a Collaborator** | Main data regarding the collaborator | Monitor collaborator management |
+| **Contract Signature** | Main data regarding the contract | Keep track of contract history |
+| **Any Unhandled Exception** | Unhandled exceptions, critical errors | Immediate alerts for production issues |
+
+### Viewing Errors
+
+Once configured, all errors will be visible in your Sentry dashboard.
+
+---
+
 ## Running the Application
 
 ### Normal Launch
 
 ```bash
 # From the project root
-poetry run python -m main
-```
-
-or
-
-```bash
-# If you're already in the virtual environment
-python -m main
+poetry run python main.py
 ```
 
 ---
@@ -344,6 +352,49 @@ The application uses **Textual** to provide a rich interface with:
 
 ---
 
+## Testing and Coverage
+
+### Tests Summary
+
+To run the test suite:
+
+```bash
+# Run all tests
+poetry run pytest -vv
+
+# Run specific test file
+poetry run pytest feature/tests/test_module.py -vv
+```
+
+#### 📊 Test Results
+
+Here are the pytest testing results:
+
+![Pytest Test Results](./reports/tests_results_screenshot.png)
+
+### Test Coverage Summary
+
+To run the test suite and generate a coverage report:
+
+```bash
+# Run all tests with coverage and generate html report
+poetry run coverage run -m pytest && poetry run coverage html 
+
+# Open report
+open htmlcov/index.html
+```
+
+The coverage report will be generated in the `htmlcov/` directory. Open `htmlcov/index.html` in your browser to view detailed coverage information.
+
+#### 📊 Coverage Test Results
+
+Here are the coverage results of the pytest tests in the current state of the project:
+
+![Coverage Test Results](./reports/coverage_test_results_screenshot_1.png)
+![Coverage Test Results](./reports/coverage_test_results_screenshot_2.png)
+
+> **Note**: Coverage percentages are based on the latest test run.
+
 ## Authentication System
 
 ### How It Works
@@ -364,8 +415,8 @@ Flow of the authentication system
 | **AuthView** | `authentication/authentication_view.py` | Credential input interface |
 | **AuthService** | `services/authentication_services.py` | Authentication business logic |
 | **TokenService** | `services/authentication_services.py` | Token generation and verification |
-| **TokenManagement** | `tokens/token_management.py` | Secure token storage |
-| **RSA Key Management** | `keys/rsa_key_management.py` | RSA key loading |
+| **TokenManagement** | `tokens/token_management.py` | Secure token storage and access|
+| **RSA Key Management** | `keys/rsa_key_management.py` | RSA key storage and access |
 
 ### Token Payload Structure
 
@@ -387,9 +438,11 @@ Flow of the authentication system
 
 EpicEvents CRM implements a Role-Based Access Control (RBAC) system with three main roles:
 
-```
-Overview of the 3 roles
-```
+| Role | Primary Responsibilities | Access Scope | Key Permissions |
+|------|--------------------------|--------------|-----------------|
+| **ADMIN** | Team and contract management | Collaborators & Contracts | Create/read/update/delete collaborators, all contract management, assign support to events |
+| **SALES** | Customer and contract lifecycle | Customers & Contracts | Create/read/update customers, create/update contracts, view events (read-only) |
+| **SUPPORT** | Event planning and execution | Events | Create/read/update events, view customers/contracts (read-only), update their own assigned events |
 
 ### Key Permission Files
 
@@ -398,12 +451,6 @@ Overview of the 3 roles
 | `permissions/permission_model.py` | Definition of all available permissions |
 | `permissions/role_model.py` | Role to permissions mapping |
 | `services/permission_services.py` | Permission verification services |
-
-### Permission Configuration
-
-```
-Explain how to setup and update permissions
-```
 
 ---
 
@@ -458,5 +505,3 @@ For full license details, see the [LICENSE](LICENSE) file.
 - Future contributors who will improve this project
 
 ---
-
-*Documentation generated for Project P12 - EpicEvents CRM*
