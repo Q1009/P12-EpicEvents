@@ -162,7 +162,7 @@ mysql -u root -p
 
 ```sql
 -- Create the database
-CREATE DATABASE IF NOT EXISTS epicevents CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS epicevents;
 
 -- Create a dedicated user
 CREATE USER IF NOT EXISTS 'epic_events_user'@'localhost' IDENTIFIED BY 'MyPassword123!';
@@ -252,7 +252,7 @@ SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o0.ingest.sentry.io/0
 
 | Scenario | What Gets Logged | Benefits |
 |----------|------------------|----------|
-| **Creation & Update of a Collaborator** | Main data regarding the collaborator | Monitor collaborator management |
+| **Collaborator Creation & Update** | Main data regarding the collaborator | Monitor collaborator management |
 | **Contract Signature** | Main data regarding the contract | Keep track of contract history |
 | **Any Unhandled Exception** | Unhandled exceptions, critical errors | Immediate alerts for production issues |
 
@@ -400,12 +400,6 @@ Here are the coverage results of the pytest tests in the current state of the pr
 ### How It Works
 
 EpicEvents CRM uses a **JWT (JSON Web Tokens)** based authentication system with the **RS256** algorithm (RSA + SHA-256).
-
-#### Authentication Flow:
-
-```
-Flow of the authentication system
-```
 
 ### System Components
 
