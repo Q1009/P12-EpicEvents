@@ -203,7 +203,7 @@ class EventController:
                 joinedload(Event.location),
                 joinedload(Event.support_representative),
             )
-            .filter(Event.support_representative == None)
+            .filter(Event.support_representative_id.is_(None))
             .all()
         )
 
@@ -246,7 +246,7 @@ class EventController:
             self.session.query(Contract)
             .filter(
                 Contract.status == ContractStatus.SIGNED,
-                Contract.event == None,
+                Contract.event == None,  # noqa: E711, RUF100
             )
             .all()
         )
