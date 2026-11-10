@@ -33,12 +33,12 @@ This project implements an **MVC (Model-View-Controller)** architecture with a *
 
 EpicEvents CRM enables **EpicEvents** company collaborators to efficiently manage:
 
-| Feature          | Description                                      | Icon  |
-|------------------|--------------------------------------------------|-------|
-| **👥 Customers**  | Create, view, and update customer information     |       |
-| **📄 Contracts** | Track contracts, status, and amounts               |       |
-| **🎉 Events**    | Plan and manage events with support assignment    |       |
-| **👥 Collaborators** | Manage the internal team (ADMIN only)        |       |
+| Feature          | Description                                      |
+|------------------|--------------------------------------------------|
+| **👥 Customers**  | Create, view, and update customer information     |
+| **📄 Contracts** | Track contracts, status, and amounts               |
+| **🎉 Events**    | Plan and manage events with support assignment    |
+| **👥 Collaborators** | Manage the internal team (ADMIN only)        |
 
 The application is designed for **three departments**:
 - **ADMIN**: Collaborator & contract management
@@ -78,11 +78,14 @@ git clone https://github.com/Q1009/P12-EpicEvents.git
 ```bash
 cd P12-EpicEvents
 poetry install
-poetry shell
 ```
 
 ### 3️⃣ Configure Environment Variables
-Create an `.env` file:
+```bash
+cd P12-EpicEvents
+touch .env
+```
+Open the `.env` file and edit it as follows :
 ```env
 # ===== Database =====
 DB_HOST=localhost
@@ -94,11 +97,12 @@ DB_NAME=epicevents
 # ===== Sentry =====
 # SENTRY_DSN=https://xxx@sentry.io/xxx
 
-# ===== Security =====
+# ===== Safety =====
+# Generate a new secret key with: poetry run python -c "import secrets; print(secrets.token_hex(32))"
 SECRET_KEY=your_64_character_hex_secret_key
 
 # ===== Environment =====
-ENVIRONMENT=development
+ENVIRONMENT=development  # development|staging|production
 
 # ===== JWT Configuration =====
 JWT_ALGORITHM=RS256
@@ -106,12 +110,21 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 JWT_PRIVATE_KEY_PATH=keys/keys/jwt_private_key.pem
 JWT_PUBLIC_KEY_PATH=keys/keys/jwt_public_key.pem
+
+# ===== Passwords (for initial database seeding) =====
+COLLAB_PASSWORD_1=password1
+COLLAB_PASSWORD_2=password2
+COLLAB_PASSWORD_3=password3
+COLLAB_PASSWORD_4=password4
+COLLAB_PASSWORD_5=password5
 ```
 
-> ⚠️ **Important**:
-> - **Never commit secrets** to version control
-> - The `keys/keys/` directory is in `.gitignore`
-> - In production, **encrypt** the private key
+> [!IMPORTANT]
+> Make sure to run poetry run :
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+> And then paste the 64 character hex as the SECRET_KEY
 
 ---
 
