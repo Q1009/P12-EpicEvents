@@ -18,9 +18,14 @@ Usage:
     python -m keys.generate_keys
 """
 
+from pathlib import Path
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+
+# Create parent directories if they dont exist
+Path("keys/keys").mkdir(parents=True, exist_ok=True)
 
 # --- Private Key Generation ---
 # Generates a new RSA key pair using OpenSSL backend.
