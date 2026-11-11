@@ -1,7 +1,5 @@
 # 🎟️ EpicEvents CRM
 
-## 📜 Event Management CRM - OpenClassrooms Project 12
-
 EpicEvents CRM is a **command-line interface (CLI)** application developed in **Python** for comprehensive management of **customers, contracts, and events**.
 Built on the **Textual** library, it provides a **rich and interactive interface** directly in the terminal.
 
@@ -20,6 +18,7 @@ This project implements an **MVC (Model-View-Controller)** architecture with a *
 - [✨ Features](#features)
 - [🏗️ Technical Architecture](#technical-architecture)
 - [🧪 Testing and Coverage](#testing-and-coverage)
+- [🔍 Code Quality & Linting](#code-quality--linting)
 - [🔐 Authentication System](#authentication-system)
 - [👥 RBAC Permission System](#rbac-permission-system)
 - [📖 Resources](#resources)
@@ -29,7 +28,7 @@ This project implements an **MVC (Model-View-Controller)** architecture with a *
 
 ---
 
-## 🏔️ Overview
+## Overview
 
 EpicEvents CRM enables **EpicEvents** company collaborators to efficiently manage:
 
@@ -47,7 +46,7 @@ The application is designed for **three departments**:
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -66,7 +65,7 @@ python --version && mysql --version && git --version && poetry --version
 
 ---
 
-## ⚙️ Installation and Configuration
+## Installation and Configuration
 
 ### 1️⃣ Clone the Repository
 ```bash
@@ -130,10 +129,11 @@ COLLAB_PASSWORD_6=password6
 
 ---
 
-## 🗃️ Database Initialization
+## Database Initialization
 
 ### 1️⃣ Create MySQL Database
 ```bash
+# Connect to your MySQL service
 mysql -u root -p
 ```
 ```sql
@@ -175,7 +175,7 @@ poetry run python -m database.seed
 
 ---
 
-## ▶️ Running the Application
+## Running the Application
 
 ```bash
 poetry run python main.py
@@ -202,26 +202,50 @@ poetry run python main.py
 
 ---
 
-## 🛠️ Error Tracking with Sentry
+## Error Tracking with Sentry
+
+EpicEvents CRM uses **Sentry** for real-time error tracking and monitoring, providing visibility into application errors, performance issues, and exceptions in production environments.
 
 **🎯 Purpose**: Real-time error tracking and monitoring
 
 ### 📝 Configuration
+
+1. **Create a Sentry account** at [sentry.io](https://sentry.io) or log in to your existing account
+2. **Create a new project** for EpicEvents CRM
+3. **Copy the DSN** from your project settings
+4. **Add the DSN** to your `.env` file:
+
 Add to `.env`:
 ```env
 SENTRY_DSN=https://your-public-key@sentry.io/your-project-id
 ```
 
+5. **Restart the application** for changes to take effect
+
 ### 📊 Use Cases
+
 | Scenario | Logged Data | Benefit |
 |----------|-------------|---------|
 | Collaborator actions | Main data | Monitor management |
 | Contract signature | Contract info | Track history |
 | Unhandled exceptions | Error details | Immediate alerts |
 
+> [!TIP]
+> Once configured, all errors will be visible in your Sentry dashboard.
+
 ---
 
-## ✨ Features
+## Features
+
+### Interface and Navigation
+
+The application uses **Textual** to provide a rich interface with:
+
+- **Interactive menus** with cursor selection or keyboard shortcuts
+- **Formatted display** with colors and custom styles
+- **Notifications** for error and success messages
+- **Real-time clock** in the header
+- **Nord theme** for a pleasant visual experience
 
 ### 🔐 Authentication
 | Feature | Description |
@@ -309,7 +333,7 @@ SENTRY_DSN=https://your-public-key@sentry.io/your-project-id
 
 ---
 
-## 🏗️ Technical Architecture
+## Technical Architecture
 
 | Component | Technology | Version |
 |-----------|------------|---------|
@@ -327,7 +351,7 @@ SENTRY_DSN=https://your-public-key@sentry.io/your-project-id
 
 ---
 
-## 🧪 Testing and Coverage
+## Testing and Coverage
 
 ### 🚀 Run Tests
 ```bash
@@ -336,21 +360,43 @@ poetry run pytest -vv
 
 # Specific test file
 poetry run pytest feature/tests/test_module.py -vv
-
-# With coverage
-poetry run coverage run -m pytest && poetry run coverage html
 ```
 
-> 📊 **View coverage report**:
-> ```bash
-> open htmlcov/index.html  # macOS
-> start htmlcov/index.html   # Windows
-> xdg-open htmlcov/index.html # Linux
-> ```
+Here are the pytest testing results:
+
+![Pytest Test Results](reports/tests_results_screenshot.png)
+
+> [!NOTE]
+> Test results are based on the latest test run.
+
+### Test Coverage Summary
+
+To run the test suite and generate a coverage report:
+
+```bash
+# Run all tests with coverage and generate html report
+poetry run coverage run -m pytest && poetry run coverage html 
+
+# Open report
+open htmlcov/index.html # macOS
+start htmlcov/index.html # Windows
+xdg-open htmlcov/index.html # Linux
+```
+
+> [!TIP]
+> The coverage report will be generated in the `htmlcov/` directory. Open `htmlcov/index.html` in your browser to view detailed coverage information.
+
+Here are the coverage results of the pytest tests in the current state of the project:
+
+![Coverage Test Results](./reports/coverage_test_results_screenshot_1.png)
+![Coverage Test Results](./reports/coverage_test_results_screenshot_2.png)
+
+> [!NOTE]
+> Coverage results are based on the latest test run.
 
 ---
 
-## 🔐 Authentication System
+## Authentication System
 
 **🔑 JWT (JSON Web Tokens)** with **RS256** algorithm
 
@@ -377,7 +423,7 @@ poetry run coverage run -m pytest && poetry run coverage html
 
 ---
 
-## 👥 RBAC Permission System
+## RBAC Permission System
 
 ### 🎯 Roles & Permissions
 | Role | 🎯 Responsibilities | 🔑 Key Permissions |
@@ -388,7 +434,33 @@ poetry run coverage run -m pytest && poetry run coverage html
 
 ---
 
-## 📖 Resources
+## Code Quality & Linting
+
+This project uses **Flake8** to ensure code compliance with [PEP 8](https://peps.python.org/pep-0008/) style guidelines.
+
+### Generate an HTML Report
+
+To generate and visualize Flake8 results in a browser:
+
+```bash
+# Generate a detailed HTML report
+poetry run flake8
+
+# Open the report in your browser
+open flake8-report/index.html  # macOS
+start flake8-report/index.html   # Windows
+xdg-open flake8-report/index.html # Linux
+```
+
+### 📊 Flake8 Report
+
+Here are the Flake8 results of the current state of the project:
+
+![Flake8 Compliance Results](./reports/flake8_report_screenshot.png)
+
+---
+
+## Resources
 
 - [Textual Documentation](https://textual.textualize.io/)
 - [SQLAlchemy Documentation](https://www.sqlalchemy.org/)
@@ -399,34 +471,41 @@ poetry run coverage run -m pytest && poetry run coverage html
 
 ---
 
-## 📜 License
+## License
 
-This project is **educational** and licensed under a **custom OpenClassrooms license**.
+This project is licensed under a **custom Educational License** specifically designed for OpenClassrooms portfolio projects.
 
-### ✅ Allowed
-- 📚 Personal learning
-- 🎨 Portfolio demonstration
-- 💼 Job interviews
-- 🔍 Code study
+This project is developed as part of **Project 12** of the **Python Application Developer** path at OpenClassrooms. It is intended for **educational, portfolio, and professional demonstration purposes only**.
 
-### ❌ Not Allowed
-- 💰 Commercial use without permission
-- ❌ Remove copyright notices
-- 👑 Claim ownership
+For full license details, see the [LICENSE](LICENSE) file.
 
-**© 2026 Quentin Tellier**
+### Quick Summary
+
+**You are free to:**
+- Use this code for personal learning and study
+- Reference it in your portfolio or resume
+- Demonstrate the application during job interviews
+- Study, modify, and understand the codebase for educational purposes
+
+**You may NOT:**
+- Sell this code or use it in commercial products without explicit permission
+- Remove or alter copyright notices
+- Claim authorship or ownership of this software
+- Distribute modified versions without maintaining the original license
+
+**Copyright (c) 2026 Quentin Tellier** - All rights reserved.
 
 ---
 
-## 👤 Authors
+## Authors
 
 - **Quentin Tellier** - Developer
   - Email: [quentin.tellier@outlook.com](mailto:quentin.tellier@outlook.com)
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- ⚡ [Textual](https://textual.textualize.io/) - CLI Framework
-- 🐍 The Python community
-- 🌟 All open-source contributors
+- [Textual](https://textual.textualize.io/) - CLI Framework
+- The Python community
+- All future contributors
