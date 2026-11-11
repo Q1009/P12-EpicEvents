@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.0.2] - 2026-11-11
+
+### Fixed
+- **Documentation**: Fixed table of contents anchor links not working
+- **Documentation**: Added missing "Code Quality & Linting" entry to table of contents
+- **Documentation**: Added missing "Code Quality & Linting" section
+- **Documentation**: Added missing test results and coverage screenshots to "Testing and Coverage" section
+- **Documentation**: Added missing sentry configuration steps to "Error Tracking with Sentry" section
+
+---
+
 ## [1.0.1] - 2026-11-10
 
 ### Added
