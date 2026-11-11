@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.0.3] - 2026-11-11
+
+### Fixed
+- **Documentation**: Fixed missing sentry configuration steps to "Error Tracking with Sentry" section due to merging conflicts
+- **Documentation**: Fixed missing "Running the Application" section due to merging conflicts
+
+---
+
 ## [1.0.2] - 2026-11-11
 
 ### Fixed
